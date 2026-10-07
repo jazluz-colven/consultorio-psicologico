@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 713" role="img" aria-label="Imagen representativa no disponible">
+  <rect width="720" height="713" fill="#F7F3EA"/>
+  <circle cx="360" cy="300" r="170" fill="#B8D8CE"/>
+  <path d="M360 170c60 40 90 100 90 170s-30 130-90 170c-60-40-90-100-90-170s30-130 90-170z" fill="#789B8A"/>
+  <text x="360" y="560" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#30454B">Imagen no disponible</text>
+</svg>

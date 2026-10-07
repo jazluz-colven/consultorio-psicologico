@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ view.brand_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <a class="site-brand" href="{{ url_for('home.index') }}">
+            <span class="site-brand__secondary">{{ view.secondary_brand }}</span>
+            <span class="site-brand__name">{{ view.brand_name }}</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-label="Abrir menú"
+                aria-expanded="false" aria-controls="site-nav">Menú</button>
+        <nav id="site-nav" class="site-nav" aria-label="Navegación principal">
+            <ul>
+                {% for item in view.nav %}
+                <li><a href="{{ item.url }}">{{ item.label }}</a></li>
+                {% endfor %}
+            </ul>
+        </nav>
+    </header>
+
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>{{ view.brand_name }} · {{ view.secondary_brand }}</p>
+    </footer>
+    <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+</body>
+</html>

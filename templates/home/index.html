@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero__text">
+        <p class="hero__brand">{{ view.secondary_brand }}</p>
+        <h1>{{ view.brand_name }}</h1>
+        <p class="hero__tagline">{{ view.tagline }}</p>
+        <p class="hero__intro">{{ view.intro }}</p>
+    </div>
+    <figure class="hero__figure">
+        <img src="{{ url_for('static', filename=view.hero.src) }}"
+             alt="{{ view.hero.alt }}" width="720" height="713">
+    </figure>
+</section>
+
+<section class="services">
+    <h2 class="services__title">{{ view.services_title }}</h2>
+    <ul class="services__list">
+        {% for service in view.services %}
+        <li class="service-card">
+            <h3 class="service-card__name">{{ service.name }}</h3>
+            <p class="service-card__summary">{{ service.summary }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+    <a class="services__link" href="{{ view.services_link_url }}">{{ view.services_link_label }}</a>
+</section>
+
+<section class="values">
+    <p class="values__line">{{ view.trust_line }}</p>
+</section>
+{% endblock %}

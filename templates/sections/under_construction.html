@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section }} — Sección en construcción{% endblock %}
+
+{% block content %}
+<section class="placeholder">
+    <h1 class="placeholder__title">{{ section }}</h1>
+    <p class="placeholder__message">Sección en construcción.</p>
+    <p class="placeholder__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
+</section>
+{% endblock %}

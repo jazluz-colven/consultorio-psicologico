@@ -5,12 +5,34 @@ aporte.
 
 ## Estado actual
 - Versión 1.0 - En desarrollo
+- **HU-001 (Spec 001) implementada**: portada con identidad, imagen representativa,
+  resumen de servicios, frase de valores, marca secundaria «Contenidas» y menú de 6
+  accesos. Rama `feature/hu-001`.
+- Tests: **29 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
+  pytest 9.1.1.
+- Specs y plan en `specs/001_visualizar-pinicio/`.
 
 ## Decisiones (y por qué)
-- (vacío por ahora)
+- **Sin SQLite en HU-001**: la portada no escribe datos; el contenido vive en
+  `consultorio/content/` (constitución #1, nada por conveniencia). La capa
+  `persistence/` se crea con la primera HU que use BD.
+- **Spec 001 con textos literales contractuales** (Q8): cambiar un copy obliga a PR de
+  spec primero; `tests/expected_content.py` es su espejo.
+- **Rutas placeholder** `/nosotros`, `/servicios`, `/articulos`, `/contacto`, `/citas`
+  responden 200 con «Sección en construcción» (Q1); cada HU posterior sustituye su
+  plantilla.
+- **Sin botón CTA en el hero**; «Agendar cita» vive solo en el menú.
+- Colores de la ilustración NO se usan como colores de UI: paleta Serenidad Natural
+  intacta (solo los 6 hex aprobados).
 
 ## Aprendizajes y errores a evitar
-- (vacío por ahora)
+- `pip` está **bloqueado por AppLocker**: usar `python -m pip install ...`.
+- El archivo de imagen llegó como `hero-contenidas.png.png`; comprobar nombres dobles.
+- El PNG de la portada mide 720×713 (usado en `width`/`height` del `<img>`).
+- Si se sube una imagen con fondo blanco, se verá una caja sobre `#F7F3EA`: pedir fondo
+  transparente.
 
 ## Próximos pasos
-- (vacío por ahora)
+- Demo manual en navegador (1280×800 y 375×812) + evidencia QA y visual de HU-001.
+- Commit y cierre de `feature/hu-001` cuando el Coordinador acepte.
+- Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.
