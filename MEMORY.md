@@ -11,6 +11,8 @@ aporte.
 - Tests: **29 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1.
 - Specs y plan en `specs/001_visualizar-pinicio/`.
+- Commits en `feature/hu-001`: `2ebaa46` (docs) y `85a0e9d` (feat). **Sin remoto
+  configurado**: no se puede hacer push.
 
 ## Decisiones (y por qué)
 - **Sin SQLite en HU-001**: la portada no escribe datos; el contenido vive en
@@ -33,6 +35,7 @@ aporte.
   transparente.
 
 ## Próximos pasos
-- Demo manual en navegador (1280×800 y 375×812) + evidencia QA y visual de HU-001.
-- Commit y cierre de `feature/hu-001` cuando el Coordinador acepte.
+- Guardar las capturas en `docs/evidencias/hu-001/` (`escritorio-1280.png`,
+  `movil-375.png`) y registrar el veredicto QA.
+- Solicitar aceptación de HU-001; configurar remoto y hacer push cuando exista.
 - Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.
