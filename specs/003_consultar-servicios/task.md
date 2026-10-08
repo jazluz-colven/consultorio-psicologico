@@ -7,13 +7,13 @@
 
 ## Tareas
 
-- [ ] **T1 — Git: rama de trabajo (plan §8.0)** `[base/regresión]`
+- [x] **T1 — Git: rama de trabajo (plan §8.0)** `[base/regresión]`
   Merge `feature/hu-002` (HU-002 aceptada, `647b66e`) en `main` y crear `feature/hu-003`
   desde `main` (Q4).
   Hecho cuando: `git merge-base --is-ancestor 647b66e main` sale sin error,
   `git branch --show-current` → `feature/hu-003` y `git status` limpio.
 
-- [ ] **T2 — Spec 003: literales RF-3 y cierre de la duda (plan §8.1)** `[RF-2][RF-3][CL-1]`
+- [x] **T2 — Spec 003: literales RF-3 y cierre de la duda (plan §8.1)** `[RF-2][RF-3][CL-1]`
   Añadir a `specs/003_consultar-servicios/spec.md` la sección «Contenido de servicios»
   con `SERVICES_PAGE_TITLE` «Servicios» y los 2 servicios (name, description, benefits)
   literales del plan §2 (aprobados 2026-10-07), y cerrar la duda abierta (Q1: solo los

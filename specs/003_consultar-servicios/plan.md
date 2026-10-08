@@ -331,11 +331,11 @@ Evidencia visual: docs/evidencias/hu-003/escritorio-1280.png, movil-375.png
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
-- [ ] Cerrar la duda abierta y fijar los literales RF-3 (descripción, beneficios y h1)
+- [x] Cerrar la duda abierta y fijar los literales RF-3 (descripción, beneficios y h1)
       en `specs/003_consultar-servicios/spec.md` — **bloquea la implementación** (Q3,
       textos ya aprobados).
 - [x] Aprobación de este `plan.md` y de los literales RF-3 por la usuaria (2026-10-07).
-- [ ] Merge a `main` y creación de `feature/hu-003` (Q4).
+- [x] Merge a `main` y creación de `feature/hu-003` (Q4).
 - [ ] Implementar módulos, plantilla y CSS (§1–§4).
 - [ ] Tests (§6) y `pytest -q` en verde (45 actuales + nuevos).
 - [ ] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual

@@ -30,5 +30,26 @@ El visitante necesita conocer las alternativas de atención disponibles para ide
 ## Criterios de finalización
 Todos los RF con test en verde y demostración manual de los servicios mínimos y su información asociada.
 
+## Contenido de servicios
+Los siguientes textos literales son contrato (aprobados el 2026-10-07). El h1 de la página es «Servicios». Se publican exactamente los 2 servicios mínimos.
+
+### Psicología Integral
+Descripción: Un proceso terapéutico para personas, parejas y familias que busca comprender lo que estás viviendo, aliviar el malestar y construir herramientas concretas para el día a día, con un enfoque basado en evidencia y un trato cercano, respetuoso y confidencial.
+
+Beneficios:
+- Comprensión más clara de tus emociones, relaciones y patrones de conducta.
+- Herramientas prácticas para manejar el estrés y el malestar cotidiano.
+- Acompañamiento personalizado: individual, de pareja o familiar.
+- Un espacio seguro, sin juicios y confidencial para hablar abiertamente.
+
+### Psiconutrición
+Descripción: Un acompañamiento que integra la salud mental con la alimentación para construir hábitos sostenibles y una relación más tranquila y consciente con la comida, sin dietas restrictivas ni culpa, respetando tu historia, tu ritmo y tus metas.
+
+Beneficios:
+- Hábitos alimentarios sostenibles, sin restricciones impuestas.
+- Una relación más saludable y consciente con la comida.
+- Vinculación entre lo emocional y lo alimentario en un mismo proceso.
+- Planes personalizados adaptados a tu realidad y tus objetivos.
+
 ## Dudas abiertas
-- [NECESITA ACLARACIÓN] Confirmar si existen servicios adicionales obligatorios además de los mínimos definidos.
+- ~~[NECESITA ACLARACIÓN] Confirmar si existen servicios adicionales obligatorios además de los mínimos definidos.~~ **CERRADA (2026-10-07): solo los 2 mínimos (Psicología Integral y Psiconutrición), sin servicios adicionales (Q1 del plan 003).**
