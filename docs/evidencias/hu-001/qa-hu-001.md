@@ -2,8 +2,8 @@
 
 **HU:** HU-001
 **Rama:** `feature/hu-001`
-**Commits:** `2ebaa46` (docs), `85a0e9d` (feat), `3203047` (docs)
-**Fecha:** 2026-10-07
+**Commits:** `2ebaa46` (docs), `85a0e9d` (feat), `3203047` (docs), `aa5379c` (evidencia)
+**Fecha:** 2026-10-07 (actualizada tras el cambio tipográfico)
 
 ## Resumen
 
@@ -14,6 +14,25 @@
 | Servidor de desarrollo | `GET http://127.0.0.1:5000/` | **200** |
 | Evidencia visual | `docs/evidencias/hu-001/*.png` | **4 archivos, PASS** |
 
+## Cambio tipográfico verificado en esta iteración
+
+La portada adopta **Palatino** (`static/css/main.css`, `body { font-family: ... }`), el
+párrafo del hero queda **justificado** de forma acotada (solo `.hero__intro`) y la base
+tipográfica sube de **16 px a 18 px** con `html { font-size: 112.5% }`, según la
+decisión documentada en `docs/design-typography.md` y reflejada en la D10 de
+`specs/001_visualizar-pinicio/plan.md`.
+
+Comprobaciones objetivas sobre `escritorio-1280.png` y `movil-375.png`:
+
+- Justificación: los bordes derechos de las líneas completas del párrafo del hero son
+  619 / 613 / 618 / 619 / 613 px y la última línea corta termina en 168 px.
+- Cuerpo ampliado: el volumen de texto crece de forma medible respecto a la captura
+  anterior (p. ej. RF-6 en móvil pasa de 1344 a 1671 px de texto y el pie de 575 a
+  722), coherente con la escala 1.125×.
+- Título del hero equilibrado con `text-wrap: balance`: en escritorio la línea 1 mide
+  464 px y la línea 2 318 px, en lugar de una primera línea larga y «Gómez» solo.
+- `python -m pytest -q` → 29 PASS después del cambio.
+
 ## Cobertura de RF
 
 | RF | Verificación | Resultado |
@@ -23,7 +42,7 @@
 | RF-3 accesos a secciones | 6 enlaces en `<nav>`; cada `href` responde 200 | PASS |
 | RF-4 orientación institucional | sin `<form>`/`<input>`/admin; `POST /` → 405 | PASS |
 | RF-5 resumen de servicios | bloque completo + enlace «Ver todos los servicios» → 200 | PASS |
-| RF-6 frase de valores | literal presente en `GET /` | PASS |
+| RF-6 frase de valores | literal presente en `GET /` y texto visible en la banda de valores | PASS |
 | RF-7 marca secundaria | «Contenidas» visible y precede al `<h1>` | PASS |
 | RNF-1 responsive | `viewport`, `width`/`height` en `<img>`, `@media (max-width…)` | PASS |
 | RNF-2 paleta coherente | únicamente los 6 hex aprobados en `main.css` | PASS |
@@ -35,30 +54,42 @@
 
 | Archivo | Dimensiones | Contenido comprobado | Resultado |
 |---|---|---|---|
-| `escritorio-1280.png` | 1280×1900 | RF-1, RF-2, RF-3, RF-5, RF-6 (y=950-980) y pie (y=1055-1160); **sin botón «Menú»** (corrección de escritorio verificada) | PASS |
-| `movil-375.png` | 375×2800 | RF-1, RF-2, RF-5, RF-6 (y=1495-1525), pie (y=1650-1695), botón «Menú» con nav oculta por defecto | PASS |
-| `escritorio-1280-devtools.png` | recorte 759×598 | Viewport DevTools «Responsive 1280» (prueba del ancho de prueba) | PASS |
-| `movil-375-devtools.png` | recorte 716×600 | Viewport DevTools «Responsive 375» (prueba del ancho de prueba) | PASS |
+| `escritorio-1280.png` | 1280×1900 | cabecera (y=0-135) **sin botón «Menú»** (0 px salvia en la zona de nav), hero (y=136-597) con imagen (89 784 px fuera de fondo), servicios/tarjetas (y=598-881), botón (y=882-935), RF-6 (y=981-1067, 1660 px de texto) y pie RF-7 (y=1149-1267, 748 px de texto) | PASS |
+| `movil-375.png` | 375×2800 | cabecera con marca (y=0-131) y botón «Menú» (y=133-177), nav cerrado (0 px de texto en y=179-221), hero (y=222-1108), «Nuestros servicios» (y=1109-1219), tarjetas (y=1220-1422 e y=1446-1649), botón (y=1677-1730), RF-6 (y=1776-1994, 1671 px de texto) y pie RF-7 (y=2067-2214, 722 px de texto) | PASS |
+| `escritorio-1280-devtools.png` | recorte 759×598 | Viewport DevTools «Responsive 1280» (prueba del ancho de prueba); muestra la tipografía anterior al cambio | PASS |
+| `movil-375-devtools.png` | recorte 716×600 | Viewport DevTools «Responsive 375» con el menú móvil desplegado; muestra la tipografía anterior al cambio | PASS |
 
-Las dos capturas completas se obtuvieron con Chrome headless a ancho exacto (1280 y 375)
-y la presencia de cada bloque se verificó por muestreo de color, no por inspección
-visual. El estado inicial del nav en móvil está comprobado además por código:
+Las dos capturas completas se generan con Chrome headless **vía DevTools Protocol**
+(`Emulation.setDeviceMetricsOverride` + `Page.captureScreenshot`), por lo que el ancho
+renderizado es exactamente 1280 y 375 px. La presencia y posición de cada bloque se
+verificó por muestreo de color (bandas de fila) y conteo de píxeles de texto, no por
+inspección visual. El estado inicial del nav en móvil está comprobado además por código:
 `base.html` no incluye la clase `is-open` y `main.css` aplica `display: none` bajo
 `@media (max-width: 767px)`.
 
+Geometría comprobada en `movil-375.png`: el hero termina en x≈356 y el fondo de página
+ocupa x≥362 (padding de 24 px), es decir, sin desbordamiento horizontal a 375 px.
+
 ## Defectos encontrados
 
-- Ninguno funcional. La única incidencia detectada en la revisión visual (botón «Menú»
-  visible en escritorio) fue corregida en `static/css/main.css` y está verificada en
-  `escritorio-1280.png`.
+- Ninguno funcional. La única incidencia funcional detectada en la revisión visual
+  (botón «Menú» visible en escritorio) fue corregida en `static/css/main.css` y está
+  verificada en `escritorio-1280.png`.
+- **Defecto de metodología corregido**: las capturas anteriores se hacían con
+  `chrome --headless --window-size=375,2800`, pero Chrome 154 limita la ventana a un
+  mínimo de 500 px y recorta la imagen al ancho pedido; por eso el contenido aparecía
+  cortado en el borde derecho. No era un fallo de la maqueta (la captura DevTools a 375
+  y la geometría CDP lo demuestran). Las capturas se regeneraron con emulación CDP.
 
 ## Pendientes de cierre
 
-- [ ] Commit de la evidencia y de este informe.
+- [ ] Commit del cambio tipográfico (`static/css/main.css`, `docs/design-typography.md`,
+      `specs/001_visualizar-pinicio/plan.md`) y de la evidencia regenerada.
 - [ ] Aceptación de la HU.
 
 ## Veredicto
 
-**PASS** — los 29 tests y las 27 comprobaciones de contrato están en verde, y la
-evidencia visual cubre la totalidad de los RF y los casos límite. Quedan como trámite
-el commit de la evidencia y la aceptación de la HU.
+**PASS** — los 29 tests y las 27 comprobaciones de contrato están en verde tras el
+cambio tipográfico, y la evidencia visual regenerada cubre la totalidad de los RF y los
+casos límite con anchos de render exactos. Quedan como trámite el commit y la
+aceptación de la HU.

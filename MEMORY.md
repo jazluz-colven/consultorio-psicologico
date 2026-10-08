@@ -11,8 +11,13 @@ aporte.
 - Tests: **29 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1.
 - Specs y plan en `specs/001_visualizar-pinicio/`.
-- Commits en `feature/hu-001`: `2ebaa46` (docs) y `85a0e9d` (feat). **Sin remoto
-  configurado**: no se puede hacer push.
+- Commits en `feature/hu-001`: `2ebaa46` (docs), `85a0e9d` (feat), `3203047` y
+  `aa5379c`. **Sin remoto configurado**: no se puede hacer push.
+- **Cambio tipográfico aplicado y sin commitar**: portada en Palatino, párrafo del
+  hero justificado (solo `.hero__intro`), **cuerpo base 18 px** (`html { font-size:
+  112.5% }`, escala 1.125× en todos los `rem`; cortes `px` intactos) y h1 del hero
+  equilibrado con `text-wrap: balance`. Decisiones en `docs/design-typography.md`,
+  D10 del plan actualizada.
 
 ## Decisiones (y por qué)
 - **Sin SQLite en HU-001**: la portada no escribe datos; el contenido vive en
@@ -33,9 +38,15 @@ aporte.
 - El PNG de la portada mide 720×713 (usado en `width`/`height` del `<img>`).
 - Si se sube una imagen con fondo blanco, se verá una caja sobre `#F7F3EA`: pedir fondo
   transparente.
+- **Chrome 154 headless no renderiza a menos de 500 px**: `--window-size=375` recorta la
+  imagen de 500 px y la maqueta parece desbordada (no lo está). Para capturas exactas
+  usar DevTools Protocol (`Emulation.setDeviceMetricsOverride`); script de apoyo en
+  `C:\Users\Jaz\AppData\Local\Temp\opencode\capture_cdp.ps1`.
 
 ## Próximos pasos
-- Evidencia de HU-001 **completa y PASS**: `docs/evidencias/hu-001/`
-  (`escritorio-1280.png`, `movil-375.png`, `*-devtools.png`, `qa-hu-001.md`).
+- Commit pendiente en `feature/hu-001`: `static/css/main.css`, `docs/design-typography.md`,
+  `specs/001_visualizar-pinicio/plan.md` y evidencia regenerada (29 tests PASS, 27
+  comprobaciones de contrato PASS, `qa-hu-001.md` actualizado).
 - Solicitar aceptación de HU-001; configurar remoto y hacer push cuando exista.
+- Regenerar las capturas `*-devtools.png` (siguen mostrando la tipografía anterior).
 - Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.
