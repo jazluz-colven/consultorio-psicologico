@@ -74,7 +74,7 @@
   formularios ni enlace a `/citas`.
   Hecho cuando: `python -m pytest tests/test_hu_003.py -v` → todos PASS, 0 FAIL.
 
-- [ ] **T12 — Suite completa y regresión (plan §6.2)** `[todos]`
+- [x] **T12 — Suite completa y regresión (plan §6.2)** `[todos]`
   Hecho cuando: `python -m pytest -q` → **0 FAIL** con los 45 tests previos intactos
   (HU-001 y HU-002 sin relajar) más los nuevos de HU-003.
 
