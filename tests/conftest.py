@@ -10,11 +10,15 @@ if str(ROOT) not in sys.path:
 
 from consultorio import create_app
 from consultorio.config import TestConfig
+from consultorio.persistence.database import init_db
 
 
 @pytest.fixture()
-def app() -> Iterator:
-    application = create_app(TestConfig)
+def app(tmp_path: Path) -> Iterator:
+    class TempConfig(TestConfig):
+        DATABASE_PATH: Path = tmp_path / "consultorio.db"
+
+    application = create_app(TempConfig)
     application.config.update(TESTING=True)
     yield application
 
@@ -22,3 +26,10 @@ def app() -> Iterator:
 @pytest.fixture()
 def client(app) -> object:
     return app.test_client()
+
+
+@pytest.fixture()
+def database_path(tmp_path: Path) -> Iterator[Path]:
+    path = tmp_path / "appointment.db"
+    init_db(path)
+    yield path
