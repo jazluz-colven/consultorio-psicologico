@@ -19,11 +19,13 @@ def create_app(settings: Any = None) -> Flask:
     from consultorio.web.about import bp as about_bp
     from consultorio.web.home import bp as home_bp
     from consultorio.web.placeholders import bp as sections_bp
+    from consultorio.web.search import bp as search_bp
     from consultorio.web.services import bp as services_bp
 
     app.register_blueprint(about_bp)
     app.register_blueprint(home_bp)
     app.register_blueprint(sections_bp)
+    app.register_blueprint(search_bp)
     app.register_blueprint(services_bp)
     register_error_handlers(app)
 

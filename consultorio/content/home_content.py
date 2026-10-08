@@ -1,7 +1,7 @@
 SECONDARY_BRAND: str = "Contenidas"
 
 HOME_CONTENT: dict[str, str] = {
-    "brand_name": "Consultorio Psicológico Carolina Gómez",
+    "brand_name": "Carolina Gómez",
     "tagline": "Acompañamiento psicológico y nutricional con calidez profesional",
     "intro": (
         "Un espacio de atención personalizada donde la salud mental y el "

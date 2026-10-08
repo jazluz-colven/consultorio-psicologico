@@ -9,7 +9,9 @@
 <body>
     <header class="site-header">
         <a class="site-brand" href="{{ url_for('home.index') }}">
-            <span class="site-brand__secondary">{{ view.secondary_brand }}</span>
+            <img class="site-brand__logo"
+                 src="{{ url_for('static', filename='img/hero-contenidas.png') }}"
+                 alt="Contenidas" width="720" height="713">
             <span class="site-brand__name">{{ view.brand_name }}</span>
         </a>
         <button class="nav-toggle" type="button" aria-label="Abrir menú"
@@ -21,6 +23,13 @@
                 {% endfor %}
             </ul>
         </nav>
+        <form class="site-search" action="{{ url_for('search.index') }}" method="get" role="search">
+            <label class="site-search__label" for="search-input">Buscar en el sitio</label>
+            <input class="site-search__input" id="search-input" type="search"
+                   name="q" placeholder="Buscar en el sitio…"
+                   value="{{ search_q|default('', true) }}">
+            <button class="site-search__button" type="submit">Buscar</button>
+        </form>
     </header>
 
     <main class="site-main">

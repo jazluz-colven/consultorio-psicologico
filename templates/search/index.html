@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Resultados de búsqueda — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="search-page">
+    <h1 class="search-page__title">Resultados de búsqueda</h1>
+
+    {% if status == "empty" %}
+    <p class="search-page__status">Escribe un término para buscar en el sitio.</p>
+    {% elif status == "no_results" %}
+    <p class="search-page__status">No se encontraron resultados para «{{ q }}».</p>
+    {% else %}
+    <p class="search-page__status">{{ hits|length }} resultado{{ "" if hits|length == 1 else "s" }} para «{{ q }}».</p>
+    <ul class="search-results">
+        {% for item in hits %}
+        <li class="search-result">
+            <h2 class="search-result__title">
+                <a href="{{ item.url }}">{{ item.title }}</a>
+            </h2>
+            <p class="search-result__snippet">{{ item.snippet }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <p class="search-page__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
+</article>
+{% endblock %}

@@ -5,7 +5,7 @@ class Config:
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
     STATIC_DIR: Path = BASE_DIR / "static"
     TEMPLATES_DIR: Path = BASE_DIR / "templates"
-    SITE_NAME: str = "Consultorio Psicológico Carolina Gómez"
+    SITE_NAME: str = "Carolina Gómez"
     TESTING: bool = False
     DEBUG: bool = False
 
