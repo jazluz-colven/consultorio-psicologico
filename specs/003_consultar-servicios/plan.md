@@ -341,7 +341,7 @@ Evidencia visual: docs/evidencias/hu-003/escritorio-1280.png, movil-375.png
 - [x] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual
       (`escritorio-1280.png`, `movil-375.png`, verificadas) con demo sobre el servidor
       (`GET /servicios` → 200).
-- [ ] Commit/Push de la evidencia y actualización de `MEMORY.md`.
+- [x] Commit/Push de la evidencia y actualización de `MEMORY.md`.
 - [ ] Aceptación de la HU (checkbox del informe QA).
 
 ---

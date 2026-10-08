@@ -86,7 +86,7 @@
   la altura de `scrollHeight` y `qa-hu-003.md` declara veredicto **PASS** con todos los
   TC en verde.
 
-- [ ] **T14 — Commit/Push de la evidencia + `MEMORY.md`** `[trazabilidad]`
+- [x] **T14 — Commit/Push de la evidencia + `MEMORY.md`** `[trazabilidad]`
   Hecho cuando: `git status` limpio, `git rev-parse HEAD origin/feature/hu-003` iguales
   y `MEMORY.md` registra HU-003 en evidencia con sus commits.
 

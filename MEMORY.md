@@ -16,7 +16,11 @@ aporte.
   servicio + blueprint + plantilla + CSS `.services-page-*`), fallback por campo,
   404 de subrutas. Veredicto QA **PASS** en `docs/evidencias/hu-003/qa-hu-003.md`;
   capturas `escritorio-1280.png` (1280×1398) y `movil-375.png` (375×1965).
-  Pendiente: push de evidencia, `MEMORY.md` y aceptación de la usuaria.
+  Commits: `e6ad118` plan/tasks, `6440e74` spec, `72167bd` espejo, `84169a4` catálogo,
+  `18f5a85` tests contenido, `c16a098` servicio, `5b5dbdb` tests servicio,
+  `66d980a` web+plantilla, `5be6b48` CSS, `249dae6` tests ruta, `6d4a5f4` tests HU,
+  `6f2a9c4` regresión, `6992364` evidencia+memory (push OK). Pendiente: aceptación
+  de la usuaria.
 - Tests: **61 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1 (29 de HU-001 + 16 de HU-002 + 16 de HU-003). Contrato HU-001: 28 PASS.
 - **Tipografía vigente**: Palatino, cuerpo base 18 px, h1 con `text-wrap: balance` y
