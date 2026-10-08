@@ -135,7 +135,7 @@ a:focus {
     margin: 1rem 0 0;
     max-width: 60ch;
     text-align: justify;
-    hyphens: auto;
+    hyphens: none;
 }
 
 .hero__figure {
@@ -184,6 +184,8 @@ a:focus {
 
 .service-card__summary {
     margin: 0;
+    text-align: justify;
+    hyphens: none;
 }
 
 .services__link {
@@ -215,6 +217,8 @@ a:focus {
     color: var(--color-text);
     font-size: 1.15rem;
     font-style: italic;
+    text-align: justify;
+    hyphens: none;
 }
 
 .about {
@@ -244,6 +248,8 @@ a:focus {
 
 .about__text {
     margin: 0;
+    text-align: justify;
+    hyphens: none;
 }
 
 .about__back {
@@ -286,7 +292,7 @@ a:focus {
     padding: 1.5rem;
     background-color: var(--color-support);
     color: var(--color-text);
-    text-align: center;
+    text-align: justify;
 }
 
 @media (min-width: 768px) {

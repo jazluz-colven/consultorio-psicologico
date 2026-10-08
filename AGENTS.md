@@ -169,6 +169,19 @@ La paleta es una restricción de diseño, no una sugerencia opcional.
 Cualquier cambio permanente en colores, tipografía o identidad visual debe
 quedar respaldado por una decisión documentada.
 
+#### Reglas de texto (permanentes)
+
+* Todos los párrafos y textos de contenido van **justificados y ajustados al cajón
+  de texto**: `text-align: justify` + `hyphens: none`, **sin guiones visibles ni
+  cortes de palabras** (los saltos de línea se hacen solo en espacios). La decisión
+  se documenta antes en `docs/design-typography.md`.
+
+#### Servidor para revisión visual
+
+* Al finalizar cada tarea o modificación que deba ser visualizada por el usuario
+  para su aprobación, dejar **el servidor en marcha** (`python app.py`) y comunicar
+  la URL correspondiente.
+
 ## Git y control de cambios
 
 Antes de modificar código:

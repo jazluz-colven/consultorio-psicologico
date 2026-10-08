@@ -35,6 +35,10 @@ aporte.
   `/citas` responden «Sección en construcción»; `/nosotros` fue sustituida por HU-002
   (`PLACEHOLDER_SECTIONS` ajustado, D11).
 - **Sin botón CTA en el hero**; «Agendar cita» vive solo en el menú.
+- **Todos los párrafos justificados** (regla permanente del usuario, 2026-10-07;
+  en `docs/design-typography.md` y `AGENTS.md`): `text-align: justify` + `hyphens: none`
+  (sin guiones ni cortes de palabras), ajustados al cajón. Aplicado en `/nosotros` y
+  en la portada (`.hero__intro`, tarjetas, frase de valores, pie).
 - Colores de la ilustración NO se usan como colores de UI: paleta Serenidad Natural
   intacta (solo los 6 hex aprobados).
 
@@ -51,6 +55,8 @@ aporte.
   `Runtime.evaluate` antes de capturar).
 - **Jinja + claves de dict con nombre de método**: `{{ d.values }}` resuelve al método
   `dict.values`, no a la clave; usar `{{ d["values"] }}` (bug visto en HU-002).
+- **Servidor para revisión**: tras toda tarea/modificación visible, dejar
+  `python app.py` en marcha y comunicar la URL (regla añadida a `AGENTS.md`).
 
 ## Próximos pasos
 - **PENDIENTE**: aceptación de HU-002 (checkbox en `docs/evidencias/hu-002/qa-hu-002.md`);
