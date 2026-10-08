@@ -85,7 +85,7 @@ NAV_LINKS = [
     {"label": "Agendar cita", "url": "/citas"},
 ]
 
-PLACEHOLDER_SECTIONS = ["/articulos", "/contacto", "/citas"]
+PLACEHOLDER_SECTIONS = ["/articulos", "/contacto"]
 
 ABOUT_CONTENT = {
     "mission": (
@@ -167,3 +167,48 @@ PALETTE = {
     "#E8D5B5",
     "#30454B",
 }
+
+# --- HU-004: Agendar cita (espejo único de la spec 004) ---
+
+BOOKING_PAGE_TITLE = "Agendar cita"
+
+BOOKING_HOURS: list[str] = [
+    "08:00", "08:30", "09:00", "09:30",
+    "10:00", "10:30", "11:00", "11:30",
+    "14:00", "14:30", "15:00", "15:30",
+    "16:00", "16:30",
+]
+
+DOCUMENT_TYPES: list[tuple[str, str]] = [
+    ("CC", "Cédula de ciudadanía"),
+    ("TI", "Tarjeta de identidad"),
+    ("CE", "Cédula de extranjería"),
+    ("PASSPORT", "Pasaporte"),
+    ("RC", "Registro civil"),
+]
+
+MSG_REQUIRED_SERVICE = "Selecciona un servicio."
+MSG_INVALID_SERVICE = "Selecciona un servicio válido."
+MSG_REQUIRED_DATE = "Selecciona una fecha."
+MSG_INVALID_DATE = "Selecciona una fecha válida de lunes a viernes, no anterior a hoy."
+MSG_REQUIRED_TIME = "Selecciona una hora."
+MSG_INVALID_TIME = "Selecciona una hora válida."
+MSG_REQUIRED_DOC_TYPE = "Selecciona un tipo de documento."
+MSG_REQUIRED_DOC_NUMBER = "Ingresa el número de documento."
+MSG_INVALID_DOC_NUMBER = "El número de documento debe tener entre 4 y 20 dígitos."
+MSG_REQUIRED_NAME = "Ingresa tu nombre y apellidos."
+MSG_INVALID_NAME = "El nombre debe tener entre 3 y 120 caracteres."
+MSG_REQUIRED_EMAIL = "Ingresa tu correo electrónico."
+MSG_INVALID_EMAIL = "Ingresa un correo electrónico válido."
+MSG_REQUIRED_PHONE = "Ingresa tu celular."
+MSG_INVALID_PHONE = "Ingresa un celular válido (entre 7 y 15 dígitos)."
+MSG_SLOT_TAKEN = "Ese horario ya no está disponible. Selecciona otro horario."
+MSG_NO_HOURS = "No hay horarios disponibles para esta fecha."
+MSG_INVALID_PARAMS = "Parámetros inválidos."
+CONFIRMATION_TITLE = "Cita registrada"
+STATUS_PENDING_LABEL = "Pendiente"
+BOOKING_HELPER = (
+    "Si el paciente es menor de edad, registra los datos del "
+    "representante con su documento; si es extranjero, puede usar "
+    "pasaporte o cédula de extranjería."
+)
