@@ -15,7 +15,8 @@ Tecnologías y componentes principales:
 * Recursos estáticos: `static/`.
 * Persistencia y reglas de citas: módulos Python del proyecto.
 * Punto de entrada: `app.py`.
-* Entorno virtual: `.venv/`.
+* Código de dominio: paquete `consultorio/`.
+* Ejecución: Python 3.14.8 del sistema (sin `.venv`).
 * Pruebas: suite automatizada y pruebas específicas de las Historias de Usuario.
 * Identificadores en inglés; mensajes de usuario en español.
 
@@ -67,6 +68,8 @@ Convención:
 * `specs/<especificación>/plan.md` → diseño técnico.
 * `tests/` → validación automatizada.
 * `docs/` → documentación, decisiones, evidencias y trazabilidad.
+* `docs/evidencias/hu-XXX/qa-hu-XXX.md` → informe QA de la HU con capturas
+  (PNG) en la misma carpeta; usar checkbox en los criterios de aceptación.
 * `MEMORY.md` → memoria breve del estado del proyecto.
 
 ## Trazabilidad
@@ -91,6 +94,13 @@ decisión documentada.
   `plan.md`.
 * No modificar archivos dentro de `specs/` salvo petición explícita o decisión formal.
 * No eliminar requisitos o criterios sin preguntar y registrar la decisión y su justificación.
+
+### Textos contractuales
+
+* Los textos literales definidos en la spec son contrato: cambiar un copy
+  obliga a un PR de spec primero.
+* `tests/expected_content.py` es el espejo de esos textos; si cambia la spec,
+  cambian juntos spec y test en el mismo PR.
 
 ## Base de datos e integridad
 
@@ -214,9 +224,16 @@ Antes de declarar una tarea terminada:
 
 **No declarar PASS únicamente mediante inspección del código.**
 
-## Comandos habituales
+Para tareas QA (diseño y ejecución de pruebas) usar el skill `pytest-qa`.
 
-Activar el entorno virtual correspondiente antes de ejecutar la aplicación.
+### Evidencia visual (capturas)
+
+* Chrome 154 headless no renderiza correctamente por debajo de 500 px:
+  `--window-size=375` recorta la página y la maqueta parece desbordada.
+* Para capturas exactas usar DevTools Protocol
+  (`Emulation.setDeviceMetricsOverride`), no `--window-size`.
+
+## Comandos habituales
 
 ### Ejecutar aplicación
 
@@ -226,9 +243,16 @@ python app.py
 
 ### Tests
 
-Si el proyecto utiliza pytest:
 ```powershell
-pytest -q
+python -m pytest -q
+```
+
+### Instalación de dependencias
+
+`pip` está bloqueado por AppLocker; usar siempre el módulo:
+
+```powershell
+python -m pip install <paquete>
 ```
 
 ### Estado Git
@@ -289,7 +313,6 @@ La implementación nunca debe convertirse en la fuente de verdad de los
 requisitos.
 
 La fuente de verdad funcional es la especificación aprobada.
-parte."
 
 Nunca reescribas código que ya funciona.
 
