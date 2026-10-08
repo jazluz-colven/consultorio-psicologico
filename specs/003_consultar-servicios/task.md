@@ -21,7 +21,7 @@
   Hecho cuando: la spec contiene los 4 bloques de texto idénticos a los del plan §2
   (comparación directa) y la duda aparece como cerrada/resuelta.
 
-- [ ] **T3 — Espejo de literales en `tests/expected_content.py` (plan §1)** `[RF-1..RF-4]`
+- [x] **T3 — Espejo de literales en `tests/expected_content.py` (plan §1)** `[RF-1..RF-4]`
   Incorporar `SERVICES_PAGE_TITLE` y `SERVICES_CATALOG` (espejo único; D5). No se toca
   aún `PLACEHOLDER_SECTIONS` (eso va en T8).
   Hecho cuando: `python -c "from tests.expected_content import SERVICES_CATALOG as c; assert set(c) == {'psychology_integral', 'nutrition'}"` → exit 0
