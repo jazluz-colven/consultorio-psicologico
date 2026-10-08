@@ -2,8 +2,9 @@
 
 **HU:** HU-002
 **Rama:** `feature/hu-002`
-**Commits:** `c71c78c` (docs: spec + plan), `f782797` (feat), `a686a58` (plan: estado)
-**Fecha:** 2026-10-07
+**Commits:** `c71c78c` (docs: spec + plan), `f782797` (feat), `a686a58` (plan: estado),
+`6ed88eb` (evidencia), `8103b91` (justificación generalizada sin guiones)
+**Fecha:** 2026-10-07 (actualizada tras la regeneración de capturas)
 
 ## Resumen
 
@@ -36,14 +37,24 @@ omitida. Ejecución única: `45 passed in 0.48s`.
 
 | Archivo | Dimensiones | Contenido comprobado | Resultado |
 |---|---|---|---|
-| `escritorio-1280.png` | 1280×1394 | cabecera sin botón «Menú» y nav de 6 accesos; `<h1>Nosotros</h1>`; 4 bloques salvia con títulos «Misión/Visión/Experiencia profesional/Valores» y sus literales completos; «Volver al inicio»; pie con marca; columna centrada a 65ch; Palatino 18 px; solo colores de la paleta | PASS |
-| `movil-375.png` | 375×1903 | marca + botón «Menú» salvia; los 4 bloques apilados con literales completos; «Volver al inicio» y pie visibles; sin desbordamiento horizontal (contenido dentro de 375 px) | PASS |
+| `escritorio-1280.png` | 1280×1394 | cabecera sin botón «Menú» y nav de 6 accesos; `<h1>Nosotros</h1>`; 4 bloques salvia con títulos «Misión/Visión/Experiencia profesional/Valores» y sus literales completos **justificados y sin guiones** (bordes de línea en x375..904); «Volver al inicio» (y=1328-1340); pie con marca; columna centrada a 65ch; Palatino 18 px; solo colores de la paleta | PASS |
+| `movil-375.png` | 375×1903 | marca + botón «Menú» salvia (DOM: `display: block` con `.site-nav` oculto); los 4 bloques apilados con literales completos **justificados y sin guiones** (DOM: `hyphens: none` en los 4); «Volver al inicio» y pie visibles; `scrollWidth` = 375 (sin desbordamiento horizontal) | PASS |
+
+**Verificación tras `8103b91`** (CDP `Runtime.evaluate` con viewport exacto):
+
+| Viewport | Resultado |
+|---|---|
+| 1280×1394 | los 4 `.about__text` con `text-align: justify` + `hyphens: none`; líneas 531·531·531·477 / 531·531·531·460 / 531·531·531·235 / 531·531·451 (las completas = ancho del bloque); `lang=es`; `scrollWidth`=1280 |
+| 375×1903 | los 4 `.about__text` con justify + none; líneas 285×6·269 / 285×7·219 / 285×7·80 / 285×5·109; `scrollWidth`=375; `form`/`input` = 0; «Volver al inicio» presente |
 
 **Método**: Chrome 154 headless vía DevTools Protocol
 (`Emulation.setDeviceMetricsOverride` + `Page.captureScreenshot`, script
-`capture_cdp.ps1`, puerto 9444). La altura de documento se midió con
-`Runtime.evaluate` (`scrollHeight` 1394 px a 1280 y 1903 px a 375) para capturar la
-página completa sin recortes ni holguras. Ambas capturas revisadas visualmente.
+`capture_cdp.ps1`, perfil limpio en el puerto 9445, emulación fijada en la misma sesión
+que captura). Las alturas se midieron con `Runtime.evaluate`
+(`scrollHeight` 1394 px a 1280 y 1903 px a 375) y las capturas se regeneraron el
+2026-10-07 con esas alturas exactas. Además, muestreo de píxeles sobre la captura de
+escritorio confirma los bordes de línea justificados (x375..904 en las líneas
+completas de los 4 bloques y última línea corta de cada uno).
 
 ## Defectos encontrados
 
@@ -59,12 +70,14 @@ página completa sin recortes ni holguras. Ambas capturas revisadas visualmente.
 - [x] Spec 002 con literales y duda abierta cerrada (`c71c78c`).
 - [x] `plan.md` aprobado y actualizado (`c71c78c`, `a686a58`).
 - [x] Implementación y tests en verde (`f782797`; 45 PASS).
-- [x] Evidencia QA + capturas escritorio/móvil.
-- [ ] Commit/Push de esta evidencia.
+- [x] Evidencia QA + capturas escritorio/móvil (`6ed88eb`).
+- [x] Commit/Push de la evidencia (`6ed88eb`).
+- [x] Capturas y QA regenerados tras la justificación generalizada (`8103b91`).
 - [ ] Aceptación de la HU.
 
 ## Veredicto
 
 **PASS** — 45 tests en verde (los 29 de HU-001 intactos como regresión), cobertura
 completa de RF-1..RF-5, RNF-1 y ambos casos límite, y evidencia visual escritorio/móvil
-verificada. Quedan como trámite el commit de esta evidencia y la aceptación de la HU.
+regenerada y verificada por DOM + muestreo de píxeles tras la justificación
+generalizada. Único trámite pendiente: la aceptación de la HU.
