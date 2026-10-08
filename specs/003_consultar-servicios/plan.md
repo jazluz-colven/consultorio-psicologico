@@ -70,8 +70,9 @@ Consultorio_Carolina/
 │                                 #   [CL-3][regresión HU-001/002]
 ├── templates/
 │   └── services/index.html       # h1 «Servicios» + 1 <section> por servicio
-│                                 # (h2 nombre, <p> descripción, <ul> beneficios)
-│                                 # + «Volver al inicio»  [RF-1..RF-4][RNF-1]
+│                                 # (banner <img>, h2 nombre, <p> descripción,
+│                                 # <ul> beneficios) + «Volver al inicio»
+│                                 #   [RF-1..RF-4][RNF-1]
 ├── static/
 │   └── css/main.css              # .services-page-* mobile-first; paleta intacta
 │                                 # [RNF-1]
@@ -129,6 +130,10 @@ SERVICES_CATALOG: dict[str, dict[str, object]] = {
             "Acompañamiento personalizado: individual, de pareja o familiar.",
             "Un espacio seguro, sin juicios y confidencial para hablar abiertamente.",
         ],
+        "image": "img/servicios/psicologia-integral.webp",      # Q6, 2026-10-08
+        "image_alt": (                      # aprobado 2026-10-08
+            "Sesión de acompañamiento terapéutico en el consultorio"
+        ),
     },
     "nutrition": {
         "name": "Psiconutrición",
@@ -144,14 +149,19 @@ SERVICES_CATALOG: dict[str, dict[str, object]] = {
             "Vinculación entre lo emocional y lo alimentario en un mismo proceso.",
             "Planes personalizados adaptados a tu realidad y tus objetivos.",
         ],
+        "image": "img/servicios/psiconutricion.webp",           # Q6, 2026-10-08
+        "image_alt": (                      # aprobado 2026-10-08
+            "Sesión de acompañamiento nutricional con plan alimentario personalizado"
+        ),
     },
 }
 DEFAULT_SERVICES_CATALOG = copy.deepcopy(SERVICES_CATALOG)  # respaldo = spec
 ```
 
 **Reglas**: exactamente las 2 claves aprobadas (`psychology_integral`, `nutrition`);
-ningún `name`/`description` vacío o solo espacios; `benefits` con ≥1 ítem no vacío y sin
-duplicados; orden de presentación = orden del diccionario. Añadir un servicio futuro
+ningún `name`/`description`/`image`/`image_alt` vacío o solo espacios; `benefits` con
+≥1 ítem no vacío y sin duplicados; cada `image` existe como fichero estático bajo
+`static/`; orden de presentación = orden del diccionario. Añadir un servicio futuro
 exige actualizar primero la spec (spec primero).
 
 ---
@@ -186,7 +196,9 @@ FUNCTION validate_services():
         name = FIRST_NON_EMPTY(s.get("name"),        d["name"])
         desc = FIRST_NON_EMPTY(s.get("description"), d["description"])
         bens = FIRST_NON_BEMPTY_LIST(s.get("benefits"), d["benefits"])
-        resolved.append({key, name, desc, bens})
+        img  = FIRST_NON_EMPTY(s.get("image"),       d["image"])
+        alt  = FIRST_NON_EMPTY(s.get("image_alt"),   d["image_alt"])
+        resolved.append({key, name, desc, bens, img, alt})
         fallback = fallback OR (any field used default)
     RETURN resolved, fallback
     # Nunca se emite un servicio sin descripción ni sin beneficios;
@@ -229,6 +241,8 @@ párrafos `justify` + `hyphens: none` según la regla permanente de `AGENTS.md`)
        ≥1 <li> de beneficio                                        → absent ⇒ FAIL
 [RF-4] cada servicio en su propio <section> con su <h2>; sin campos
        mezclados entre servicios                                   → ausente/mixto ⇒ FAIL
+[imágenes] por cada servicio: <img> con src = fichero estático
+       existente y alt no vacío (banner superior del bloque)       → ausente/roto ⇒ FAIL
 [RNF-1] <meta viewport>, ≥1 @media (max-width…), paleta ⊆ 6 hex,
        medida CSS de la sección, párrafos justify + hyphens:none    → absent ⇒ FAIL
 [CL-1] catálogo vacío → 2 servicios completos con defaults         → vacío ⇒ FAIL
@@ -258,6 +272,7 @@ párrafos `justify` + `hyphens: none` según la regla permanente de `AGENTS.md`)
 | D11 | **CL-3 materializada como 404 de subrutas de `/servicios/…`** | Con página única (Q2) no existen rutas por servicio: cualquier recurso consultado bajo `/servicios/` responde 404 con la plantilla de errores ya registrada | *Fichas de detalle `/servicios/<slug>`*: descartada en Q2 (añadía ruta, plantilla y navegación sin un RF que los exija; la constitución #1 prioriza lo mínimo) | CL-3 |
 | D12 | **Sin CTA de agendamiento en la sección de servicios** | Fuera de alcance explícito de la spec («reserva desde la descripción»); el acceso a citas ya existe en la nav | *Botón «Agendar cita» por servicio*: introduce conversión/comercio no pedido y tocaría el contrato semántico de la portada | fuera de alcance |
 | D13 | **«Volver al inicio» al pie de la página** | Coherencia con `/nosotros` (D10 del plan 002) y E2E estable (TC-003-014) | *Sin enlace de retorno*: la sección queda como callejón sin salida | RF-1, finalización |
+| D14 | **Banner de imagen por servicio: `<img>` al inicio de cada `<section>`, proporción fija (`aspect-ratio: 2/1`) con `object-fit: cover` y `border-radius`; rutas y `alt` literales en el catálogo (Q6)** | Ampliación pedida por la usuaria (2026-10-08) que enriquece RF-1 sin tocar RF-3/RF-4; el `alt` es contrato de accesibilidad y la ruta vive en el catálogo (espejo en `expected_content.py`); el PNG original (1 MB) se convierte a WebP (~55 KB) para no penalizar carga (RNF-1) | *Fondo CSS con `background-image`*: pierde `alt` y accesibilidad. *Dejar el PNG de 1 MB*: 20× más pesado que su versión WebP. *Imagen libre en la plantilla*: rompe el espejo spec → catálogo → test | RF-1, RNF-1 |
 
 ---
 
@@ -272,15 +287,16 @@ dependencia del orden. `tests/expected_content.py` concentra los literales de la
 
 | ID | Archivo | Objetivo y resultado esperado | RF |
 |---|---|---|---|
-| TC-003-001 | `test_services_content.py` | `SERVICES_CATALOG` tiene exactamente las claves aprobadas, sin campos vacíos ni beneficios duplicados | RF-1, RF-4 |
-| TC-003-002 | `test_services_content.py` | `DEFAULT_SERVICES_CATALOG` = literales de la spec (descripción y beneficios) y `SERVICES_PAGE_TITLE` = «Servicios» | RF-2, RF-3, CL-1 |
+| TC-003-001 | `test_services_content.py` | `SERVICES_CATALOG` tiene exactamente las claves aprobadas, sin campos vacíos (incluidos `image`/`image_alt`) ni beneficios duplicados | RF-1, RF-4 |
+| TC-003-002 | `test_services_content.py` | `DEFAULT_SERVICES_CATALOG` = literales de la spec (descripción, beneficios, imagen y alt) y `SERVICES_PAGE_TITLE` = «Servicios» | RF-2, RF-3, CL-1 |
 | TC-003-003 | `test_services_content.py` | **RF-2 (unit):** el catálogo contiene «Psicología Integral» y «Psiconutrición»; coherencia de nombres con `SERVICES_HIGHLIGHT` de la portada | RF-2, regresión |
 | TC-003-004 | `test_services_content.py` | **RF-3 (unit):** cada servicio tiene `description` no vacía y ≥1 `benefits` no vacío | RF-3, CL-2 |
+| TC-003-016 | `test_services_content.py` | Cada `image` del catálogo existe como fichero estático bajo `static/` y su `image_alt` no está vacío | RF-1, imágenes |
 | TC-003-005 | `test_services_service.py` | `get_services_view()` devuelve los 2 servicios completos y `fallback_active=False` | RF-1..4 |
 | TC-003-006 | `test_services_service.py` | **CL-1:** catálogo vacío (monkeypatch) → defaults aplicados, `fallback_active=True`, ningún servicio sin bloques | RF-1, CL-1 |
 | TC-003-007 | `test_services_service.py` | **CL-2:** `description` o `benefits` vacíos (monkeypatch) → default por campo/lista; ningún servicio emitido incompleto | RF-3, CL-2 |
 | TC-003-008 | `test_services_routes.py` | `GET /servicios` → **200** con `<h1>Servicios</h1>` y los 2 nombres dentro de `<main>` | RF-1, RF-2 |
-| TC-003-009 | `test_services_routes.py` | `GET /servicios` → **200** con 2 `<section>` propios, cada uno con descripción y `<ul>` de beneficios | RF-3, RF-4 |
+| TC-003-009 | `test_services_routes.py` | `GET /servicios` → **200** con 2 `<section>` propios, cada uno con `<img>` (src + alt), descripción y `<ul>` de beneficios | RF-3, RF-4, imágenes |
 | TC-003-010 | `test_services_routes.py` | `POST/PUT/DELETE /servicios` → **405** sin efectos secundarios | CL-3, fuera de alcance |
 | TC-003-011 | `test_services_routes.py` | **CL-3:** `GET /servicios/<recurso desconocido>` → **404** con `errors/404.html` | CL-3 |
 | TC-003-012 | `test_services_routes.py` | Regresión: `PLACEHOLDER_SECTIONS` sin `/servicios` y `/articulos`, `/contacto`, `/citas` siguen «Sección en construcción.»; `/`, `/nosotros` intactos; nav de 6 hrefs → 200 | regresión HU-001/002 |
@@ -328,6 +344,7 @@ Evidencia visual: docs/evidencias/hu-003/escritorio-1280.png, movil-375.png
 | Q3 | Copy de descripción y beneficios | **Propuestas del plan (§2) aprobadas por la usuaria el 2026-10-07** → se fijan en la spec 003 antes de codificar (mismo flujo que HU-002). |
 | Q4 | Rama de trabajo | **Merge `feature/hu-002` → `main`** (HU-002 aceptada) y **`feature/hu-003` desde `main`**. |
 | Q5 | Persistencia | Sin `persistence/` en HU-003 (contenido estático; D2). |
+| Q6 | Imágenes por servicio | **Banner superior en cada bloque con proporción fija y esquinas redondeadas; PNG convertido a WebP** (decisión de la usuaria, 2026-10-08); rutas y `alt` como contrato en la spec 003 y en el catálogo (D14). |
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
@@ -338,9 +355,9 @@ Evidencia visual: docs/evidencias/hu-003/escritorio-1280.png, movil-375.png
 - [x] Merge a `main` y creación de `feature/hu-003` (Q4).
 - [x] Implementar módulos, plantilla y CSS (§1–§4).
 - [x] Tests (§6) y `pytest -q` en verde (45 actuales + nuevos).
-- [x] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual
+- [ ] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual
       (`escritorio-1280.png`, `movil-375.png`, verificadas) con demo sobre el servidor
-      (`GET /servicios` → 200).
+      (`GET /servicios` → 200) — **regenerar tras la ampliación de imágenes (Q6)**.
 - [x] Commit/Push de la evidencia y actualización de `MEMORY.md`.
 - [ ] Aceptación de la HU (checkbox del informe QA).
 

@@ -51,5 +51,11 @@ Beneficios:
 - Vinculación entre lo emocional y lo alimentario en un mismo proceso.
 - Planes personalizados adaptados a tu realidad y tus objetivos.
 
+### Imágenes de cada servicio
+Cada bloque de servicio muestra una fotografía propia en la parte superior, como banner de proporción fija con esquinas redondeadas (aprobado el 2026-10-08). Rutas y textos alternativos son contrato:
+
+- Psicología Integral → `img/servicios/psicologia-integral.webp` — alt: «Sesión de acompañamiento terapéutico en el consultorio»
+- Psiconutrición → `img/servicios/psiconutricion.webp` — alt: «Sesión de acompañamiento nutricional con plan alimentario personalizado»
+
 ## Dudas abiertas
 - ~~[NECESITA ACLARACIÓN] Confirmar si existen servicios adicionales obligatorios además de los mínimos definidos.~~ **CERRADA (2026-10-07): solo los 2 mínimos (Psicología Integral y Psiconutrición), sin servicios adicionales (Q1 del plan 003).**
