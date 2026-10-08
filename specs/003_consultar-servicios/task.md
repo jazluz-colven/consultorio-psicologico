@@ -37,7 +37,7 @@
   (coherencia con `SERVICES_HIGHLIGHT`), description/beneficios no vacíos.
   Hecho cuando: `python -m pytest tests/test_services_content.py -v` → todos PASS, 0 FAIL.
 
-- [ ] **T6 — Módulo de servicio `services/services_service.py` (plan §3)** `[RF-1..RF-4][CL-1][CL-2]`
+- [x] **T6 — Módulo de servicio `services/services_service.py` (plan §3)** `[RF-1..RF-4][CL-1][CL-2]`
   `ServicesView`, `get_services_view()` y `validate_services()` con fallback por campo y
   por lista (FIRST_NON_EMPTY / lista no vacía), sin bloques incompletos.
   Hecho cuando: `python -c "from consultorio.services.services_service import get_services_view as g; v = g(); assert len(v.items) == 2 and v.fallback_active is False"` → exit 0.
