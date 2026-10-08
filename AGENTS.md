@@ -291,6 +291,8 @@ requisitos.
 La fuente de verdad funcional es la especificación aprobada.
 parte."
 
+Nunca reescribas código que ya funciona.
+
 ## Memoria del proyecto
 
 * Al comenzar una tarea, leer `MEMORY.md`.
