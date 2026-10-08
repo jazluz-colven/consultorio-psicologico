@@ -35,7 +35,7 @@ aporte.
   transparente.
 
 ## Próximos pasos
-- Guardar las capturas en `docs/evidencias/hu-001/` (`escritorio-1280.png`,
-  `movil-375.png`) y registrar el veredicto QA.
+- Evidencia de HU-001 **completa y PASS**: `docs/evidencias/hu-001/`
+  (`escritorio-1280.png`, `movil-375.png`, `*-devtools.png`, `qa-hu-001.md`).
 - Solicitar aceptación de HU-001; configurar remoto y hacer push cuando exista.
 - Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.
