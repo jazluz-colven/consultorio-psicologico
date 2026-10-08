@@ -3,7 +3,7 @@
 **HU:** HU-001
 **Rama:** `feature/hu-001`
 **Commits:** `2ebaa46` (docs), `85a0e9d` (feat), `3203047` (docs), `aa5379c` (evidencia),
-`4c1266a` (tipografía), `6b7dc3f` (evidencia regenerada)
+`4c1266a` (tipografía), `6b7dc3f` (evidencia regenerada), `434ef1e` (evidencia DevTools)
 **Fecha:** 2026-10-07 (actualizada tras el cambio tipográfico)
 
 ## Resumen
@@ -93,7 +93,7 @@ ocupa x≥362 (padding de 24 px), es decir, sin desbordamiento horizontal a 375 
 ## Pendientes de cierre
 
 - [x] Commit del cambio tipográfico y de la evidencia regenerada.
-- [ ] Commit de la evidencia DevTools `*-devtools.png` regenerada (2026-10-07).
+- [x] Commit de la evidencia DevTools `*-devtools.png` regenerada (`434ef1e`, 2026-10-07).
 - [ ] Aceptación de la HU.
 
 ## Veredicto
