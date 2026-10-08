@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ services.title }} — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="services-page">
+    <h1 class="services-page__title">{{ services.title }}</h1>
+
+    {% for service in services.items %}
+    <section class="services-page__block">
+        <h2 class="services-page__block-title">{{ service.name }}</h2>
+        <p class="services-page__text">{{ service.description }}</p>
+        <ul class="services-page__benefits">
+            {% for benefit in service.benefits %}
+            <li class="services-page__benefit">{{ benefit }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endfor %}
+
+    <p class="services-page__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
+</article>
+{% endblock %}

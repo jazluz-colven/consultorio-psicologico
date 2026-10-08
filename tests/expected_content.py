@@ -65,7 +65,7 @@ NAV_LINKS = [
     {"label": "Agendar cita", "url": "/citas"},
 ]
 
-PLACEHOLDER_SECTIONS = ["/servicios", "/articulos", "/contacto", "/citas"]
+PLACEHOLDER_SECTIONS = ["/articulos", "/contacto", "/citas"]
 
 ABOUT_CONTENT = {
     "mission": (

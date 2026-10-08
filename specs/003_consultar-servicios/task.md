@@ -47,7 +47,7 @@
   `fallback_active=True`; CL-2 con description/benefits vacíos → defaults por campo.
   Hecho cuando: `python -m pytest tests/test_services_service.py -v` → todos PASS, 0 FAIL.
 
-- [ ] **T8 — Capa web + plantilla + placeholders (plan §8.5-6)** `[RF-1..RF-4][CL-3][regresión HU-001/002]`
+- [x] **T8 — Capa web + plantilla + placeholders (plan §8.5-6)** `[RF-1..RF-4][CL-3][regresión HU-001/002]`
   `web/services.py` (blueprint GET `/servicios`), retiro de `/servicios` de
   `placeholders.py`, registro en `create_app()`, `PLACEHOLDER_SECTIONS` sin `/servicios`
   (D6) y `templates/services/index.html` (h1, un `<section>` con h2 + descripción +
