@@ -359,7 +359,7 @@ Evidencia visual: docs/evidencias/hu-003/escritorio-1280.png, movil-375.png
       (`escritorio-1280.png`, `movil-375.png`, verificadas) con demo sobre el servidor
       (`GET /servicios` → 200) — **regenerada tras la ampliación de imágenes (Q6)**.
 - [x] Commit/Push de la evidencia y actualización de `MEMORY.md`.
-- [ ] Aceptación de la HU (checkbox del informe QA).
+- [x] Aceptación de la HU (checkbox del informe QA, 2026-10-08).
 
 ---
 

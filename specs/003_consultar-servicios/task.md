@@ -98,6 +98,6 @@
   Hecho cuando: `python -m pytest -q` → 0 FAIL, `GET /servicios` sirve ambas imágenes
   (200) y las capturas/QA se regeneran con el banner visible.
 
-- [ ] **T15 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T15 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-003/qa-hu-003.md`
   está marcado con fecha y el plan §7.2 queda íntegramente en `[x]`.

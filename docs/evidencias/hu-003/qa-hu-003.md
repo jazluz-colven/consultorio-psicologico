@@ -93,18 +93,19 @@ alturas exactas; dimensiones de los PNG verificadas por cabecera IHDR.
 - [x] `plan.md` aprobado (2026-10-07) y task.md seguido por orden.
 - [x] Implementación y tests en verde (18 tests nuevos; 63 PASS).
 - [x] Evidencia QA + capturas escritorio/móvil regeneradas con banners.
-- [ ] Commit/Push de la evidencia y actualización de `MEMORY.md`.
-- [ ] Aceptación de la HU (checkbox de abajo).
+- [x] Commit/Push de la evidencia y actualización de `MEMORY.md` (`d659139`).
+- [x] Aceptación de la HU (checkbox de abajo).
 
 ## Veredicto
 
 **PASS** — 63 tests en verde (los 45 de HU-001/002 intactos como regresión),
 cobertura completa de RF-1..RF-4, imágenes por servicio (Q6/D14), RNF-1,
 CL-1..CL-3 y fuera de alcance, y evidencia visual escritorio/móvil regenerada y
-verificada por DOM + medidas de PNG.
+verificada por DOM + medidas de PNG. HU aceptada por la usuaria el 2026-10-08:
+**HU-003 CERRADA**.
 
 ---
 
 ## Aceptación de la HU
 
-- [ ] Aceptada por la usuaria el ____/____/________
+- [x] Aceptada por la usuaria el 08/10/2026

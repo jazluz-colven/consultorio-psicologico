@@ -11,18 +11,18 @@ aporte.
   `c71c78c` spec+plan, `f782797` feat, `a686a58` plan, `6ed88eb` evidencia,
   `8103b91` justificación generalizada, `5038f6b` evidencia regenerada,
   cierre de aceptación en `qa-hu-002.md`).
-- **HU-003 (Spec 003) EN EVIDENCIA** (2026-10-08, rama `feature/hu-003` nacida de
-  `main` tras merge de HU-002): página `/servicios` con los 2 servicios (catálogo +
-  servicio + blueprint + plantilla + CSS `.services-page-*`), fallback por campo,
-  404 de subrutas y **banner de imagen por servicio** (Q6/D14, 2026-10-08: WebP
-  1200×600 y 1200×800, `aspect-ratio: 2/1` + `object-fit: cover` + `border-radius`;
-  el PNG original de 1 MB se convirtió a WebP 55 KB). Veredicto QA **PASS** en
-  `docs/evidencias/hu-003/qa-hu-003.md`; capturas `escritorio-1280.png` (1280×1965) y
-  `movil-375.png` (375×2286). Commits: `e6ad118` plan/tasks, `6440e74` spec, `72167bd`
-  espejo, `84169a4` catálogo, `18f5a85` tests contenido, `c16a098` servicio,
-  `5b5dbdb` tests servicio, `66d980a` web+plantilla, `5be6b48` CSS, `249dae6` tests
-  ruta, `6d4a5f4` tests HU, `6f2a9c4` regresión, `6992364` evidencia, `4ba8ce0`
-  imágenes. Pendiente: aceptación de la usuaria.
+- **HU-003 (Spec 003) ACEPTADA y CERRADA** (2026-10-08, rama `feature/hu-003`):
+  página `/servicios` con los 2 servicios (catálogo + servicio + blueprint +
+  plantilla + CSS `.services-page-*`), fallback por campo, 404 de subrutas y
+  **banner de imagen por servicio** (Q6/D14: WebP 1200×600 y 1200×800,
+  `aspect-ratio: 2/1` + `object-fit: cover` + `border-radius`; el PNG original de
+  1 MB se convirtió a WebP 55 KB). Veredicto QA **PASS** en
+  `docs/evidencias/hu-003/qa-hu-003.md` (aceptación 2026-10-08); capturas
+  `escritorio-1280.png` (1280×1965) y `movil-375.png` (375×2286). Commits:
+  `6440e74` spec, `84169a4` catálogo, `c16a098` servicio, `66d980a` web+plantilla,
+  `5be6b48` CSS, tests en `18f5a85`/`5b5dbdb`/`249dae6`/`6d4a5f4`, `6f2a9c4`
+  regresión, `6992364`+`d659139` evidencia/imágenes; cierre de aceptación en
+  `qa-hu-003.md`. **Pendiente de merge a `main` al comenzar la siguiente HU (Q4/T1).**
 - Tests: **63 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1 (29 de HU-001 + 16 de HU-002 + 18 de HU-003). Contrato HU-001: 28 PASS.
 - **Tipografía vigente**: Palatino, cuerpo base 18 px, h1 con `text-wrap: balance` y
@@ -70,6 +70,6 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-003 en evidencia (QA PASS 2026-10-08): falta **push de la evidencia y
-  aceptación de la usuaria** (`qa-hu-003.md` checkbox). Después: siguiente HU según
-  prioridad (spec y plan primero, regla de oro SDD).
+- HU-003 cerrada (aceptada 2026-10-08). Al comenzar la siguiente HU: **merge
+  `feature/hu-003` → `main`** y crear su rama desde `main` (Q4/T1); spec y plan
+  primero (regla de oro SDD).
