@@ -32,7 +32,7 @@
   con claves en inglés y literales en español (D9).
   Hecho cuando: `python -c "from consultorio.content.services_catalog import SERVICES_CATALOG as c, DEFAULT_SERVICES_CATALOG as d; assert c == d and len(c) == 2 and all(v['description'] and v['benefits'] for v in c.values())"` → exit 0.
 
-- [ ] **T5 — Tests de contenido `test_services_content.py` (plan §6.1, TC-001..004)** `[RF-1..RF-4][RF-3][CL-1][CL-2]`
+- [x] **T5 — Tests de contenido `test_services_content.py` (plan §6.1, TC-001..004)** `[RF-1..RF-4][RF-3][CL-1][CL-2]`
   Integridad del catálogo, defaults = spec, presencia de los 2 nombres mínimos
   (coherencia con `SERVICES_HIGHLIGHT`), description/beneficios no vacíos.
   Hecho cuando: `python -m pytest tests/test_services_content.py -v` → todos PASS, 0 FAIL.
