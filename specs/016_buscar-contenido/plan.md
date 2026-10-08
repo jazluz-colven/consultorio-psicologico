@@ -254,8 +254,9 @@ Caso: TC-016-005
 Comando: python -m pytest tests/test_search_routes.py -v
 Resultado: PASS
 Rama: feature/identidad-buscador
-Commit: <hash>
-Evidencia visual: documentada en MEMORY.md (decisión del usuario de no regenerar PNG)
+Commit: f53282d (tests); d0e2d4c (docs) y ed36013 (feat)
+Evidencia visual: documentada en docs/evidencias/hu-016/qa-hu-016.md
+(decisión de la usuaria de no regenerar PNG — Q6)
 ```
 
 - Veredicto QA: `PASS` / `PARCIAL` / `FAIL` (skill `pytest-qa`, §20).
