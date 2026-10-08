@@ -7,10 +7,10 @@ aporte.
 - Versión 1.0 - En desarrollo
 - **HU-001 (Spec 001) ACEPTADA** (2026-10-07): portada completa, rama `feature/hu-001`,
   cerrada en `ba23658`.
-- **HU-002 (Spec 002) implementada con evidencia PASS y PENDIENTE de aceptación**
-  (rama `feature/hu-002`; `c71c78c` spec+plan, `f782797` feat, `a686a58` plan,
-  `6ed88eb` evidencia, `8103b91` justificación generalizada, y commit de evidencia
-  regenerada posterior).
+- **HU-002 (Spec 002) ACEPTADA y CERRADA** (2026-10-07, rama `feature/hu-002`;
+  `c71c78c` spec+plan, `f782797` feat, `a686a58` plan, `6ed88eb` evidencia,
+  `8103b91` justificación generalizada, `5038f6b` evidencia regenerada,
+  cierre de aceptación en `qa-hu-002.md`).
 - Tests: **45 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1 (29 de HU-001 + 16 de HU-002). Contrato HU-001: 28 PASS (script
   actualizado tras implementarse `/nosotros`).
@@ -56,5 +56,5 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **PENDIENTE**: aceptación de HU-002 (checkbox en `docs/evidencias/hu-002/qa-hu-002.md`).
-  Tras aceptar, valorar HU-003 (Servicios).
+- HU-002 cerrada (aceptada 2026-10-07). Siguiente: **HU-003 (Servicios)** — spec y
+  plan primero (regla de oro SDD).

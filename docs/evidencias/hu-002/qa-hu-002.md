@@ -73,11 +73,11 @@ completas de los 4 bloques y última línea corta de cada uno).
 - [x] Evidencia QA + capturas escritorio/móvil (`6ed88eb`).
 - [x] Commit/Push de la evidencia (`6ed88eb`).
 - [x] Capturas y QA regenerados tras la justificación generalizada (`8103b91`).
-- [ ] Aceptación de la HU.
+- [x] Aceptación de la HU (2026-10-07).
 
 ## Veredicto
 
 **PASS** — 45 tests en verde (los 29 de HU-001 intactos como regresión), cobertura
 completa de RF-1..RF-5, RNF-1 y ambos casos límite, y evidencia visual escritorio/móvil
 regenerada y verificada por DOM + muestreo de píxeles tras la justificación
-generalizada. Único trámite pendiente: la aceptación de la HU.
+generalizada. HU aceptada por el usuario el 2026-10-07: **HU-002 CERRADA**.

@@ -2,9 +2,9 @@
 
 > Trazabilidad: **HU-002 → Spec 002 (`specs/002_conocer-consultorio/spec.md`) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs` (Q5).
-> Etapa actual: **EVIDENCIA CERRADA** (2026-10-07): `pytest -q` → **45 PASS / 0 FAIL**,
-> `docs/evidencias/hu-002/` completa (`qa-hu-002.md` + 2 capturas). **PENDIENTE de
-> aceptación de la HU.**
+> Etapa actual: **HU-002 ACEPTADA / CERRADA** (2026-10-07): `pytest -q` →
+> **45 PASS / 0 FAIL**, `docs/evidencias/hu-002/` completa (`qa-hu-002.md` + 2 capturas,
+> PASS) y aceptación registrada en la evidencia.
 > Ramas: `main` y `feature/hu-002` creadas en `ba23658` (cabecera de HU-001 aceptada).
 
 ---
