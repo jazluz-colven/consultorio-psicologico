@@ -1,6 +1,6 @@
 SECONDARY_BRAND = "Contenidas"
 
-BRAND_NAME = "Consultorio Psicológico Carolina Gómez"
+BRAND_NAME = "Carolina Gómez"
 
 TAGLINE = "Acompañamiento psicológico y nutricional con calidez profesional"
 
@@ -22,9 +22,29 @@ TRUST_LINE = (
     "Nuestro compromiso es tu bienestar en un espacio seguro y sin juicios."
 )
 
-HERO_SRC = "img/hero-contenidas.png"
+HERO_SRC = "img/hero-presentacion.png"
 
-HERO_ALT = "Retrato ilustrado con flores y una cinta rosa que dice «Contenidas»"
+HERO_ALT = "Retrato de Carolina Gómez en su consultorio con la leyenda «Salud mental»"
+
+HEADER_LOGO_SRC = "img/hero-contenidas.png"
+
+HEADER_LOGO_ALT = "Contenidas"
+
+SEARCH_URL = "/buscar"
+
+SEARCH_QUERY_PARAM = "q"
+
+SEARCH_LABEL = "Buscar en el sitio"
+
+SEARCH_PLACEHOLDER = "Buscar en el sitio…"
+
+SEARCH_EMPTY_MESSAGE = "Escribe un término para buscar en el sitio."
+
+SEARCH_NO_RESULTS_PREFIX = "No se encontraron resultados para «"
+
+SEARCH_RESULTS_TITLE = "Resultados de búsqueda"
+
+SEARCH_RESULTS_STATUS = "para «"
 
 PLACEHOLDER_SRC = "img/placeholder.svg"
 

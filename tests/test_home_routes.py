@@ -24,10 +24,12 @@ def test_get_home_devuelve_presentacion_clara(client) -> None:
 def test_get_home_muestra_imagen_representativa(client) -> None:
     html = _home_html(client)
 
-    match = re.search(r"<img[^>]*>", html)
+    match = re.search(
+        r'<figure class="hero__figure">.*?(<img[^>]*>)', html, re.S
+    )
     assert match is not None
 
-    image_tag = match.group(0)
+    image_tag = match.group(1)
     assert f'alt="{expected.HERO_ALT}"' in image_tag
     assert f'filename="{expected.HERO_SRC}"' in html or expected.HERO_SRC in image_tag
 
@@ -53,9 +55,12 @@ def test_post_home_devuelve_405(client) -> None:
 
 def test_home_no_contiene_formularios_ni_administracion(client) -> None:
     html = _home_html(client).lower()
+    html_sin_buscador = re.sub(
+        r'<form class="site-search".*?</form>', "", html, flags=re.S
+    )
 
-    assert "<form" not in html
-    assert "<input" not in html
+    assert "<form" not in html_sin_buscador
+    assert "<input" not in html_sin_buscador
     assert "type=\"password\"" not in html
     assert "admin" not in html
 
