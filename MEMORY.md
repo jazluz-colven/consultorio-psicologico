@@ -12,7 +12,7 @@ aporte.
   pytest 9.1.1.
 - Specs y plan en `specs/001_visualizar-pinicio/`.
 - Commits en `feature/hu-001` (remoto `origin`: github.com/jazluz-colven/consultorio-psicologico,
-  rama sincronizada en `012880d`): `2ebaa46` y `3203047`/`aa5379c` (docs), `85a0e9d` (feat),
+  rama sincronizada en `0491da1`): `2ebaa46` y `3203047`/`aa5379c` (docs), `85a0e9d` (feat),
   `4c1266a` (tipografía), `6b7dc3f`/`434ef1e`/`012880d` (evidencia).
 - **Tipografía vigente y commitada**: portada en Palatino, párrafo del hero justificado
   (solo `.hero__intro`), **cuerpo base 18 px** (`html { font-size: 112.5% }`, escala
