@@ -27,7 +27,7 @@
   Hecho cuando: `python -c "from tests.expected_content import SERVICES_CATALOG as c; assert set(c) == {'psychology_integral', 'nutrition'}"` → exit 0
   y `python -m pytest -q` sigue en **45 PASS / 0 FAIL**.
 
-- [ ] **T4 — Módulo de contenido `content/services_catalog.py` (plan §2)** `[RF-1..RF-4][CL-1][CL-2]`
+- [x] **T4 — Módulo de contenido `content/services_catalog.py` (plan §2)** `[RF-1..RF-4][CL-1][CL-2]`
   `SERVICES_CATALOG`, `DEFAULT_SERVICES_CATALOG` (deepcopy) y `SERVICES_PAGE_TITLE`,
   con claves en inglés y literales en español (D9).
   Hecho cuando: `python -c "from consultorio.content.services_catalog import SERVICES_CATALOG as c, DEFAULT_SERVICES_CATALOG as d; assert c == d and len(c) == 2 and all(v['description'] and v['benefits'] for v in c.values())"` → exit 0.
