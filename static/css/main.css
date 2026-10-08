@@ -260,6 +260,57 @@ a:focus {
     font-weight: bold;
 }
 
+.services-page {
+    max-width: 65ch;
+    margin-inline: auto;
+}
+
+.services-page__title {
+    margin: 0 0 1.5rem;
+    color: var(--color-text);
+    font-size: 1.8rem;
+    text-wrap: balance;
+}
+
+.services-page__block {
+    max-width: 65ch;
+    margin: 0 0 1.5rem;
+    padding: 1.5rem;
+    background-color: var(--color-secondary);
+    border-radius: 12px;
+}
+
+.services-page__block-title {
+    margin: 0 0 0.5rem;
+    color: var(--color-primary);
+    font-size: 1.3rem;
+}
+
+.services-page__text {
+    margin: 0 0 1rem;
+    text-align: justify;
+    hyphens: none;
+}
+
+.services-page__benefits {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.services-page__benefit {
+    margin: 0 0 0.35rem;
+    text-align: justify;
+    hyphens: none;
+}
+
+.services-page__back {
+    margin: 2rem 0 0;
+}
+
+.services-page__back a {
+    font-weight: bold;
+}
+
 .placeholder {
     padding: 3rem 1.5rem;
     text-align: center;

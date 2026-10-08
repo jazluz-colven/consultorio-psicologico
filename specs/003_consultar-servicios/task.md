@@ -55,7 +55,7 @@
   Hecho cuando: `python -c "from consultorio import create_app; c = create_app().test_client(); r = c.get('/servicios'); assert r.status_code == 200 and 'Servicios</h1>' in r.get_data(as_text=True) and 'Psicología Integral' in r.get_data(as_text=True) and 'Psiconutrición' in r.get_data(as_text=True)"` → exit 0
   y `python -m pytest -q` → 0 FAIL.
 
-- [ ] **T9 — CSS `.services-page-*` en `main.css` (plan §8.7, D10)** `[RNF-1][CL-2]`
+- [x] **T9 — CSS `.services-page-*` en `main.css` (plan §8.7, D10)** `[RNF-1][CL-2]`
   Sección mobile-first con medida `max-width` ≈ 65ch por bloque, párrafos
   `text-align: justify` + `hyphens: none`, paleta intacta (solo los 6 hex).
   Hecho cuando: `grep -c "#789B8A\|#B8D8CE\|#F7F3EA\|#D99A7A\|#E8D5B5\|#30454B" static/css/main.css` no introduce hex nuevos (test de paleta en verde) y
