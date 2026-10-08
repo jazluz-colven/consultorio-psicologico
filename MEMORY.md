@@ -7,13 +7,16 @@ aporte.
 - Versión 1.0 - En desarrollo
 - **HU-001 (Spec 001) implementada y ACEPTADA** (2026-10-07): portada con identidad,
   imagen representativa, resumen de servicios, frase de valores, marca secundaria
-  «Contenidas» y menú de 6 accesos. Rama `feature/hu-001`. **No iniciar HU-002 aún**.
-- Tests: **29 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
-  pytest 9.1.1.
+  «Contenidas» y menú de 6 accesos. Rama `feature/hu-001`.
+- **HU-002 (Spec 002) implementada con evidencia PASS** (2026-10-07, `feature/hu-002`):
+  `/nosotros` con Misión/Visión/Experiencia/Valores según literales de la spec;
+  **PENDIENTE de aceptación**.
+- Tests: **45 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
+  pytest 9.1.1 (29 de HU-001 + 16 de HU-002).
 - Specs y plan en `specs/001_visualizar-pinicio/`.
-- Commits en `feature/hu-001` (remoto `origin`: github.com/jazluz-colven/consultorio-psicologico,
-  rama sincronizada en `0491da1`): `2ebaa46` y `3203047`/`aa5379c` (docs), `85a0e9d` (feat),
-  `4c1266a` (tipografía), `6b7dc3f`/`434ef1e`/`012880d` (evidencia).
+- Commits: remoto `origin` (github.com/jazluz-colven/consultorio-psicologico);
+  HU-001 cerrada en `ba23658`; HU-002: `c71c78c` (spec+plan), `f782797` (feat),
+  `a686a58` (plan) y cierre de evidencia en el commit correspondiente.
 - **Tipografía vigente y commitada**: portada en Palatino, párrafo del hero justificado
   (solo `.hero__intro`), **cuerpo base 18 px** (`html { font-size: 112.5% }`, escala
   1.125× en todos los `rem`; cortes `px` intactos) y h1 del hero equilibrado con
@@ -28,9 +31,9 @@ aporte.
   `persistence/` se crea con la primera HU que use BD.
 - **Spec 001 con textos literales contractuales** (Q8): cambiar un copy obliga a PR de
   spec primero; `tests/expected_content.py` es su espejo.
-- **Rutas placeholder** `/nosotros`, `/servicios`, `/articulos`, `/contacto`, `/citas`
-  responden 200 con «Sección en construcción» (Q1); cada HU posterior sustituye su
-  plantilla.
+- **Rutas placeholder** (Q1) ahora solo `/servicios`, `/articulos`, `/contacto`,
+  `/citas` responden «Sección en construcción»; `/nosotros` fue sustituida por HU-002
+  (`PLACEHOLDER_SECTIONS` ajustado, D11).
 - **Sin botón CTA en el hero**; «Agendar cita» vive solo en el menú.
 - Colores de la ilustración NO se usan como colores de UI: paleta Serenidad Natural
   intacta (solo los 6 hex aprobados).
@@ -44,8 +47,11 @@ aporte.
 - **Chrome 154 headless no renderiza a menos de 500 px**: `--window-size=375` recorta la
   imagen de 500 px y la maqueta parece desbordada (no lo está). Para capturas exactas
   usar DevTools Protocol (`Emulation.setDeviceMetricsOverride`); script de apoyo en
-  `C:\Users\Jaz\AppData\Local\Temp\opencode\capture_cdp.ps1`.
+  `C:\Users\Jaz\AppData\Local\Temp\opencode\capture_cdp.ps1` (miden `scrollHeight` con
+  `Runtime.evaluate` antes de capturar).
+- **Jinja + claves de dict con nombre de método**: `{{ d.values }}` resuelve al método
+  `dict.values`, no a la clave; usar `{{ d["values"] }}` (bug visto en HU-002).
 
 ## Próximos pasos
-- HU-001 **CERRADA** (aceptada). Esperar orden para arrancar HU-002 (Nosotros):
-  spec en `specs/002_conocer-consultorio/spec.md`, aún sin `plan.md`.
+- **PENDIENTE**: aceptación de HU-002 (checkbox en `docs/evidencias/hu-002/qa-hu-002.md`);
+  evidencia y push ya hechos. Tras aceptar, valorar HU-003 (Servicios).
