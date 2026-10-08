@@ -16,17 +16,21 @@ def create_app(settings: Any = None) -> Flask:
         app.config.from_object(settings)
 
     from consultorio.errors import register_error_handlers
+    from consultorio.persistence.database import init_db
     from consultorio.web.about import bp as about_bp
+    from consultorio.web.appointments import bp as appointments_bp
     from consultorio.web.home import bp as home_bp
     from consultorio.web.placeholders import bp as sections_bp
     from consultorio.web.search import bp as search_bp
     from consultorio.web.services import bp as services_bp
 
     app.register_blueprint(about_bp)
+    app.register_blueprint(appointments_bp)
     app.register_blueprint(home_bp)
     app.register_blueprint(sections_bp)
     app.register_blueprint(search_bp)
     app.register_blueprint(services_bp)
     register_error_handlers(app)
+    init_db(app.config["DATABASE_PATH"])
 
     return app

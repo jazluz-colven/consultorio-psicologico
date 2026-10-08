@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ confirmation_title }} — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="appointment appointment--confirmation">
+    <h1 class="appointment__title">{{ confirmation_title }}</h1>
+
+    <dl class="appointment__summary">
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">Servicio</dt>
+            <dd class="appointment__summary-value">{{ service_name }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">Fecha</dt>
+            <dd class="appointment__summary-value">{{ appointment.date }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">Hora</dt>
+            <dd class="appointment__summary-value">{{ appointment.time }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">Estado</dt>
+            <dd class="appointment__summary-value">{{ status_label }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">Paciente</dt>
+            <dd class="appointment__summary-value">{{ appointment.patient_name }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">Correo electrónico</dt>
+            <dd class="appointment__summary-value">{{ appointment.email }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">Celular</dt>
+            <dd class="appointment__summary-value">{{ appointment.phone }}</dd>
+        </div>
+    </dl>
+
+    <p class="appointment__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
+</article>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="appointment">
+    <h1 class="appointment__title">{{ page_title }}</h1>
+
+    <form class="appointment__form" method="post" action="{{ url_for('appointments.index') }}" novalidate>
+        <p class="appointment__field{% if errors.get('service') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="service">Servicio</label>
+            <select class="appointment__input" id="service" name="service" required>
+                <option value="" {% if not values.get('service') %}selected{% endif %} disabled>Selecciona un servicio</option>
+                {% for item in services.items %}
+                <option value="{{ item.key }}" {% if values.get('service') == item.key %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+            </select>
+            {% if errors.get('service') %}<span class="appointment__error">{{ errors['service'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__field{% if errors.get('date') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="date">Fecha</label>
+            <input class="appointment__input" id="date" name="date" type="date" required
+                   value="{{ values.get('date', '') }}">
+            {% if errors.get('date') %}<span class="appointment__error">{{ errors['date'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__field{% if errors.get('time') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="time">Hora</label>
+            <select class="appointment__input" id="time" name="time" required
+                    data-empty-message="{{ hours_empty_message }}">
+                <option value="" disabled {% if not values.get('time') %}selected{% endif %}>Selecciona una hora</option>
+                {% for hour in hours %}
+                <option value="{{ hour }}" {% if values.get('time') == hour %}selected{% endif %}>{{ hour }}</option>
+                {% endfor %}
+            </select>
+            <span class="appointment__hint" id="hours-status" aria-live="polite"></span>
+            {% if errors.get('time') %}<span class="appointment__error">{{ errors['time'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__field{% if errors.get('document_type') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="document_type">Tipo de documento</label>
+            <select class="appointment__input" id="document_type" name="document_type" required>
+                <option value="" disabled {% if not values.get('document_type') %}selected{% endif %}>Selecciona un tipo de documento</option>
+                {% for code, label in document_types %}
+                <option value="{{ code }}" {% if values.get('document_type') == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            {% if errors.get('document_type') %}<span class="appointment__error">{{ errors['document_type'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__field{% if errors.get('document_number') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="document_number">Número de documento</label>
+            <input class="appointment__input" id="document_number" name="document_number" type="text"
+                   inputmode="numeric" required value="{{ values.get('document_number', '') }}">
+            {% if errors.get('document_number') %}<span class="appointment__error">{{ errors['document_number'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__field{% if errors.get('patient_name') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="patient_name">Nombre y apellido</label>
+            <input class="appointment__input" id="patient_name" name="patient_name" type="text" required
+                   value="{{ values.get('patient_name', '') }}">
+            {% if errors.get('patient_name') %}<span class="appointment__error">{{ errors['patient_name'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__field{% if errors.get('email') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="email">Correo electrónico</label>
+            <input class="appointment__input" id="email" name="email" type="email" required
+                   value="{{ values.get('email', '') }}">
+            {% if errors.get('email') %}<span class="appointment__error">{{ errors['email'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__field{% if errors.get('phone') %} appointment__field--error{% endif %}">
+            <label class="appointment__label" for="phone">Celular</label>
+            <input class="appointment__input" id="phone" name="phone" type="tel" inputmode="numeric" required
+                   value="{{ values.get('phone', '') }}">
+            {% if errors.get('phone') %}<span class="appointment__error">{{ errors['phone'] }}</span>{% endif %}
+        </p>
+
+        <p class="appointment__helper">{{ helper }}</p>
+
+        <p class="appointment__actions">
+            <button class="appointment__submit" type="submit">Agendar cita</button>
+        </p>
+    </form>
+
+    <p class="appointment__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
+</article>
+<script src="{{ url_for('static', filename='js/availability.js') }}"></script>
+{% endblock %}

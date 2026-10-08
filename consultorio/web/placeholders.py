@@ -23,8 +23,3 @@ def articulos() -> str:
 @bp.get("/contacto")
 def contacto() -> str:
     return _render_section("/contacto")
-
-
-@bp.get("/citas")
-def citas() -> str:
-    return _render_section("/citas")

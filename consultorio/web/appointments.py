@@ -1,0 +1,131 @@
+"""Booking routes: form, availability JSON and confirmation page."""
+
+from datetime import date, timedelta
+from pathlib import Path
+
+from flask import Blueprint, abort, current_app, jsonify, redirect, render_template
+from flask import request, url_for
+
+from consultorio.content.appointment_content import (
+    BOOKING_HELPER,
+    BOOKING_PAGE_TITLE,
+    CONFIRMATION_TITLE,
+    DOCUMENT_TYPES,
+    MSG_INVALID_PARAMS,
+    MSG_NO_HOURS,
+    MSG_SLOT_TAKEN,
+    STATUS_PENDING_LABEL,
+)
+from consultorio.content.services_catalog import SERVICES_CATALOG
+from consultorio.services.appointment_service import (
+    SLOT_TAKEN,
+    create_booking,
+    get_available_hours,
+    is_valid_iso_date,
+    validate_booking,
+)
+from consultorio.services.home_service import get_home_view
+from consultorio.services.services_service import get_services_view
+
+bp = Blueprint("appointments", __name__)
+
+_BOOKING_FIELDS: tuple[str, ...] = (
+    "service",
+    "date",
+    "time",
+    "document_type",
+    "document_number",
+    "patient_name",
+    "email",
+    "phone",
+)
+
+
+def _database_path() -> Path:
+    return Path(current_app.config["DATABASE_PATH"])
+
+
+def _next_weekday() -> str:
+    candidate = date.today()
+    while candidate.weekday() >= 5:
+        candidate += timedelta(days=1)
+    return candidate.isoformat()
+
+
+def _default_service() -> str:
+    return next(iter(SERVICES_CATALOG))
+
+
+def _render_form(values: dict[str, str], errors: dict[str, str], status: int = 200):
+    default_date = _next_weekday()
+    default_service = _default_service()
+    service = values.get("service", "") or default_service
+    booking_date = values.get("date", "") or default_date
+    hours = get_available_hours(service, booking_date, _database_path())
+    return (
+        render_template(
+            "appointments/index.html",
+            view=get_home_view(),
+            services=get_services_view(),
+            document_types=DOCUMENT_TYPES,
+            hours=hours,
+            hours_empty_message=MSG_NO_HOURS,
+            helper=BOOKING_HELPER,
+            page_title=BOOKING_PAGE_TITLE,
+            values=values,
+            errors=errors,
+        ),
+        status,
+    )
+
+
+@bp.route("/citas", methods=["GET", "POST"])
+def index():
+    if request.method == "GET":
+        return _render_form({}, {})
+
+    data = {field: request.form.get(field, "") for field in _BOOKING_FIELDS}
+    errors = validate_booking(data)
+    if errors:
+        return _render_form(data, errors)
+
+    result = create_booking(data, _database_path())
+    if result == SLOT_TAKEN:
+        return _render_form(data, {"time": MSG_SLOT_TAKEN})
+
+    return redirect(url_for("appointments.confirm", cita_id=result.id), code=303)
+
+
+@bp.get("/citas/horarios")
+def horarios():
+    service = request.args.get("service", "")
+    booking_date = request.args.get("date", "")
+    if service not in SERVICES_CATALOG or not is_valid_iso_date(booking_date):
+        return jsonify({"error": MSG_INVALID_PARAMS}), 400
+    hours = get_available_hours(service, booking_date, _database_path())
+    return jsonify({"available": hours}), 200
+
+
+@bp.get("/citas/confirmada/<int:cita_id>")
+def confirm(cita_id: int):
+    appointment = _find_appointment(cita_id)
+    if appointment is None:
+        abort(404)
+    service_name = SERVICES_CATALOG[appointment.service]["name"]
+    return render_template(
+        "appointments/confirmation.html",
+        view=get_home_view(),
+        appointment=appointment,
+        service_name=service_name,
+        status_label=STATUS_PENDING_LABEL,
+        confirmation_title=CONFIRMATION_TITLE,
+        page_title=CONFIRMATION_TITLE,
+    )
+
+
+def _find_appointment(cita_id: int):
+    from consultorio.persistence.appointments_repository import (
+        get_appointment_by_id,
+    )
+
+    return get_appointment_by_id(cita_id, _database_path())
