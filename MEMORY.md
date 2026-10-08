@@ -18,6 +18,9 @@ aporte.
   (solo `.hero__intro`), **cuerpo base 18 px** (`html { font-size: 112.5% }`, escala
   1.125× en todos los `rem`; cortes `px` intactos) y h1 del hero equilibrado con
   `text-wrap: balance`. Decisiones en `docs/design-typography.md`, D10 del plan.
+- **Evidencia DevTools regenerada** (2026-10-07): `escritorio-1280-devtools.png` y
+  `movil-375-devtools.png` (1028×563) ahora muestran la tipografía actual, toolbar real
+  «Responsive 1280 × 650» / «375 × 512» y menú móvil desplegado; **sin commit aún**.
 
 ## Decisiones (y por qué)
 - **Sin SQLite en HU-001**: la portada no escribe datos; el contenido vive en
@@ -44,8 +47,8 @@ aporte.
   `C:\Users\Jaz\AppData\Local\Temp\opencode\capture_cdp.ps1`.
 
 ## Próximos pasos
-- HU-001 **PENDIENTE de aceptación** (todo commitado; 29 tests y 27 comprobaciones de
-  contrato en verde).
-- Solicitar aceptación de HU-001; configurar remoto y hacer push cuando exista.
-- Regenerar las capturas `*-devtools.png` (siguen mostrando la tipografía anterior).
+- **PENDIENTE**: commit de la evidencia DevTools `*-devtools.png` regenerada junto con
+  los cambios de `qa-hu-001.md` y `MEMORY.md` (29 tests PASS; requiere aprobación);
+  cerrar después el checkbox de aceptación en `qa-hu-001.md`.
+- HU-001 PENDIENTE de aceptación; configurar remoto y hacer push cuando exista.
 - Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.

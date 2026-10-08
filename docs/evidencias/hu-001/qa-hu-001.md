@@ -57,8 +57,8 @@ Comprobaciones objetivas sobre `escritorio-1280.png` y `movil-375.png`:
 |---|---|---|---|
 | `escritorio-1280.png` | 1280×1900 | cabecera (y=0-135) **sin botón «Menú»** (0 px salvia en la zona de nav), hero (y=136-597) con imagen (89 784 px fuera de fondo), servicios/tarjetas (y=598-881), botón (y=882-935), RF-6 (y=981-1067, 1660 px de texto) y pie RF-7 (y=1149-1267, 748 px de texto) | PASS |
 | `movil-375.png` | 375×2800 | cabecera con marca (y=0-131) y botón «Menú» (y=133-177), nav cerrado (0 px de texto en y=179-221), hero (y=222-1108), «Nuestros servicios» (y=1109-1219), tarjetas (y=1220-1422 e y=1446-1649), botón (y=1677-1730), RF-6 (y=1776-1994, 1671 px de texto) y pie RF-7 (y=2067-2214, 722 px de texto) | PASS |
-| `escritorio-1280-devtools.png` | recorte 759×598 | Viewport DevTools «Responsive 1280» (prueba del ancho de prueba); muestra la tipografía anterior al cambio | PASS |
-| `movil-375-devtools.png` | recorte 716×600 | Viewport DevTools «Responsive 375» con el menú móvil desplegado; muestra la tipografía anterior al cambio | PASS |
+| `escritorio-1280-devtools.png` | 1028×563 | Toolbar real de DevTools «Dimensions: Responsive **1280 × 650** · Fit to window · No throttling» + regla + viewport **sin botón «Menú»** (`display: none` comprobado por DOM), hero con h1 equilibrado e intro justificada en Palatino y base 18 px | PASS |
+| `movil-375-devtools.png` | 1028×563 | Toolbar real «Dimensions: Responsive **375 × 512**» + viewport con la marca, botón «Menú» y **nav desplegada** (`aria-expanded=true`, `is-open`), hero sage visible; Palatino y base 18 px | PASS |
 
 Las dos capturas completas se generan con Chrome headless **vía DevTools Protocol**
 (`Emulation.setDeviceMetricsOverride` + `Page.captureScreenshot`), por lo que el ancho
@@ -67,6 +67,14 @@ verificó por muestreo de color (bandas de fila) y conteo de píxeles de texto, 
 inspección visual. El estado inicial del nav en móvil está comprobado además por código:
 `base.html` no incluye la clase `is-open` y `main.css` aplica `display: none` bajo
 `@media (max-width: 767px)`.
+
+Las dos capturas `*-devtools.png` se regeneraron el 2026-10-07 desde una **ventana real
+de Chrome** (perfil de depuración, DevTools abierto y acoplado abajo, device toolbar
+activo) usando `PrintWindow`, recortando solo el área de página (x=8, y=87, 1028×563 px)
+para excluir la barra del navegador y los paneles de DevTools. Verificación: `btnDisplay:
+'none'` y `base: 18px`/`font: Palatino` leídos por DOM en 1280, y `aria-expanded: true`
+con clase `is-open` en 375; geometría por muestreo de píxeles (viewport 375×512 a zoom
+100 % centrado con margen de fondo a ambos lados).
 
 Geometría comprobada en `movil-375.png`: el hero termina en x≈356 y el fondo de página
 ocupa x≥362 (padding de 24 px), es decir, sin desbordamiento horizontal a 375 px.
@@ -85,6 +93,7 @@ ocupa x≥362 (padding de 24 px), es decir, sin desbordamiento horizontal a 375 
 ## Pendientes de cierre
 
 - [x] Commit del cambio tipográfico y de la evidencia regenerada.
+- [ ] Commit de la evidencia DevTools `*-devtools.png` regenerada (2026-10-07).
 - [ ] Aceptación de la HU.
 
 ## Veredicto
