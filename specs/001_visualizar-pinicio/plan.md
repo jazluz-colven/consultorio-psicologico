@@ -4,6 +4,13 @@
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs` (Q5).
 > Etapa actual: **PLANEACIÓN**. No se ha escrito código.
 
+> **Enmienda 2026-10-08** (identidad + tipografía + buscador, ver `docs/design-identity.md`
+> y `docs/design-typography.md`): nombre → `Carolina Gómez`; imagen representativa →
+> `static/img/hero-presentacion.png` (380×511) con nuevo literal de alt; la cabecera usa
+> la ilustración `hero-contenidas.png` como logotipo; tipografía → **Open Sans** (D10);
+> TC-001-004 acotado a la imagen del `<figure>` del hero; TC-001-008 acotado a
+> formularios de reserva/administración (admite el buscador de la Spec 016).
+
 ---
 
 ## 0. Alcance y cobertura
@@ -21,7 +28,7 @@ la portada vive en módulos de contenido versionados en código (§2).
 | RF | Enunciado (resumen) | Dónde se cubre |
 |----|---------------------|----------------|
 | RF-1 | Presentación clara del consultorio | §1 `home_content.py` + `home_service` + `home/index.html`; §2 `HOME_CONTENT`; §3 `get_home_view()`/`validate_content()`; §4 `GET /`; §5 D2/D3/D4; §6 TC-001-001/002/012/014 |
-| RF-2 | Imagen representativa | §1 `resolve_hero_image` + `static/img/hero-contenidas.png`; §2 `HERO_IMAGE`; §3 `resolve_hero_image()`; §4 `GET /`; §5 D5/D14; §6 TC-001-003/004/009/019 |
+| RF-2 | Imagen representativa | §1 `resolve_hero_image` + `static/img/hero-presentacion.png`; §2 `HERO_IMAGE`; §3 `resolve_hero_image()`; §4 `GET /`; §5 D5/D14; §6 TC-001-003/004/009/019 |
 | RF-3 | Accesos claros a las principales secciones | §1 `nav_links.py` + `web/placeholders.py` + `base.html`; §2 `NAV_LINKS`; §3 `build_navigation()`; §4 contrato de rutas; §5 D6/D11; §6 TC-001-005/006/016/017/018 |
 | RF-4 | Portada orientada a presentación institucional y navegación inicial | §1 blueprint `home` sin mutaciones; §3 `validate_content()`; §4 `GET /` (405 en mutaciones); §5 D1/D2/D8; §6 TC-001-007/008/014 |
 | RF-5 | Resumen de servicios (Psicología Integral + Psiconutrición) con acceso a Servicios | §1 `services_highlights.py`; §2 `SERVICES_HIGHLIGHT`; §3 `validate_services()`; §4 aserciones semánticas; §6 TC-001-010/015/020 |
@@ -74,7 +81,8 @@ Consultorio_Carolina/
 │   ├── css/main.css              # mobile-first + paleta Serenidad Natural       [RNF-1][RNF-2]
 │   ├── js/nav.js                 # menú hamburguesa (sin lógica de negocio)
 │   └── img/
-│       ├── hero-contenidas.png   # imagen representativa (asset suministrado)    [RF-2]
+│       ├── hero-presentacion.png  # imagen representativa (foto suministrada)     [RF-2]
+│       ├── hero-contenidas.png    # logotipo de cabecera (ilustración Contenidas) [RF-7]
 │       └── placeholder.svg       # sustituto cuando la imagen no existe         [CL-1]
 └── tests/
     ├── conftest.py               # app factory con config de test + client HTTP  [§6]
@@ -110,7 +118,7 @@ la spec 001 (Q8).
 SECONDARY_BRAND = "Contenidas"
 
 HOME_CONTENT = {
-    "brand_name": "Consultorio Psicológico Carolina Gómez",
+    "brand_name": "Carolina Gómez",
     "tagline": "Acompañamiento psicológico y nutricional con calidez profesional",
     "intro": "Un espacio de atención personalizada donde la salud mental y el "
              "bienestar alimentario se abordan con evidencia, escucha y respeto. "
@@ -149,8 +157,8 @@ DEFAULT_SERVICES_HIGHLIGHT = [*SERVICES_HIGHLIGHT]
 
 ```python
 HERO_IMAGE = {
-    "path": "img/hero-contenidas.png",
-    "alt": "Retrato ilustrado con flores y una cinta rosa que dice «Contenidas»",
+    "path": "img/hero-presentacion.png",
+    "alt": "Retrato de Carolina Gómez en su consultorio con la leyenda «Salud mental»",
 }
 DEFAULT_HERO_IMAGE = {**HERO_IMAGE}
 ```
@@ -268,14 +276,14 @@ FUNCTION build_navigation(links):                            # RF-3
 
 ```text
 [RF-7] «Contenidas» visible, precediendo al <h1>            → absent ⇒ FAIL
-[RF-1] <title> y <h1> = nombre del consultorio; <p> = intro → absent ⇒ FAIL
-[RF-2] <img src resuelto alt="Retrato ilustrado…«Contenidas»"> → absent ⇒ FAIL
+[RF-1] <title> y <h1> = «Carolina Gómez»; <p> = intro       → absent ⇒ FAIL
+[RF-2] <img en <figure> con alt="Retrato de Carolina Gómez…«Salud mental»"> → absent ⇒ FAIL
 [RF-5] bloque con «Nuestros servicios», «Psicología Integral»,
        «Psiconutrición» y enlace «Ver todos los servicios» → /servicios  → absent ⇒ FAIL
 [RF-6] frase de valores literal presente                    → absent ⇒ FAIL
 [RF-3] <nav> con 6 <a href> visibles; cada href → 200       → <6 o 404 ⇒ FAIL
-[RF-4] sin formularios de reserva, panel admin ni scripts
-       de notificación; POST/PUT/DELETE → 405               → presente/2xx ⇒ FAIL
+[RF-4] sin formularios de reserva ni de administración
+       (el buscador de la Spec 016 está permitido); POST/PUT/DELETE → 405 → presente/2xx ⇒ FAIL
 [RNF-1] <meta name="viewport">; <img> con width y height    → absent ⇒ FAIL
 ```
 
@@ -294,11 +302,11 @@ FUNCTION build_navigation(links):                            # RF-3
 | D7 | **Contenido en `dict` con claves fijas** | Permite validar completitud de forma genérica y absorber literales nuevos añadiendo clave + default, sin tocar la lógica. | *Clases/ORM*: peso innecesario para contenido de solo lectura (constitución #1). | RF-1, CL-2 |
 | D8 | **Degradación en `home_service`, no en la plantilla** | La regla vive en la capa de lógica; la plantilla solo recibe datos. | *Lógica Jinja*: ver D4. | RF-1, RF-4 |
 | D9 | **Identificadores en inglés, mensajes y documentación en español** | Constitución #6: `home_service`, `nav_links` en inglés; literales y mensajes en español. | *Todo en español* / *todo en inglés*: ambos rompen la regla. | RF-1, RF-4 |
-| D10 | **CSS mobile-first propio con la paleta Serenidad Natural (AGENTS.md) y tipografía Palatino** | RNF-1 y RNF-2. `#789B8A` acciones/navegación, `#F7F3EA` fondo, `#30454B` texto, `#B8D8CE`/`#E8D5B5` apoyo, `#D99A7A` acento. Tipografía: pila Palatino del sistema, párrafo del hero justificado y cuerpo base de 18 px (`html { font-size: 112.5% }`); decisiones de diseño en `docs/design-typography.md`. Sin frameworks CSS ni fuentes de terceros (constitución #1). | *Bootstrap/Tailwind* o *Google Fonts*: dependencia externa sin aprobación; *Charter/Candara*: registro menos cálido; *justificar todos los párrafos*: ríos blancos en móvil; *sin media queries*: incumple RNF-1. | RNF-1, RNF-2 |
+| D10 | **CSS mobile-first propio con la paleta Serenidad Natural (AGENTS.md) y tipografía Open Sans** | RNF-1 y RNF-2. `#789B8A` acciones/navegación, `#F7F3EA` fondo, `#30454B` texto, `#B8D8CE`/`#E8D5B5` apoyo, `#D99A7A` acento. Tipografía: **Open Sans** (Google Fonts vía `@import` en `main.css`, aprobada 2026-10-08) con fallback de sistema, párrafo del hero justificado y cuerpo base de 18 px (`html { font-size: 112.5% }`); decisiones de diseño en `docs/design-typography.md`. Sin frameworks CSS (constitución #1; la dependencia de Google Fonts está justificada y aprobada). | *Bootstrap/Tailwind*: dependencia externa sin aprobación; *Charter/Candara*: registro menos cálido; *justificar todos los párrafos*: ríos blancos en móvil; *sin media queries*: incumple RNF-1. | RNF-1, RNF-2 |
 | D11 | **Dos blueprints: `home` y `sections`** | Contrato pequeño por HU; `create_app()` es el punto único de extensión para HU-002/003/004/013/015. | *Blueprint por sección desde ya*: módulos que otras HU reescribirán. | RF-3, RF-4 |
 | D12 | **Spec 001 con textos literales exactos (Q8)** | La spec es la fuente de verdad del copy; trazabilidad directa spec → `expected_content.py` → HTML. | *Spec solo con campos*: el copy se decidiría en código, rompiendo SDD. **Consecuencia asumida**: cambiar un texto obliga a PR de spec primero y a refrescar los tests. | RF-1..RF-7 |
 | D13 | **Sin botón CTA en el hero** | No aprobado como obligatorio en Q3; «Agendar cita» sigue siendo acceso claro vía menú (RF-3). | *Botón de acción destacado en el hero*: añade un elemento no requerido por la spec. | RF-3 |
-| D14 | **Asset de imagen versionado en el repositorio (`static/img/hero-contenidas.png`)** | RF-2 deja de depender de terceros; el test TC-001-009 detecta su pérdida. `width`/`height` en el `<img>` evitan saltos de layout (RNF-1). | *URL externa/CDN*: dependencia de terceros, rompe disponibilidad de RF-2 y el modo offline. | RF-2, RNF-1 |
+| D14 | **Asset de imagen versionado en el repositorio (`static/img/hero-presentacion.png`, 380×511; enmienda 2026-10-08)** | RF-2 deja de depender de terceros; el test TC-001-009 detecta su pérdida. `width`/`height` en el `<img>` evitan saltos de layout (RNF-1). La cabecera reutiliza `hero-contenidas.png` como logotipo (decisión en `docs/design-identity.md`). | *URL externa/CDN*: dependencia de terceros, rompe disponibilidad de RF-2 y el modo offline. | RF-2, RNF-1 |
 | D15 | **Los colores de la ilustración no alteran la paleta de UI** | El rosa/verde del recurso son contenido gráfico, no colores de interfaz. AGENTS.md prohíbe introducir colores de marca sin decisión de diseño documentada. | *Incorporar el rosa de la cinta como acento de la UI*: cambiaría la identidad sin decisión formal. | RNF-2 |
 
 ---
@@ -317,13 +325,13 @@ actualiza junto con la spec — D12).
 |---|---|---|---|
 | TC-001-001 | `test_home_service.py` | `get_home_view()` devuelve identidad completa y `fallback_active=False` | RF-1 |
 | TC-001-002 | `test_home_routes.py` | `GET /` → **200**, `<h1>` = nombre del consultorio, `<p>` = intro | RF-1 |
-| TC-001-003 | `test_home_service.py` | Archivo del hero existe → `available=True`, `src` = `img/hero-contenidas.png` | RF-2 |
-| TC-001-004 | `test_home_routes.py` | `GET /` → `<img>` con `alt` = literal de la spec y `src` resuelto | RF-2 |
+| TC-001-003 | `test_home_service.py` | Archivo del hero existe → `available=True`, `src` = `img/hero-presentacion.png` | RF-2 |
+| TC-001-004 | `test_home_routes.py` | `GET /` → `<img>` **del `<figure>` del hero** con `alt` = literal de la spec y `src` resuelto (la cabecera contiene otro `<img>`, el logotipo) | RF-2 |
 | TC-001-005 | `test_home_content.py` | `NAV_LINKS`: sin duplicados, sin `label`/`url` vacíos, orden estable, 6 items | RF-3 |
 | TC-001-006 | `test_home_routes.py` | `GET /` → `<nav>` con 6 `<a href>` visibles | RF-3 |
 | TC-001-007 | `test_home_routes.py` | `POST /` → **405**; sin efectos secundarios | RF-4 |
-| TC-001-008 | `test_home_routes.py` | Respuesta sin formularios de reserva, panel admin ni scripts de notificación | RF-4 |
-| TC-001-009 | `test_home_content.py` | **CL-1:** `static/img/hero-contenidas.png` existe y no está vacío | RF-2 |
+| TC-001-008 | `test_home_routes.py` | Respuesta sin formularios de reserva ni de administración (sin `type="password"`, sin panel admin); el formulario de búsqueda `action="/buscar"` (Spec 016) está permitido y presente | RF-4 |
+| TC-001-009 | `test_home_content.py` | **CL-1:** `static/img/hero-presentacion.png` existe y no está vacío | RF-2 |
 | TC-001-010 | `test_home_content.py` | `SERVICES_HIGHLIGHT` ≥2 items con `name`, `summary`, `url` no vacíos | RF-5 |
 | TC-001-011 | `test_home_content.py` | `TRUST_LINE` y `SECONDARY_BRAND` = literales de `expected_content.py` | RF-6, RF-7 |
 | TC-001-012 | `test_home_service.py` | **CL-2:** `HOME_CONTENT` con claves vacías (monkeypatch) → `fallback_active=True` y view completo | RF-1, CL-2 |
@@ -382,17 +390,23 @@ Evidencia visual: docs/evidencias/hu-001/escritorio-1280.png, movil-375.png
 | Q6 | Git | `git init` + `.gitignore` + rama `feature/hu-001` = **paso 0**. Sin confirmación pendiente. |
 | Q7 | Ruta/título de la sección de citas | No aplica; las rutas placeholder se fijan en §2.4 y las sustituye su HU. |
 | Q8 | Contenido por defecto | **Promovido a la spec**: los `DEFAULT_*` son sus literales; la spec fija textos literales exactos (D12). |
-| Q9 | Imagen representativa | Asset suministrado → `static/img/hero-contenidas.png`, alt literal en la spec (RF-2). |
+| Q9 | Imagen representativa | Asset suministrado → `static/img/hero-contenidas.png`, alt literal en la spec (RF-2). **2026-10-08:** cambia a `static/img/hero-presentacion.png` (380×511) con nuevo alt; `hero-contenidas.png` pasa a logotipo de cabecera (ver `docs/design-identity.md`). |
 | Q10 | «Contenidas» | **Marca secundaria visible** en la portada → RF-7 (D13: sin botón CTA en el hero). |
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
-- [ ] Escribir la spec 001 actualizada y este plan (aprobado).
-- [ ] Guardar el asset suministrado en `static/img/hero-contenidas.png` y comprobar que
+- [x] Escribir la spec 001 actualizada y este plan (aprobado).
+- [x] Guardar el asset suministrado en `static/img/hero-contenidas.png` y comprobar que
       el PNG lleva **fondo transparente** (si es blanco, se verá una caja sobre `#F7F3EA`
       → pedir versión transparente o recortarla).
-- [ ] Evidencia QA (PASS/FAIL por TC), evidencia visual escritorio/móvil y demo manual.
-- [ ] Actualizar `MEMORY.md` al cerrar.
+- [x] Evidencia QA (PASS/FAIL por TC), evidencia visual escritorio/móvil y demo manual.
+- [x] Actualizar `MEMORY.md` al cerrar.
+
+> **Enmienda 2026-10-08 (identidad + hero):** los pendientes anteriores corresponden al
+> cierre original de HU-001 (aceptada). La enmienda añade `hero-presentacion.png`
+> versionado (D14), la evidencia visual queda **documentada sin regenerar PNG** (Q6,
+> decisión de la usuaria) y la demo manual de identidad + buscador se registra en
+> `docs/evidencias/hu-016/qa-hu-016.md`.
 
 ---
 

@@ -2,12 +2,41 @@
 
 **Fecha:** 2026-10-07
 **HU:** HU-001 (Spec 001 — Visualizar la página de inicio)
-**Estado:** Aprobada
+**Estado:** Aprobada (vigente: Open Sans desde 2026-10-08)
 **Afecta:** `static/css/main.css`, `specs/001_visualizar-pinicio/plan.md` (D10), RNF-2
 
-## Decisión
+## Decisión vigente — Open Sans (2026-10-08)
 
-La portada utiliza una pila de tipografías **Palatino** (serif humanista de trazo
+Petición explícita del usuario (2026-10-08): cambiar la tipografía por una
+**sans-serif humanista**. Aprobada **Open Sans** (Google Fonts).
+
+```css
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap");
+
+body {
+    font-family: "Open Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+```
+
+- **Carga:** `@import` al inicio de `static/css/main.css` (cubre las 4 plantillas que
+  incluyen la hoja: `base.html` y las páginas de error 404/405/500).
+- **Justificación escrita (constitución #1):** sans humanista de alta legibilidad en
+  pantalla, ideal para 18 px y párrafos justificados; aprobada por el usuario el
+  2026-10-08. La pila conserva fallback del sistema (`Segoe UI`, `Helvetica Neue`,
+  `Arial`), de modo que **el sitio sigue funcionando sin conexión** y sin bloquear
+  contenido si Google Fonts no responde.
+- **Pesos cargados:** 400 (texto), 600 y 700 (títulos y navegación), los ya
+  declarados en `main.css`.
+- Intactos: `html { font-size: 112.5 % }` (base 18 px), `line-height: 1.6`, la
+  justificación generalizada con `hyphens: none`, `text-wrap: balance` y la paleta
+  Serenidad Natural.
+- Anula la fila «Google Fonts» de *Alternativas descartadas* más abajo (aprobada el
+  2026-10-08) y la justificación de «Sin dependencias nuevas» de la sección
+  original, que pasaba por usar solo fuentes del sistema.
+
+## Decisión original — Palatino (2026-10-07, histórica)
+
+La portada utilizaba una pila de tipografías **Palatino** (serif humanista de trazo
 caligráfico) para todos los textos, y el párrafo de presentación del hero se alinea
 **justificado**.
 
@@ -55,6 +84,9 @@ modo que el navegador reparte el título en líneas de longitud parecida
   conservan el corte anterior.
 - Afecta únicamente la presentación: sin cambios de RF, de textos literales ni de
   paleta.
+- **2026-10-08:** con el nombre cambiado a «Carolina Gómez» (ver
+  `docs/design-identity.md`) el `<h1>` cabe en una línea y `text-wrap: balance` no
+  tiene efecto; se conserva por si el literal vuelve a crecer (sin costo).
 
 ## Justificación generalizada de párrafos — 2026-10-07
 
@@ -97,9 +129,9 @@ y portada (`.hero__intro`, `.service-card__summary`, `.values__line` y pie
 | Alternativa | Por qué se descarta |
 |---|---|
 | **Charter / Constantia** | Serif de texto más firme y contemporánea; proyecta «profesional-serio» en lugar de «cálido», que es el registro del consultorio. |
-| **Candara / Corbel (sans humanista)** | Deja el conjunto más ligero y accesible, pero rompe la continuidad con el sello dibujado a mano de la portada. |
+| **Candara / Corbel (sans humanista)** | Deja el conjunto más ligero y accesible, pero rompe la continuidad con el sello dibujado a mano de la portada. **— 2026-10-08:** el usuario aprobó otra sans humanista (Open Sans); Candara/Corbel siguen descartadas por depender de Windows/Office. |
 | **Palatino en títulos + sans en cuerpo** | Dos familias añaden complejidad de mantenimiento sin necesidad: el sitio tiene un bloque de contenido corto y homogéneo. |
-| **Google Fonts (Lora, Source Serif, etc.)** | Dependencia externa de terceros: requiere justificación y aprobación escrita (constitución #1) y rompe el funcionamiento sin red. |
+| **Google Fonts (Lora, Source Serif, etc.)** | Dependencia externa de terceros: requiere justificación y aprobación escrita (constitución #1) y rompe el funcionamiento sin red. **— Anulada el 2026-10-08:** el usuario aprobó Open Sans desde Google Fonts con justificación escrita (decisión vigente); el fallback de sistema mantiene el sitio operativo sin red. |
 | **Justificar todos los párrafos** | Genera espacios irregulares en móvil y en las tarjetas de servicio, de ancho reducido. **— Anulada el 2026-10-07:** el usuario decretó la justificación general; ver «Justificación generalizada de párrafos». |
 
 ## Consecuencias
