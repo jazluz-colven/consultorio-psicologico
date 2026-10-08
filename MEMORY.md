@@ -11,13 +11,13 @@ aporte.
 - Tests: **29 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1.
 - Specs y plan en `specs/001_visualizar-pinicio/`.
-- Commits en `feature/hu-001`: `2ebaa46` (docs), `85a0e9d` (feat), `3203047` y
-  `aa5379c`. **Sin remoto configurado**: no se puede hacer push.
-- **Cambio tipográfico aplicado y sin commitar**: portada en Palatino, párrafo del
-  hero justificado (solo `.hero__intro`), **cuerpo base 18 px** (`html { font-size:
-  112.5% }`, escala 1.125× en todos los `rem`; cortes `px` intactos) y h1 del hero
-  equilibrado con `text-wrap: balance`. Decisiones en `docs/design-typography.md`,
-  D10 del plan actualizada.
+- Commits en `feature/hu-001`: `2ebaa46` y `3203047`/`aa5379c` (docs), `85a0e9d` (feat),
+  `4c1266a` (tipografía) y `6b7dc3f` (evidencia). **Sin remoto configurado**: no se
+  puede hacer push.
+- **Tipografía vigente y commitada**: portada en Palatino, párrafo del hero justificado
+  (solo `.hero__intro`), **cuerpo base 18 px** (`html { font-size: 112.5% }`, escala
+  1.125× en todos los `rem`; cortes `px` intactos) y h1 del hero equilibrado con
+  `text-wrap: balance`. Decisiones en `docs/design-typography.md`, D10 del plan.
 
 ## Decisiones (y por qué)
 - **Sin SQLite en HU-001**: la portada no escribe datos; el contenido vive en
@@ -44,9 +44,8 @@ aporte.
   `C:\Users\Jaz\AppData\Local\Temp\opencode\capture_cdp.ps1`.
 
 ## Próximos pasos
-- Commit pendiente en `feature/hu-001`: `static/css/main.css`, `docs/design-typography.md`,
-  `specs/001_visualizar-pinicio/plan.md` y evidencia regenerada (29 tests PASS, 27
-  comprobaciones de contrato PASS, `qa-hu-001.md` actualizado).
+- HU-001 **PENDIENTE de aceptación** (todo commitado; 29 tests y 27 comprobaciones de
+  contrato en verde).
 - Solicitar aceptación de HU-001; configurar remoto y hacer push cuando exista.
 - Regenerar las capturas `*-devtools.png` (siguen mostrando la tipografía anterior).
 - Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.

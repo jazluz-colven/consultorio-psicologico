@@ -2,7 +2,8 @@
 
 **HU:** HU-001
 **Rama:** `feature/hu-001`
-**Commits:** `2ebaa46` (docs), `85a0e9d` (feat), `3203047` (docs), `aa5379c` (evidencia)
+**Commits:** `2ebaa46` (docs), `85a0e9d` (feat), `3203047` (docs), `aa5379c` (evidencia),
+`4c1266a` (tipografía), `6b7dc3f` (evidencia regenerada)
 **Fecha:** 2026-10-07 (actualizada tras el cambio tipográfico)
 
 ## Resumen
@@ -83,13 +84,11 @@ ocupa x≥362 (padding de 24 px), es decir, sin desbordamiento horizontal a 375 
 
 ## Pendientes de cierre
 
-- [ ] Commit del cambio tipográfico (`static/css/main.css`, `docs/design-typography.md`,
-      `specs/001_visualizar-pinicio/plan.md`) y de la evidencia regenerada.
+- [x] Commit del cambio tipográfico y de la evidencia regenerada.
 - [ ] Aceptación de la HU.
 
 ## Veredicto
 
 **PASS** — los 29 tests y las 27 comprobaciones de contrato están en verde tras el
 cambio tipográfico, y la evidencia visual regenerada cubre la totalidad de los RF y los
-casos límite con anchos de render exactos. Quedan como trámite el commit y la
-aceptación de la HU.
+casos límite con anchos de render exactos. Queda como trámite la aceptación de la HU.
