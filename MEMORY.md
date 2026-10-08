@@ -11,9 +11,9 @@ aporte.
 - Tests: **29 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1.
 - Specs y plan en `specs/001_visualizar-pinicio/`.
-- Commits en `feature/hu-001`: `2ebaa46` y `3203047`/`aa5379c` (docs), `85a0e9d` (feat),
-  `4c1266a` (tipografía) y `6b7dc3f` (evidencia). **Sin remoto configurado**: no se
-  puede hacer push.
+- Commits en `feature/hu-001` (remoto `origin`: github.com/jazluz-colven/consultorio-psicologico,
+  rama sincronizada en `012880d`): `2ebaa46` y `3203047`/`aa5379c` (docs), `85a0e9d` (feat),
+  `4c1266a` (tipografía), `6b7dc3f`/`434ef1e`/`012880d` (evidencia).
 - **Tipografía vigente y commitada**: portada en Palatino, párrafo del hero justificado
   (solo `.hero__intro`), **cuerpo base 18 px** (`html { font-size: 112.5% }`, escala
   1.125× en todos los `rem`; cortes `px` intactos) y h1 del hero equilibrado con
@@ -48,6 +48,5 @@ aporte.
 
 ## Próximos pasos
 - **PENDIENTE**: cerrar el checkbox de aceptación en `docs/evidencias/hu-001/qa-hu-001.md`
-  cuando el usuario acepte la HU (evidencia y tests ya commiteados: `434ef1e`).
-- HU-001 PENDIENTE de aceptación; configurar remoto y hacer push cuando exista.
+  cuando el usuario acepte la HU (evidencia, tests y push ya hechos).
 - Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.
