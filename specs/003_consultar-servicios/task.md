@@ -42,7 +42,7 @@
   por lista (FIRST_NON_EMPTY / lista no vacía), sin bloques incompletos.
   Hecho cuando: `python -c "from consultorio.services.services_service import get_services_view as g; v = g(); assert len(v.items) == 2 and v.fallback_active is False"` → exit 0.
 
-- [ ] **T7 — Tests de servicio `test_services_service.py` (plan §6.1, TC-005..007)** `[RF-3][CL-1][CL-2]`
+- [x] **T7 — Tests de servicio `test_services_service.py` (plan §6.1, TC-005..007)** `[RF-3][CL-1][CL-2]`
   View completo sin fallback; CL-1 con catálogo vacío (monkeypatch) → defaults +
   `fallback_active=True`; CL-2 con description/benefits vacíos → defaults por campo.
   Hecho cuando: `python -m pytest tests/test_services_service.py -v` → todos PASS, 0 FAIL.
