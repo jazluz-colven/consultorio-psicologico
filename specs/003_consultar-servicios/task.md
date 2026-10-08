@@ -68,7 +68,7 @@
   nav de 6 hrefs → 200.
   Hecho cuando: `python -m pytest tests/test_services_routes.py -v` → todos PASS, 0 FAIL.
 
-- [ ] **T11 — Tests de HU `test_hu_003.py` (plan §6.1, TC-013..015)** `[RNF-1][RF-1][RF-2][CL-2][fuera de alcance]`
+- [x] **T11 — Tests de HU `test_hu_003.py` (plan §6.1, TC-013..015)** `[RNF-1][RF-1][RF-2][CL-2][fuera de alcance]`
   RNF (viewport, @media, paleta, medida, justify+hyphens), E2E portada →
   «Ver todos los servicios» → `/servicios` y «Volver al inicio» → `/`, `<main>` sin
   formularios ni enlace a `/citas`.
