@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Nosotros — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="about">
+    <h1 class="about__title">Nosotros</h1>
+
+    <section class="about__block">
+        <h2 class="about__block-title">{{ about.titles["mission"] }}</h2>
+        <p class="about__text">{{ about.mission }}</p>
+    </section>
+
+    <section class="about__block">
+        <h2 class="about__block-title">{{ about.titles["vision"] }}</h2>
+        <p class="about__text">{{ about.vision }}</p>
+    </section>
+
+    <section class="about__block">
+        <h2 class="about__block-title">{{ about.titles["experience"] }}</h2>
+        <p class="about__text">{{ about.experience }}</p>
+    </section>
+
+    <section class="about__block">
+        <h2 class="about__block-title">{{ about.titles["values"] }}</h2>
+        <p class="about__text">{{ about.values }}</p>
+    </section>
+
+    <p class="about__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
+</article>
+{% endblock %}

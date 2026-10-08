@@ -16,9 +16,11 @@ def create_app(settings: Any = None) -> Flask:
         app.config.from_object(settings)
 
     from consultorio.errors import register_error_handlers
+    from consultorio.web.about import bp as about_bp
     from consultorio.web.home import bp as home_bp
     from consultorio.web.placeholders import bp as sections_bp
 
+    app.register_blueprint(about_bp)
     app.register_blueprint(home_bp)
     app.register_blueprint(sections_bp)
     register_error_handlers(app)

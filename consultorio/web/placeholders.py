@@ -15,11 +15,6 @@ def _render_section(section_url: str) -> str:
     )
 
 
-@bp.get("/nosotros")
-def nosotros() -> str:
-    return _render_section("/nosotros")
-
-
 @bp.get("/servicios")
 def servicios() -> str:
     return _render_section("/servicios")
