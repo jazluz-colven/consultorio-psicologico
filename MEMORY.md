@@ -5,9 +5,9 @@ aporte.
 
 ## Estado actual
 - Versión 1.0 - En desarrollo
-- **HU-001 (Spec 001) implementada**: portada con identidad, imagen representativa,
-  resumen de servicios, frase de valores, marca secundaria «Contenidas» y menú de 6
-  accesos. Rama `feature/hu-001`.
+- **HU-001 (Spec 001) implementada y ACEPTADA** (2026-10-07): portada con identidad,
+  imagen representativa, resumen de servicios, frase de valores, marca secundaria
+  «Contenidas» y menú de 6 accesos. Rama `feature/hu-001`. **No iniciar HU-002 aún**.
 - Tests: **29 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1.
 - Specs y plan en `specs/001_visualizar-pinicio/`.
@@ -47,6 +47,5 @@ aporte.
   `C:\Users\Jaz\AppData\Local\Temp\opencode\capture_cdp.ps1`.
 
 ## Próximos pasos
-- **PENDIENTE**: cerrar el checkbox de aceptación en `docs/evidencias/hu-001/qa-hu-001.md`
-  cuando el usuario acepte la HU (evidencia, tests y push ya hechos).
-- Arrancar HU-002 (Nosotros) sustituyendo el placeholder correspondiente.
+- HU-001 **CERRADA** (aceptada). Esperar orden para arrancar HU-002 (Nosotros):
+  spec en `specs/002_conocer-consultorio/spec.md`, aún sin `plan.md`.

@@ -94,10 +94,11 @@ ocupa x≥362 (padding de 24 px), es decir, sin desbordamiento horizontal a 375 
 
 - [x] Commit del cambio tipográfico y de la evidencia regenerada.
 - [x] Commit de la evidencia DevTools `*-devtools.png` regenerada (`434ef1e`, 2026-10-07).
-- [ ] Aceptación de la HU.
+- [x] Aceptación de la HU (2026-10-07).
 
 ## Veredicto
 
 **PASS** — los 29 tests y las 27 comprobaciones de contrato están en verde tras el
 cambio tipográfico, y la evidencia visual regenerada cubre la totalidad de los RF y los
-casos límite con anchos de render exactos. Queda como trámite la aceptación de la HU.
+casos límite con anchos de render exactos. HU aceptada por el usuario el 2026-10-07:
+**HU-001 CERRADA**.
