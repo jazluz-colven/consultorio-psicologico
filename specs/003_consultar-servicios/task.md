@@ -90,7 +90,7 @@
   Hecho cuando: `git status` limpio, `git rev-parse HEAD origin/feature/hu-003` iguales
   y `MEMORY.md` registra HU-003 en evidencia con sus commits.
 
-- [ ] **T16 — Imágenes por servicio (Q6/D14, ampliación 2026-10-08)** `[RF-1][RNF-1]`
+- [x] **T16 — Imágenes por servicio (Q6/D14, ampliación 2026-10-08)** `[RF-1][RNF-1]`
   Imágenes en `static/img/servicios/` (PNG→WebP), `image`/`image_alt` en el catálogo y
   el espejo, `<img>` en la plantilla, CSS banner (`aspect-ratio` + `object-fit: cover` +
   `border-radius`), tests (TC-003-016 y ampliación de TC-003-009) y evidencia

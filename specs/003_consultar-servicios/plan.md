@@ -355,9 +355,9 @@ Evidencia visual: docs/evidencias/hu-003/escritorio-1280.png, movil-375.png
 - [x] Merge a `main` y creación de `feature/hu-003` (Q4).
 - [x] Implementar módulos, plantilla y CSS (§1–§4).
 - [x] Tests (§6) y `pytest -q` en verde (45 actuales + nuevos).
-- [ ] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual
+- [x] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual
       (`escritorio-1280.png`, `movil-375.png`, verificadas) con demo sobre el servidor
-      (`GET /servicios` → 200) — **regenerar tras la ampliación de imágenes (Q6)**.
+      (`GET /servicios` → 200) — **regenerada tras la ampliación de imágenes (Q6)**.
 - [x] Commit/Push de la evidencia y actualización de `MEMORY.md`.
 - [ ] Aceptación de la HU (checkbox del informe QA).
 

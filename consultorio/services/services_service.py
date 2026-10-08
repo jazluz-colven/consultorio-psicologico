@@ -13,6 +13,8 @@ class ServiceItem:
     name: str
     description: str
     benefits: list[str]
+    image: str
+    image_alt: str
 
 
 @dataclass(frozen=True)
@@ -49,8 +51,17 @@ def validate_services() -> tuple[list[ServiceItem], bool]:
         benefits, benefits_fallback = _resolve_benefits(
             current.get("benefits"), list(default["benefits"])
         )
+        image, image_fallback = _resolve_text(current.get("image"), str(default["image"]))
+        image_alt, image_alt_fallback = _resolve_text(
+            current.get("image_alt"), str(default["image_alt"])
+        )
         fallback_active = (
-            fallback_active or name_fallback or description_fallback or benefits_fallback
+            fallback_active
+            or name_fallback
+            or description_fallback
+            or benefits_fallback
+            or image_fallback
+            or image_alt_fallback
         )
         resolved.append(
             ServiceItem(
@@ -58,6 +69,8 @@ def validate_services() -> tuple[list[ServiceItem], bool]:
                 name=name,
                 description=description,
                 benefits=benefits,
+                image=image,
+                image_alt=image_alt,
             )
         )
     return resolved, fallback_active

@@ -280,6 +280,15 @@ a:focus {
     border-radius: 12px;
 }
 
+.services-page__image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 2 / 1;
+    object-fit: cover;
+    border-radius: 8px;
+    margin: 0 0 1rem;
+}
+
 .services-page__block-title {
     margin: 0 0 0.5rem;
     color: var(--color-primary);

@@ -29,10 +29,23 @@ def test_get_servicios_muestra_dos_secciones_con_descripcion_y_beneficios(client
     sections = re.findall(r'<section class="services-page__block">(.*?)</section>', main, re.S)
     assert len(sections) == 2
     for section, service in zip(sections, expected.SERVICES_CATALOG.values()):
+        image_html = (
+            f'<img class="services-page__image" '
+            f'src="/static/{service["image"]}" alt="{service["image_alt"]}">'
+        )
+        assert image_html in section
         assert service["description"] in section
         assert '<ul class="services-page__benefits">' in section
         for benefit in service["benefits"]:
             assert f'<li class="services-page__benefit">{benefit}</li>' in section
+
+
+def test_las_imagenes_de_los_servicios_responden_200(client) -> None:
+    for service in expected.SERVICES_CATALOG.values():
+        response = client.get(f"/static/{service['image']}")
+
+        assert response.status_code == 200, service["image"]
+        assert response.content_type.startswith("image/")
 
 
 def test_metodos_escritores_devuelven_405(client) -> None:

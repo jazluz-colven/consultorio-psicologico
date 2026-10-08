@@ -24,6 +24,10 @@ def test_servicios_es_responsive_con_medida_y_justificacion(client) -> None:
     assert re.search(
         r"\.services-page__text\s*\{[^}]*text-align:\s*justify;[^}]*hyphens:\s*none", css
     )
+    assert re.search(
+        r"\.services-page__image\s*\{[^}]*aspect-ratio:\s*2\s*/\s*1;[^}]*object-fit:\s*cover;[^}]*border-radius:\s*\d+px",
+        css,
+    )
 
 
 def test_css_sigue_usando_solo_colores_de_la_paleta() -> None:

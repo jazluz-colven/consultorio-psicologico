@@ -18,6 +18,8 @@ SERVICES_CATALOG: dict[str, dict[str, object]] = {
             "Acompañamiento personalizado: individual, de pareja o familiar.",
             "Un espacio seguro, sin juicios y confidencial para hablar abiertamente.",
         ],
+        "image": "img/servicios/psicologia-integral.webp",
+        "image_alt": "Sesión de acompañamiento terapéutico en el consultorio",
     },
     "nutrition": {
         "name": "Psiconutrición",
@@ -33,6 +35,8 @@ SERVICES_CATALOG: dict[str, dict[str, object]] = {
             "Vinculación entre lo emocional y lo alimentario en un mismo proceso.",
             "Planes personalizados adaptados a tu realidad y tus objetivos.",
         ],
+        "image": "img/servicios/psiconutricion.webp",
+        "image_alt": "Sesión de acompañamiento nutricional con plan alimentario personalizado",
     },
 }
 

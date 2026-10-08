@@ -14,15 +14,17 @@ aporte.
 - **HU-003 (Spec 003) EN EVIDENCIA** (2026-10-08, rama `feature/hu-003` nacida de
   `main` tras merge de HU-002): página `/servicios` con los 2 servicios (catálogo +
   servicio + blueprint + plantilla + CSS `.services-page-*`), fallback por campo,
-  404 de subrutas. Veredicto QA **PASS** en `docs/evidencias/hu-003/qa-hu-003.md`;
-  capturas `escritorio-1280.png` (1280×1398) y `movil-375.png` (375×1965).
-  Commits: `e6ad118` plan/tasks, `6440e74` spec, `72167bd` espejo, `84169a4` catálogo,
-  `18f5a85` tests contenido, `c16a098` servicio, `5b5dbdb` tests servicio,
-  `66d980a` web+plantilla, `5be6b48` CSS, `249dae6` tests ruta, `6d4a5f4` tests HU,
-  `6f2a9c4` regresión, `6992364` evidencia+memory (push OK). Pendiente: aceptación
-  de la usuaria.
-- Tests: **61 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
-  pytest 9.1.1 (29 de HU-001 + 16 de HU-002 + 16 de HU-003). Contrato HU-001: 28 PASS.
+  404 de subrutas y **banner de imagen por servicio** (Q6/D14, 2026-10-08: WebP
+  1200×600 y 1200×800, `aspect-ratio: 2/1` + `object-fit: cover` + `border-radius`;
+  el PNG original de 1 MB se convirtió a WebP 55 KB). Veredicto QA **PASS** en
+  `docs/evidencias/hu-003/qa-hu-003.md`; capturas `escritorio-1280.png` (1280×1965) y
+  `movil-375.png` (375×2286). Commits: `e6ad118` plan/tasks, `6440e74` spec, `72167bd`
+  espejo, `84169a4` catálogo, `18f5a85` tests contenido, `c16a098` servicio,
+  `5b5dbdb` tests servicio, `66d980a` web+plantilla, `5be6b48` CSS, `249dae6` tests
+  ruta, `6d4a5f4` tests HU, `6f2a9c4` regresión, `6992364` evidencia, `4ba8ce0`
+  imágenes. Pendiente: aceptación de la usuaria.
+- Tests: **63 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
+  pytest 9.1.1 (29 de HU-001 + 16 de HU-002 + 18 de HU-003). Contrato HU-001: 28 PASS.
 - **Tipografía vigente**: Palatino, cuerpo base 18 px, h1 con `text-wrap: balance` y
   **justificación generalizada a todo el sitio** (`text-align: justify` +
   `hyphens: none`, sin guiones). Decisiones en `docs/design-typography.md`
@@ -48,7 +50,9 @@ aporte.
   (solo los 6 hex aprobados).
 
 ## Aprendizajes y errores a evitar
-- `pip` está **bloqueado por AppLocker**: usar `python -m pip install ...`.
+- `pip` está **bloqueado por AppLocker**: usar `python -m pip install ...` (así se
+  instaló Pillow 12.3.0 para convertir imágenes; es herramienta del entorno, no
+  dependencia del proyecto).
 - Imagen de portada: 720×713; llegó `hero-contenidas.png.png` (nombres dobles); fondo
   blanco se ve como caja sobre `#F7F3EA`.
 - **Chrome 154 headless no renderiza a menos de 500 px**: para capturas exactas usar

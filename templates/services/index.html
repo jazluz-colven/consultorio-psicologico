@@ -8,6 +8,7 @@
 
     {% for service in services.items %}
     <section class="services-page__block">
+        <img class="services-page__image" src="{{ url_for('static', filename=service.image) }}" alt="{{ service.image_alt }}">
         <h2 class="services-page__block-title">{{ service.name }}</h2>
         <p class="services-page__text">{{ service.description }}</p>
         <ul class="services-page__benefits">

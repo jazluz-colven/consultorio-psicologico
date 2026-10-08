@@ -1,3 +1,4 @@
+from consultorio.config import Config
 from consultorio.content import services_catalog, services_highlights
 
 from tests import expected_content as expected
@@ -10,6 +11,8 @@ def test_servicios_catalog_tiene_las_claves_aprobadas_sin_campos_vacios() -> Non
     for key, service in services_catalog.SERVICES_CATALOG.items():
         assert str(service["name"]).strip(), key
         assert str(service["description"]).strip(), key
+        assert str(service["image"]).strip(), key
+        assert str(service["image_alt"]).strip(), key
         benefits = service["benefits"]
         assert isinstance(benefits, list) and benefits, key
         for benefit in benefits:
@@ -36,3 +39,11 @@ def test_cada_servicio_tiene_description_y_benefits_no_vacios() -> None:
         benefits = service["benefits"]
         assert isinstance(benefits, list) and len(benefits) >= 1, key
         assert all(str(benefit).strip() for benefit in benefits), key
+
+
+def test_las_imagenes_del_catalogo_existen_como_ficheros_estaticos() -> None:
+    static_dir = Config.STATIC_DIR
+    for key, service in services_catalog.SERVICES_CATALOG.items():
+        image_path = static_dir / str(service["image"])
+        assert image_path.is_file(), (key, image_path)
+        assert str(service["image_alt"]).strip(), key
