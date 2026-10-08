@@ -2,7 +2,8 @@
 
 > Trazabilidad: **HU-002 → Spec 002 (`specs/002_conocer-consultorio/spec.md`) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs` (Q5).
-> Etapa actual: **PLANEACIÓN APROBADA**. No se ha escrito código.
+> Etapa actual: **IMPLEMENTADO Y PROBADO** (2026-10-07): código en la rama
+> `feature/hu-002`, `pytest -q` → **45 PASS / 0 FAIL**. Evidencia QA pendiente.
 > Ramas: `main` y `feature/hu-002` creadas en `ba23658` (cabecera de HU-001 aceptada).
 
 ---
@@ -286,10 +287,13 @@ Evidencia visual: docs/evidencias/hu-002/escritorio-1280.png, movil-375.png
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
-- [ ] Implementar módulos, plantilla y CSS (§1–§4).
-- [ ] Tests (§6) y `pytest -q` en verde (regresión de los 29 de HU-001).
+- [x] Implementar módulos, plantilla y CSS (§1–§4) — commit `f782797`.
+- [x] Tests (§6) y `pytest -q` en verde: **45 PASS** (29 de HU-001 + 16 nuevos,
+      incluye el bug de plantilla `titles["values"]` detectado por TC-002-005).
 - [ ] Evidencia QA (`qa-hu-002.md`), evidencia visual escritorio/móvil y demo manual.
-- [ ] Commit/Push con trazabilidad y actualización de `MEMORY.md`.
+      Capturas ya generadas sin commitear: `docs/evidencias/hu-002/escritorio-1280.png`
+      (1280×1394) y `movil-375.png` (375×1903).
+- [ ] Commit/Push de la evidencia y actualización de `MEMORY.md`.
 
 ---
 
