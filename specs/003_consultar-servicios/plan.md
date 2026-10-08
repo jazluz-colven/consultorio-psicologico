@@ -336,9 +336,9 @@ Evidencia visual: docs/evidencias/hu-003/escritorio-1280.png, movil-375.png
       textos ya aprobados).
 - [x] Aprobación de este `plan.md` y de los literales RF-3 por la usuaria (2026-10-07).
 - [x] Merge a `main` y creación de `feature/hu-003` (Q4).
-- [ ] Implementar módulos, plantilla y CSS (§1–§4).
-- [ ] Tests (§6) y `pytest -q` en verde (45 actuales + nuevos).
-- [ ] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual
+- [x] Implementar módulos, plantilla y CSS (§1–§4).
+- [x] Tests (§6) y `pytest -q` en verde (45 actuales + nuevos).
+- [x] Evidencia QA (`qa-hu-003.md`, veredicto PASS) y evidencia visual
       (`escritorio-1280.png`, `movil-375.png`, verificadas) con demo sobre el servidor
       (`GET /servicios` → 200).
 - [ ] Commit/Push de la evidencia y actualización de `MEMORY.md`.

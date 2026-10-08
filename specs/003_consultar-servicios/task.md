@@ -78,7 +78,7 @@
   Hecho cuando: `python -m pytest -q` → **0 FAIL** con los 45 tests previos intactos
   (HU-001 y HU-002 sin relajar) más los nuevos de HU-003.
 
-- [ ] **T13 — Evidencia QA y visual (plan §6.3)** `[RF-1..RF-4][RNF-1][finalización]`
+- [x] **T13 — Evidencia QA y visual (plan §6.3)** `[RF-1..RF-4][RNF-1][finalización]`
   Servidor (`python app.py`), capturas CDP con alturas exactas →
   `docs/evidencias/hu-003/escritorio-1280.png` y `movil-375.png`, informe
   `qa-hu-003.md` con PASS/FAIL por TC y veredicto.

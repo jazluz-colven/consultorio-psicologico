@@ -11,26 +11,32 @@ aporte.
   `c71c78c` spec+plan, `f782797` feat, `a686a58` plan, `6ed88eb` evidencia,
   `8103b91` justificación generalizada, `5038f6b` evidencia regenerada,
   cierre de aceptación en `qa-hu-002.md`).
-- Tests: **45 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
-  pytest 9.1.1 (29 de HU-001 + 16 de HU-002). Contrato HU-001: 28 PASS (script
-  actualizado tras implementarse `/nosotros`).
+- **HU-003 (Spec 003) EN EVIDENCIA** (2026-10-08, rama `feature/hu-003` nacida de
+  `main` tras merge de HU-002): página `/servicios` con los 2 servicios (catálogo +
+  servicio + blueprint + plantilla + CSS `.services-page-*`), fallback por campo,
+  404 de subrutas. Veredicto QA **PASS** en `docs/evidencias/hu-003/qa-hu-003.md`;
+  capturas `escritorio-1280.png` (1280×1398) y `movil-375.png` (375×1965).
+  Pendiente: push de evidencia, `MEMORY.md` y aceptación de la usuaria.
+- Tests: **61 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
+  pytest 9.1.1 (29 de HU-001 + 16 de HU-002 + 16 de HU-003). Contrato HU-001: 28 PASS.
 - **Tipografía vigente**: Palatino, cuerpo base 18 px, h1 con `text-wrap: balance` y
   **justificación generalizada a todo el sitio** (`text-align: justify` +
-  `hyphens: none`, sin guiones): `.hero__intro`, `.service-card__summary`,
-  `.values__line`, `.site-footer`, `.about__text`. Decisiones en
-  `docs/design-typography.md` (D10 del plan); reglas permanentes en `AGENTS.md`.
-- **Evidencia visual regenerada** (2026-10-07): `hu-001/escritorio-1280.png` 1280×1268,
-  `hu-001/movil-375.png` 375×2215, `hu-002/*.png` 1280×1394 y 375×1903 (alturas exactas,
-  sin holgura); los `*-devtools.png` se conservan (verificados por píxeles).
-- Servidor de revisión en marcha: `python app.py` → http://127.0.0.1:5000/.
+  `hyphens: none`, sin guiones). Decisiones en `docs/design-typography.md`
+  (D10 del plan 002); reglas permanentes en `AGENTS.md`.
+- **Evidencia visual HU-001/002** (2026-10-07): `hu-001/escritorio-1280.png` 1280×1268,
+  `hu-001/movil-375.png` 375×2215, `hu-002/*.png` 1280×1394 y 375×1903; los
+  `*-devtools.png` se conservan (verificados por píxeles).
+- Servidor de revisión en marcha: `python app.py` → http://127.0.0.1:5000/
+  (`/servicios` responde 200).
 
 ## Decisiones (y por qué)
 - **Sin SQLite hasta que una HU lo pida**: contenido en `consultorio/content/`
   (constitución #1); `persistence/` se crea con la primera HU con BD.
 - **Spec 001/002 con textos literales contractuales** (Q8): cambiar un copy obliga a PR
   de spec primero; `tests/expected_content.py` es su espejo.
-- **Rutas placeholder** (Q1): ahora solo `/servicios`, `/articulos`, `/contacto`,
-  `/citas` responden «Sección en construcción»; `/nosotros` la sustituyó (D11).
+- **Rutas placeholder** (Q1): ahora solo `/articulos`, `/contacto`, `/citas` responden
+  «Sección en construcción»; `/nosotros` (HU-002) y `/servicios` (HU-003) las
+  sustituyeron.
 - **Sin botón CTA en el hero**; «Agendar cita» vive solo en el menú.
 - **Todos los párrafos justificados y sin guiones** (regla permanente del usuario,
   2026-10-07): `justify` + `hyphens: none`, ajustados al cajón.
@@ -56,5 +62,6 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-002 cerrada (aceptada 2026-10-07). Siguiente: **HU-003 (Servicios)** — spec y
-  plan primero (regla de oro SDD).
+- HU-003 en evidencia (QA PASS 2026-10-08): falta **push de la evidencia y
+  aceptación de la usuaria** (`qa-hu-003.md` checkbox). Después: siguiente HU según
+  prioridad (spec y plan primero, regla de oro SDD).
