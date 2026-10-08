@@ -23,15 +23,16 @@ aporte.
   `5be6b48` CSS, tests en `18f5a85`/`5b5dbdb`/`249dae6`/`6d4a5f4`, `6f2a9c4`
   regresión, `6992364`+`d659139` evidencia/imágenes; cierre de aceptación en
    `qa-hu-003.md`. Mergeado a `main` (`bf2533d`) antes de crear la rama actual.
-- **HU-016 (Spec 016) + enmienda de identidad IMPLEMENTADAS, en espera de
-  aceptación** (2026-10-08, rama `feature/identidad-buscador`): nombre
+- **HU-016 (Spec 016) + enmienda de identidad ACEPTADAS y CERRADAS**
+  (2026-10-08, rama `feature/identidad-buscador`): nombre
   **«Carolina Gómez»** en todo el sitio, cabecera con logotipo
   `hero-contenidas.png` + nombre, hero con `hero-presentacion.png` (380×511,
   marco elíptico 50 %), tipografía **Open Sans** (Google Fonts por `@import`),
   y **buscador** `GET /buscar` (etiqueta oculta, D9; cabecera responsive
-  768-1199, D10). Commits: `d0e2d4c` docs, `ed36013` feat, `f53282d` tests;
-  evidencia en `docs/evidencias/hu-016/qa-hu-016.md` (veredicto PASS, sin PNG
-  por Q6). Specs/plans 001-003 enmendados; `docs/design-identity.md` nuevo.
+  768-1199, D10). Commits: `d0e2d4c` docs, `ed36013` feat, `f53282d` tests,
+  `2c1c146` evidencia+memoria; veredicto **PASS** en
+  `docs/evidencias/hu-016/qa-hu-016.md` (aceptación 2026-10-08, sin PNG por Q6).
+  Specs/plans 001-003 enmendados; `docs/design-identity.md` nuevo.
 - Tests: **74 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
   pytest 9.1.1 (63 previos de HU-001/002/003 + 11 nuevos TC-016-001..011).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
@@ -84,7 +85,6 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-016 implementada y en verde (74 PASS); **falta aceptación de la usuaria**
-  (checkbox de `qa-hu-016.md`) y, al comenzar la siguiente HU, **merge
+- HU-016 **cerrada** (aceptada 2026-10-08). Al comenzar la siguiente HU: **merge
   `feature/identidad-buscador` → `main`** y crear su rama desde `main` (Q4/T1).
 - Preguntas abiertas de HU-016: ninguna (Q1-Q6 cerradas en el plan 016).

@@ -104,8 +104,8 @@ DevTools Protocol (`Emulation.setDeviceMetricsOverride`, puerto 9444):
 - [x] Demo manual de las 3 consultas + verificación visual 1280/1100/900/375.
 - [x] Evidencia QA documentada (este documento, sin PNG por Q6).
 - [x] Commits por fase y `MEMORY.md` actualizado.
-- [ ] Push verificado contra `origin` (se registra al cerrar).
-- [ ] Aceptación de la HU (checkbox de abajo).
+- [x] Push verificado contra `origin` (rama sincronizada en `2c1c146`).
+- [x] Aceptación de la HU (checkbox de abajo).
 
 ## Veredicto
 
@@ -113,9 +113,10 @@ DevTools Protocol (`Emulation.setDeviceMetricsOverride`, puerto 9444):
 completa de RF-1..RF-5, RNF-1/RNF-2 y casos límite de la Spec 016, enmienda de
 identidad de la Spec 001 verificada (nombre, hero, cabecera, Open Sans) y demo
 manual de las 3 consultas con evidencia visual documentada.
+HU aceptada por la usuaria el 2026-10-08: **HU-016 CERRADA**.
 
 ---
 
 ## Aceptación de la HU
 
-- [ ] Aceptada por la usuaria
+- [x] Aceptada por la usuaria el 08/10/2026
