@@ -32,9 +32,27 @@ aporte.
   768-1199, D10). Commits: `d0e2d4c` docs, `ed36013` feat, `f53282d` tests,
   `2c1c146` evidencia+memoria; veredicto **PASS** en
   `docs/evidencias/hu-016/qa-hu-016.md` (aceptación 2026-10-08, sin PNG por Q6).
-  Specs/plans 001-003 enmendados; `docs/design-identity.md` nuevo.
-- Tests: **74 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask 3.1.3 +
-  pytest 9.1.1 (63 previos de HU-001/002/003 + 11 nuevos TC-016-001..011).
+  Specs/plans 001-003 enmendados; `docs/design-identity.md` nuevo. Mergeada a
+  `main` (`fac427d`).
+- **HU-004 (Spec 004) IMPLEMENTADA Y QA PASS — PENDIENTE DE ACEPTACIÓN**
+  (2026-10-09, rama `feature/hu-004` desde `main`): flujo de reserva en
+  `/citas` — formulario de 8 campos, disponibilidad en vivo
+  (`GET /citas/horarios` + `availability.js`), alta con PRG (303 →
+  `/citas/confirmada/<id>`), estado inicial **«Pendiente»** (`pending`).
+  **Primera persistencia del proyecto**: `consultorio/persistence/` con SQLite
+  stdlib, tabla `appointments` (11 columnas) e índice **`UNIQUE (service,
+  date, time)`**; `data/consultorio.db` en `.gitignore`; tests con BD temporal
+  por fixture. 14 slots 30 min (08:00–11:30 y 14:00–16:30), solo lun–vie,
+  documento y celular **solo dígitos** (enmienda de la usuaria 2026-10-09).
+  Spec 004 enmendada (dudas Q1/Q2 cerradas + literales fijados). Commits:
+  `f68b765` docs, `392227f` contenido, `e8274cf` persistencia, `ef62651`
+  servicio, `7a25fd2` web+JS+CSS, `eb10fc3` tests (27 nuevos), evidencia en el
+  commit siguiente. Veredicto **PASS** en
+  `docs/evidencias/hu-004/qa-hu-004.md`; capturas `escritorio-1280.png`
+  (1280×1488) y `movil-375.png` (375×1728), sin desborde verificado por
+  `scrollWidth`.
+- Tests: **101 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
+  3.1.3 + pytest 9.1.1 (74 previos + 27 nuevos TC-004-001..027).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
   sean el buscador.
 - **Tipografía vigente**: **Open Sans** (18 px base), h1 con `text-wrap: balance` y
@@ -49,8 +67,20 @@ aporte.
   (`/buscar?q=psicología` responde 200).
 
 ## Decisiones (y por qué)
-- **Sin SQLite hasta que una HU lo pida**: contenido en `consultorio/content/`
-  (constitución #1); `persistence/` se crea con la primera HU con BD.
+- **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
+  stdlib en `consultorio/persistence/` (sin ORM, sin dependencias); BD en
+  `data/consultorio.db` (fuera de git); unicidad en el punto de persistencia.
+- **Spec 001/002 con textos literales contractuales** (Q8): cambiar un copy obliga a PR
+  de spec primero; `tests/expected_content.py` es su espejo. La spec 004 también
+  fija literales (Q9 aprobado y enmendado 2026-10-09: documento y celular solo
+  dígitos).
+- **Rama de HU-004**: `feature/hu-004` nacida de `main` tras merge de
+  `feature/identidad-buscador` (Q6).
+- **Doble comprobación de horario (D9)**: `SELECT` previo + `UNIQUE` → mismo
+  literal `MSG_SLOT_TAKEN` y 0 filas nuevas; la concurrencia avanzada queda para
+  HU-006.
+- **Disponibilidad por `(service, date)`** (D18): coherente con Spec 006 RF-2;
+  HU-005 reutilizará `/citas/horarios` y añadirá el calendario.
 - **Spec 001/002 con textos literales contractuales** (Q8): cambiar un copy obliga a PR
   de spec primero; `tests/expected_content.py` es su espejo.
 - **Rutas placeholder** (Q1): ahora solo `/articulos`, `/contacto`, `/citas` responden
@@ -85,6 +115,8 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-016 **cerrada** (aceptada 2026-10-08). Al comenzar la siguiente HU: **merge
-  `feature/identidad-buscador` → `main`** y crear su rama desde `main` (Q4/T1).
-- Preguntas abiertas de HU-016: ninguna (Q1-Q6 cerradas en el plan 016).
+- HU-004 **implementada, QA PASS** (2026-10-09): **falta la aceptación de la
+  usuaria** (checkbox de `qa-hu-004.md`) para cerrarla y hacer merge a `main`.
+- Servidor de revisión en marcha: http://127.0.0.1:5000/citas
+- HU-005 (validar disponibilidad) puede reutilizar `/citas/horarios`; HU-006
+  se apoya en el `UNIQUE` de HU-004.

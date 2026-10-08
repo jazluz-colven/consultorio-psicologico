@@ -1,4 +1,4 @@
-# Plan 004 — Agendar una cita
+﻿# Plan 004 — Agendar una cita
 
 > Trazabilidad: **HU-004 → Spec 004 (`specs/004_agendar-cita/spec.md`) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs` (Q5).
@@ -484,16 +484,16 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
-- [ ] Enmienda de `specs/004_agendar-cita/spec.md` (§8.1): cerrar las 2 dudas abiertas
+- [x] Enmienda de `specs/004_agendar-cita/spec.md` (§8.1): cerrar las 2 dudas abiertas
       (Q1, Q2) y fijar literales — mensajes de error/éxito, helper de representante,
       `BOOKING_HOURS`, reglas de fecha/día y campos obligatorios (Q7/Q8/Q9) —
       **bloquea la implementación** y requiere petición explícita sobre `specs/`.
 - [x] Aprobación de este `plan.md` y de los literales Q9 por la usuaria
       (2026-10-09).
-- [ ] Merge a `main` y creación de `feature/hu-004` (Q6).
-- [ ] Implementar módulos, persistencia, plantillas, JS y CSS (§1–§5).
-- [ ] Tests (§6) y `python -m pytest -q` en verde (74 actuales + ~27 nuevos).
-- [ ] Evidencia QA (`qa-hu-004.md`, veredicto PASS) y evidencia visual
+- [x] Merge a `main` y creación de `feature/hu-004` (Q6).
+- [x] Implementar módulos, persistencia, plantillas, JS y CSS (§1–§5).
+- [x] Tests (§6) y `python -m pytest -q` en verde (74 actuales + ~27 nuevos).
+- [x] Evidencia QA (`qa-hu-004.md`, veredicto PASS) y evidencia visual
       (`escritorio-1280.png`, `movil-375.png`) con demo sobre el servidor
       (`GET /citas` → 200 y reserva completa).
 - [ ] Commit/Push de la evidencia y actualización de `MEMORY.md`.
