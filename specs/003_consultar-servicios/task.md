@@ -62,7 +62,7 @@
   `python -m pytest tests/test_hu_002.py tests/test_hu_001.py -q` → 0 FAIL
   (la regla de paleta existente sigue pasando).
 
-- [ ] **T10 — Tests de ruta `test_services_routes.py` (plan §6.1, TC-008..012)** `[RF-1..RF-4][CL-3][regresión]`
+- [x] **T10 — Tests de ruta `test_services_routes.py` (plan §6.1, TC-008..012)** `[RF-1..RF-4][CL-3][regresión]`
   200 con h1/nombres, 2 secciones con descripción y beneficios, POST → 405,
   `GET /servicios/<recurso>` → 404 con `errors/404.html`, placeholders restantes 200,
   nav de 6 hrefs → 200.
