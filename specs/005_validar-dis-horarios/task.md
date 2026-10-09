@@ -154,12 +154,15 @@
   extra `dia-lleno-1280.png` (1280×1486, día 6 `is-full`), todas sin desborde;
   `GET /citas` → 200 con servidor en marcha.
 
-- [ ] **T17 — Commits por fase, Push y `MEMORY.md` (plan §8.13)** `[trazabilidad]`
+- [x] **T17 — Commits por fase, Push y `MEMORY.md` (plan §8.13)** `[trazabilidad]`
   Commits separados por fase (spec+plan+task, contenido/espejo, persistencia, servicio,
   web, JS/CSS, tests, evidencia) con mensajes que citan HU-005/Spec 005.
   Hecho cuando: `git status` limpio, `git rev-parse HEAD` = `git rev-parse origin/feature/hu-005`
   y `MEMORY.md` registra HU-005 (estados por día, horas «Ocupado», endpoint
   `/citas/disponibilidad`).
+  **Hecho 2026-10-09**: 11 commits de fase `e92112b`…`accb304` + evidencia/memoria
+  `de2bdf4`; rama publicada `origin/feature/hu-005` con HEAD = remoto; `MEMORY.md`
+  actualizado (bloque HU-005, decisiones y aprendizajes).
 
 - [ ] **T18 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-005/qa-hu-005.md`
