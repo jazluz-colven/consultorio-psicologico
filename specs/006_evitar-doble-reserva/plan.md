@@ -317,6 +317,12 @@ concentra el literal nuevo (espejo único, D11).
 | TC-006-015 | `test_hu_006.py` | **CL-3:** BD temporal cuya tabla `appointments` se crea **sin** el índice (DDL del test) con 2 filas idénticas → el diagnóstico las detecta (valida la política Q1: detectar, no sanear) | RF-6, CL-3 |
 | TC-006-016 | `test_hu_006.py` | **Regresión total:** `python -m pytest -q` → **0 FAIL** con los **118 tests previos** intactos (HU-001/002/003/016/004/005) | todos, finalización |
 
+> **Nota de recuento (2026-10-09, verificada en ejecución)**: TC-006-016 es la propia
+> corrida de la suite, no una función de test; los TC con función son **15**, de modo
+> que el total es **133** (118 previos + 15). La cifra «134» de §4.1/§6.2 y del
+> `task.md` contaba los 16 TC incluyendo la corrida; se corrige aquí sin tocar los
+> criterios: **0 FAIL con los 118 previos intactos** sigue siendo la condición real.
+
 ### 6.2 Pirámide
 
 1. **Unitarias** — `appointment_service.create_booking()` (libre, ocupado, reintento,
