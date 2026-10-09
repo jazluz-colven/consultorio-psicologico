@@ -171,7 +171,7 @@ def test_horarios_json_disponibilidad_y_405(client) -> None:
         f"/citas/horarios?service=nutrition&date={booking_date}"
     )
     assert response.status_code == 200
-    assert response.get_json() == {"available": BOOKING_HOURS}
+    assert response.get_json() == {"available": BOOKING_HOURS, "occupied": []}
     weekend = date.today()
     while weekend.weekday() < 5:
         weekend += timedelta(days=1)
@@ -179,7 +179,7 @@ def test_horarios_json_disponibilidad_y_405(client) -> None:
         f"/citas/horarios?service=nutrition&date={weekend.isoformat()}"
     )
     assert empty.status_code == 200
-    assert empty.get_json() == {"available": []}
+    assert empty.get_json() == {"available": [], "occupied": []}
     missing = client.get("/citas/horarios")
     assert missing.status_code == 400
     assert missing.get_json() == {"error": MSG_INVALID_PARAMS}

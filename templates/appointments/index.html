@@ -78,7 +78,11 @@
                      data-today="{{ today_iso }}"
                      data-selected="{{ values.get('date', selected_date) }}"
                      data-empty-message="{{ hours_empty_message }}"
-                     data-hint="{{ select_date_hint }}">
+                     data-hint="{{ select_date_hint }}"
+                     data-checking="{{ checking_message }}"
+                     data-occupied-label="{{ occupied_label }}"
+                     data-day-no-hours="{{ day_label_no_hours }}"
+                     data-slot-taken="{{ slot_taken_message }}">
                     <div class="appointment__calendar-header">
                         <button class="appointment__calendar-nav" type="button" id="calendar-prev"
                                 aria-label="Mes anterior">&#8249;</button>
@@ -91,6 +95,10 @@
                     </div>
                     <div class="appointment__calendar-grid" id="calendar-grid"></div>
                 </div>
+                <p class="appointment__calendar-legend">
+                    <span class="appointment__legend-item appointment__legend-item--free">{{ legend_free }}</span>
+                    <span class="appointment__legend-item appointment__legend-item--full">{{ legend_full }}</span>
+                </p>
                 {% if errors.get('date') %}<span class="appointment__error">{{ errors['date'] }}</span>{% endif %}
 
                 <fieldset class="appointment__hours-block">
@@ -101,6 +109,13 @@
                             <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}"
                                    {% if values.get('time') == hour %}checked{% endif %}>
                             <span>{{ hour }}</span>
+                        </label>
+                        {% endfor %}
+                        {% for hour in morning_taken %}
+                        <label class="appointment__hour appointment__hour--taken">
+                            <input class="appointment__hour-input" type="radio" disabled>
+                            <span>{{ hour }}</span>
+                            <span class="appointment__hour-badge">{{ occupied_label }}</span>
                         </label>
                         {% endfor %}
                     </div>
@@ -114,6 +129,13 @@
                             <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}"
                                    {% if values.get('time') == hour %}checked{% endif %}>
                             <span>{{ hour }}</span>
+                        </label>
+                        {% endfor %}
+                        {% for hour in afternoon_taken %}
+                        <label class="appointment__hour appointment__hour--taken">
+                            <input class="appointment__hour-input" type="radio" disabled>
+                            <span>{{ hour }}</span>
+                            <span class="appointment__hour-badge">{{ occupied_label }}</span>
                         </label>
                         {% endfor %}
                     </div>
