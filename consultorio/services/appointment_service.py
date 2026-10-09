@@ -1,6 +1,7 @@
 """Booking rules: validate, check availability and register appointments."""
 
 import re
+import sqlite3
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -142,10 +143,13 @@ def create_booking(
         return SLOT_TAKEN
     try:
         return repository.insert_appointment(data, database_path)
-    except Exception as exc:  # UNIQUE (service, date, time) in persistence
-        if "UNIQUE" in str(exc).upper():
-            return SLOT_TAKEN
-        raise
+    except sqlite3.IntegrityError:
+        # UNIQUE (service, date, time) enforced at the persistence point
+        return SLOT_TAKEN
+    except sqlite3.OperationalError:
+        # lock/busy under concurrency: user-facing rejection, never a raw 500
+        return SLOT_TAKEN
+    # any other exception propagates (a real 500 must not be silenced)
 
 
 def is_valid_iso_date(raw_date: str) -> bool:

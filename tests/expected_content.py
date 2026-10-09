@@ -231,3 +231,8 @@ CALENDAR_LEGEND_FREE = "Con horarios disponibles"
 CALENDAR_LEGEND_FULL = "Sin horarios disponibles"
 
 DAY_LABEL_NO_HOURS = ", sin horarios disponibles"
+
+# --- HU-006: Evitar doble reserva (espejo único de la spec 006) ---
+# MSG_SLOT_TAKEN (spec 004) y MSG_OCCUPIED_HOUR (spec 005) se reutilizan sin cambio.
+
+MSG_SUBMITTING = "Registrando tu cita…"

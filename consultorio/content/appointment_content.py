@@ -64,3 +64,6 @@ MSG_CHECKING_HOURS: str = "Consultando disponibilidad…"
 CALENDAR_LEGEND_FREE: str = "Con horarios disponibles"
 CALENDAR_LEGEND_FULL: str = "Sin horarios disponibles"
 DAY_LABEL_NO_HOURS: str = ", sin horarios disponibles"
+
+# HU-006: submit in progress (spec 006 «Literales y contrato»)
+MSG_SUBMITTING: str = "Registrando tu cita…"
