@@ -2,13 +2,16 @@
 
 > Trazabilidad: **HU-006 → Spec 006 (`specs/006_evitar-doble-reserva/spec.md`) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs`.
-> Etapa actual: **PLAN PROPUESTO — decisiones Q1–Q5 APROBADAS** (2026-10-09): política
-> de duplicados históricos (prevenir + detectar), mecanismo RF-5 (POST de formulario
-> con estado en el botón), literal «Registrando tu cita…», reintento rechazado con
-> `MSG_SLOT_TAKEN` y rama `feature/hu-006` desde `main`.
-> **HU-005 ACEPTADA (2026-10-09)** → cierre y merge a `main` realizados (§8.0).
+> Etapa actual: **IMPLEMENTACIÓN COMPLETA + QA PASS — PENDIENTE DE ACEPTACIÓN**
+> (2026-10-09). Decisiones Q1–Q5 aprobadas: política de duplicados históricos
+> (prevenir + detectar), mecanismo RF-5 (POST de formulario con estado en el
+> botón), literal «Registrando tu cita…», reintento rechazado con `MSG_SLOT_TAKEN`
+> y rama `feature/hu-006` desde `main`.
+> **HU-005 ACEPTADA Y MERGEADA (2026-10-09, `8463087`)** → §8.0 cumplido.
 > **Spec 006 ENMENDADA (2026-10-09)** (§8.1, bloqueante cumplido).
-> Rama objetivo: **`feature/hu-006` desde `main`** (Q5, D10) — **creada 2026-10-09**.
+> **Rama `feature/hu-006` creada y sincronizada** (HEAD =
+> `origin/feature/hu-006`); `python -m pytest -q` → **133 PASS / 0 FAIL**; QA
+> **PASS** en `docs/evidencias/hu-006/qa-hu-006.md`; solo queda T17 (aceptación).
 
 ---
 
@@ -389,11 +392,16 @@ Evidencia visual: docs/evidencias/hu-006/escritorio-1280.png, movil-375.png, bot
       petición explícita de la usuaria («Iniciar las tareas» sobre el task.md aprobado);
       verificada con 118 PASS.**
 - [x] Creación de `feature/hu-006` desde `main` (Q5) — **2026-10-09**.
-- [ ] Espejo `tests/expected_content.py` + implementación de §1–§5.
-- [ ] Tests (§6) y `python -m pytest -q` en verde (118 actuales + ~16 nuevos).
-- [ ] Evidencia QA (`qa-hu-006.md`, veredicto PASS) y evidencia visual (capturas CDP
-      1280/375, incluido el botón en curso) con la demo antes-durante-después.
-- [ ] Commit/Push por fases y actualización de `MEMORY.md`.
+- [x] Espejo `tests/expected_content.py` + implementación de §1–§5 — **2026-10-09
+      (`6233f9d`, `afa4423`).**
+- [x] Tests (§6) y `python -m pytest -q` en verde — **2026-10-09: 133 PASS / 0 FAIL**
+      (118 previos intactos + 15 funciones nuevas; TC-006-016 es la corrida de la
+      suite, ver nota de recuento en §6.1).**
+- [x] Evidencia QA (`qa-hu-006.md`, veredicto **PASS**) y evidencia visual (capturas
+      CDP 1280/375, incluido el botón en curso) con la demo antes-durante-después —
+      **2026-10-09 (`d028c0b`).**
+- [x] Commit/Push por fases y actualización de `MEMORY.md` — **2026-10-09 (5 commits;
+      HEAD = `origin/feature/hu-006`).**
 - [ ] Aceptación de la HU (checkbox del informe QA).
 
 ---
