@@ -750,6 +750,16 @@ a:focus {
     background-color: var(--color-text);
 }
 
+.appointment__submit:disabled {
+    background-color: var(--color-support);
+    color: var(--color-text);
+    cursor: not-allowed;
+}
+
+.appointment__form[aria-busy="true"] {
+    cursor: wait;
+}
+
 .appointment__back {
     margin: 2rem 0 0;
 }

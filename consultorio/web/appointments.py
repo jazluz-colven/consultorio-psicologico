@@ -24,6 +24,7 @@ from consultorio.content.appointment_content import (
     MSG_OCCUPIED_HOUR,
     MSG_SELECT_DATE_HINT,
     MSG_SLOT_TAKEN,
+    MSG_SUBMITTING,
     STATUS_PENDING_LABEL,
 )
 from consultorio.content.services_catalog import SERVICES_CATALOG
@@ -104,6 +105,7 @@ def _render_form(values: dict[str, str], errors: dict[str, str], status: int = 2
             checking_message=MSG_CHECKING_HOURS,
             day_label_no_hours=DAY_LABEL_NO_HOURS,
             slot_taken_message=MSG_SLOT_TAKEN,
+            submitting_message=MSG_SUBMITTING,
             values=values,
             errors=errors,
         ),

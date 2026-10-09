@@ -343,8 +343,30 @@
     renderCalendar();
   }
 
+  function initBookingSubmit() {
+    var form = document.querySelector(".appointment__form");
+    if (!form) {
+      return;
+    }
+    var button = form.querySelector(".appointment__submit");
+    var submitting = false;
+    form.addEventListener("submit", function (event) {
+      if (submitting) {
+        event.preventDefault();
+        return;
+      }
+      submitting = true;
+      if (button) {
+        button.disabled = true;
+        button.textContent = dataAttr("data-submitting");
+      }
+      form.setAttribute("aria-busy", "true");
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCalendar();
+    initBookingSubmit();
 
     var serviceField = document.getElementById("service");
     if (serviceField) {
