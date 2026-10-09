@@ -59,11 +59,11 @@ aporte.
    «Agendar cita» pasan a la columna izquierda** (Servicio sobre «Datos del
    paciente»; helper + botón debajo de los campos), solo reposición en la
    plantilla. **Mergeada a `main` (ff → `b793686`).**
-- Tests: **133 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
-  3.1.3 + pytest 9.1.1 (118 previos de HU-001/002/003/004/005/016 + 15 nuevos
-  TC-006-001..015; **TC-006-016 es la corrida de la suite, no una función**).
-  TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
-  sean el buscador.
+- Tests: **134 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
+  3.1.3 + pytest 9.1.1 (118 previos de HU-001/002/003/004/005/016 + 16 nuevos
+  TC-006-001..015 y TC-006-017; **TC-006-016 es la corrida de la suite, no una
+  función**). TC-001-004 acotado al `<figure>` del hero y TC-001-008 a
+  formularios que no sean el buscador.
 - **HU-005 (Spec 005) ACEPTADA Y CERRADA** (2026-10-09, rama `feature/hu-005`):
   validar
   disponibilidad de horarios. Spec+plan+task enmendados/aprobados (`e92112b`,
@@ -82,10 +82,16 @@ aporte.
   (`e6a8f4f`), literal `MSG_SUBMITTING` «Registrando tu cita…»,
   `create_booking()` endurecido (`sqlite3.IntegrityError`/`OperationalError` →
   `SLOT_TAKEN`; sin `except Exception`), guard JS de envío + CSS `:disabled` /
-  `[aria-busy]`, `data-submitting` en la plantilla y 15 tests nuevos (`6233f9d`,
-  `afa4423`). Veredicto **PASS** en `docs/evidencias/hu-006/qa-hu-006.md`
-  (16/16 TC, suite 133/133, demo antes-durante-después con el botón capturado en
-  «Registrando tu cita…»; capturas CDP 1280/375 medidas por IHDR).
+  `[aria-busy]`, `data-submitting` en la plantilla y 16 tests nuevos (`6233f9d`,
+  `afa4423`). **Enmienda 2 (Q6/D13, 2026-10-09)** tras la observación de la
+  usuaria («El mensaje de «Registrando tu cita…» es muy rápido»): el estado se ve
+  al menos **700 ms** (`SUBMITTING_MIN_MS = 700`) — el primer envío hace
+  `preventDefault()` (sin eso el navegador navega ya y el retardo no sirve) y
+  `form.submit()` a los 700 ms; TC-006-017. Veredicto **PASS** en
+  `docs/evidencias/hu-006/qa-hu-006.md` (17/17 TC, suite 134/134; clic→POST
+  medido en el reloj de la página: **728 ms**; capturas CDP 1280/375 medidas por
+  IHDR). BD de desarrollo: filas 25–28 = pruebas manuales de la usuaria; fila 34 =
+  demo de la evidencia; se limpiaron las filas 29–33 de ejecuciones intermedias.
   **Pendiente: T17 (aceptación de la usuaria) y merge a `main`.**
 - **Tipografía vigente**: **Open Sans** (18 px base), h1 con `text-wrap: balance` y
   **justificación generalizada** (`text-align: justify` + `hyphens: none`).
@@ -158,6 +164,20 @@ aporte.
   pausada el renderer queda en estado provisional y **`Runtime.evaluate` se
   bloquea** (no evaluar; capturar el screenshot directamente). Además, el clic
   debe enviarse **sin aguardar** la respuesta de `Runtime.evaluate`.
+- **Retener el envío de un formulario exige `preventDefault()` en el primer
+  `submit`** (HU-006/D13): sin él el navegador navega ya y un `setTimeout(…
+  form.submit())` posterior no garantiza nada; con él, el estado en curso se ve
+  el tiempo que se decida y `form.submit()` (que no re-dispara el evento) envía
+  después. Medir el intervalo clic→POST **en el reloj de la página**
+  (instrumentar `HTMLFormElement.prototype.submit` y leer el `console.log` por
+  CDP): correlacionar el reloj mono de CDP con `Date.now()` de Node es impreciso.
+- **En `/citas` la fecha la gobierna el clic del calendario** (`selectDate`), no
+  un `change` del input `#booking-date`: fijar `input.value` desde un script no
+  dispara `refreshHours()` y la vista de horas queda de otra fecha. Y en esperas
+  de DOM contra el backend, exigir **igualdad exacta** con el JSON de
+  `/citas/horarios` (p. ej. lista de ocupadas), no «algún elemento taken»: las
+  vistas previas/retrasadas de otra fecha también lo cumplen (incidente de
+  evidencia HU-006).
 - **Reservas de demostración en `data/consultorio.db`**: las demos HU-004/005/006
   dejan filas reales (ids 1–4 y 24); si un script de evidencia falla a medias,
   eliminar sus filas antes de reintentar (incidente HU-006: ids 21–23).
@@ -173,8 +193,8 @@ aporte.
 
 ## Próximos pasos
 - **HU-006: T17 — pedir la aceptación de la usuaria** sobre
-  `docs/evidencias/hu-006/qa-hu-006.md` (veredicto PASS, 16/16 TC, suite
-  133/133); al aceptarla: marcar el checkbox de aceptación, merge a `main` y
-  actualizar esta memoria.
+  `docs/evidencias/hu-006/qa-hu-006.md` (veredicto PASS, 17/17 TC, suite
+  134/134; estado en curso visible ≥ 700 ms tras la enmienda 2); al aceptarla:
+  marcar el checkbox de aceptación, merge a `main` y actualizar esta memoria.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).
