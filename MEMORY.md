@@ -53,12 +53,12 @@ aporte.
   `f68b765` docs, `392227f` contenido, `e8274cf` persistencia, `ef62651`
   servicio, `7a25fd2` web+JS+CSS, `eb10fc3` tests, `cee1528` evidencia+memoria,
   y los commits de D19 en el mismo orden de fases. Veredicto **PASS** en
-  `docs/evidencias/hu-004/qa-hu-004.md`; capturas `escritorio-1280.png`
-  (1280×1433) y `movil-375.png` (375×2569), sin desborde verificado por
-  `scrollWidth`. Ajuste posterior (2026-10-09): **Servicio, helper y botón
-  «Agendar cita» pasan a la columna izquierda** (Servicio sobre «Datos del
-  paciente»; helper + botón debajo de los campos), solo reposición en la
-  plantilla.
+   `docs/evidencias/hu-004/qa-hu-004.md`; capturas `escritorio-1280.png`
+   (1280×1433) y `movil-375.png` (375×2569), sin desborde verificado por
+   `scrollWidth`. Ajuste posterior (2026-10-09): **Servicio, helper y botón
+   «Agendar cita» pasan a la columna izquierda** (Servicio sobre «Datos del
+   paciente»; helper + botón debajo de los campos), solo reposición en la
+   plantilla. **Mergeada a `main` (ff → `b793686`).**
 - Tests: **102 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
   3.1.3 + pytest 9.1.1 (74 previos + 28 nuevos TC-004-001..028).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
@@ -123,9 +123,9 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-004 **ACEPTADA el 2026-10-09** (incluye D19 y el ajuste de columna
-  izquierda): **falta merge de `feature/hu-004` a `main`** y verificar
-  sincronización.
+- HU-004 **ACEPTADA (2026-10-09) y MERGEADA a `main`** (ff → `b793686`,
+  sincronizada con el remoto; 102 PASS en `main`). HU-004 cerrada.
+- Siguiente HU según prioridad de la usuaria (005/006 u otra).
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-005 (validar disponibilidad) puede reutilizar `/citas/horarios`; HU-006
   se apoya en el `UNIQUE` de HU-004.
