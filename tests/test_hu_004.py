@@ -126,3 +126,65 @@ def test_tc_004_027_fuera_de_alcance_sin_correo_whatsapp_ni_cancelacion(
     services = _main_html(client.get("/servicios").get_data(as_text=True))
     assert "<form" not in services
     assert "<input" not in services
+
+
+def test_tc_004_028_d19_layout_dos_columnas_datepicker_y_bloques_de_horas(
+    client,
+) -> None:
+    html = client.get("/citas").get_data(as_text=True)
+    main = _main_html(html)
+
+    assert 'class="appointment__layout"' in main
+    assert main.count('class="appointment__panel"') == 2
+    assert expected.BOOKING_PATIENT_SECTION_TITLE in main
+    assert expected.BOOKING_SCHEDULE_SECTION_TITLE in main
+
+    assert 'id="booking-calendar"' in main
+    assert re.search(r'id="booking-calendar"[^>]*data-today="\d{4}-\d{2}-\d{2}"', main)
+    assert 'type="date"' not in main
+    assert 'id="calendar-grid"' in main
+    assert 'id="calendar-prev"' in main
+    assert 'id="calendar-next"' in main
+    assert 'name="date"' in main
+
+    assert expected.BOOKING_BLOCK_MORNING in main
+    assert expected.BOOKING_BLOCK_AFTERNOON in main
+    assert main.count('name="time"') == len(expected.BOOKING_HOURS)
+    morning = re.search(
+        r'id="hours-morning">(.*?)</div>', main, re.S
+    )
+    afternoon = re.search(
+        r'id="hours-afternoon">(.*?)</div>', main, re.S
+    )
+    assert morning is not None and afternoon is not None
+    morning_hours = re.findall(r'value="(\d{2}:\d{2})"', morning.group(1))
+    afternoon_hours = re.findall(r'value="(\d{2}:\d{2})"', afternoon.group(1))
+    assert morning_hours == expected.BOOKING_HOURS[:8]
+    assert afternoon_hours == expected.BOOKING_HOURS[8:]
+
+    css = MAIN_CSS.read_text(encoding="utf-8")
+    for rule in (
+        ".appointment__layout",
+        ".appointment__panel",
+        ".appointment__calendar",
+        ".appointment__calendar-grid",
+        ".appointment__calendar-day.is-bookable",
+        ".appointment__calendar-day.is-disabled",
+        ".appointment__calendar-day.is-selected",
+        ".appointment__hours-block",
+        ".appointment__hours-list",
+    ):
+        assert rule in css, rule
+    assert re.search(r"\.appointment__layout\s*\{[^}]*flex-direction:\s*row", css)
+
+    js = AVAILABILITY_JS.read_text(encoding="utf-8")
+    for token in (
+        "booking-calendar",
+        "calendar-grid",
+        "calendar-prev",
+        "calendar-next",
+        "refreshHours",
+        "isBookable",
+        "/citas/horarios",
+    ):
+        assert token in js, token
