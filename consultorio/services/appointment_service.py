@@ -1,7 +1,7 @@
 """Booking rules: validate, check availability and register appointments."""
 
 import re
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from consultorio.content.appointment_content import (
@@ -87,13 +87,50 @@ def validate_booking(data: dict[str, str]) -> dict[str, str]:
     return errors
 
 
-def get_available_hours(
+def get_hours_with_status(
     service: str, booking_date: str, database_path: str | Path
-) -> list[str]:
+) -> list[tuple[str, bool]]:
+    """Ordered (hour, is_free) pairs for a weekday; [] on weekend/past/invalid."""
     if not _is_valid_weekday(booking_date):
         return []
     booked = repository.list_booked_times(service, booking_date, database_path)
-    return [hour for hour in BOOKING_HOURS if hour not in booked]
+    return [(hour, hour not in booked) for hour in BOOKING_HOURS]
+
+
+def get_available_hours(
+    service: str, booking_date: str, database_path: str | Path
+) -> list[str]:
+    return [
+        hour
+        for hour, is_free in get_hours_with_status(
+            service, booking_date, database_path
+        )
+        if is_free
+    ]
+
+
+def get_available_days(
+    service: str, year: int, month: int, database_path: str | Path
+) -> list[str]:
+    """Weekdays >= today in the month with at least one free hour."""
+    first = date(year, month, 1)
+    if month == 12:
+        last = date(year, 12, 31)
+    else:
+        last = date(year, month + 1, 1) - timedelta(days=1)
+    booked_by_date = repository.list_booked_times_by_date(
+        service, first.isoformat(), last.isoformat(), database_path
+    )
+    days: list[str] = []
+    current = first
+    today = date.today()
+    while current <= last:
+        if current.weekday() < 5 and current >= today:
+            booked = booked_by_date.get(current.isoformat(), [])
+            if any(hour not in booked for hour in BOOKING_HOURS):
+                days.append(current.isoformat())
+        current += timedelta(days=1)
+    return days
 
 
 def create_booking(
@@ -114,6 +151,21 @@ def create_booking(
 def is_valid_iso_date(raw_date: str) -> bool:
     try:
         date.fromisoformat(raw_date)
+    except ValueError:
+        return False
+    return True
+
+
+def is_valid_month(raw_month: str) -> bool:
+    """True for a real YYYY-MM month (e.g. 2026-10)."""
+    parts = raw_month.split("-")
+    if len(parts) != 2 or not all(part.isdigit() for part in parts):
+        return False
+    year, month = int(parts[0]), int(parts[1])
+    if not (1 <= month <= 12):
+        return False
+    try:
+        date(year, month, 1)
     except ValueError:
         return False
     return True
