@@ -175,3 +175,32 @@
 - [ ] **T17 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-006/qa-hu-006.md`
   está marcado con fecha y la §7.2 del plan queda íntegramente en `[x]`.
+
+> **Nota**: tras la revisión de T17 la usuaria observó que el estado
+> «Registrando tu cita…» es «muy rápido» → **cambio de requisito (Q6)** que abre
+> T18–T19; T17 se cierra cuando ambas estén terminadas y la HU vuelva a pedirse.
+
+- [x] **T18 — Enmienda 2: duración mínima visible del estado en curso, 700 ms (plan §7.1/§7.2)** `[RF-5][trazabilidad]`
+  Enmendar `spec.md` (contrato RF-5 + duda cerrada Q6) y `plan.md` (§3 pseudocódigo
+  con `setTimeout`, D13, Q6, TC-006-017, nota de recuento 134, §4.1) con el literal
+  de diseño `SUBMITTING_MIN_MS = 700` aprobado por la usuaria.
+  Hecho cuando: la spec y el plan reflejan los 700 ms y TC-006-017 está declarado.
+  **Hecho 2026-10-09**: spec §«Contratos» y §«Dudas cerradas», plan §3/D13/Q6/§6.1/§7.2.
+
+- [x] **T19 — Implementación de los 700 ms + TC-006-017 + evidencia actualizada (plan §3/D13)** `[RF-5][RNF-3]`
+  `availability.js`: constante `SUBMITTING_MIN_MS = 700` y
+  `setTimeout(() => form.submit(), SUBMITTING_MIN_MS)` tras pintar el estado (el
+  guard `submitting` cubre la espera); añadir `test_tc_006_017_...` en
+  `test_hu_006.py`; suite completa en verde; regenerar la captura
+  `boton-en-curso-1280.png` dentro de la ventana de 700 ms (sin `Fetch.requestPaused`)
+  y actualizar `qa-hu-006.md` y `MEMORY.md`.
+  Hecho cuando: `python -m pytest -q` → **134 PASS / 0 FAIL**, TC-006-017 PASS y la
+  evidencia refleja el estado visible ≥ 700 ms.
+  **Hecho 2026-10-09**: añadido `event.preventDefault()` en el primer envío
+  (descubierto durante la implementación: sin él el navegador navegaba ya y el
+  retardo no garantizaba nada — registrado en D13); suite **134 PASS / 0 FAIL**;
+  evidencia CDP con clic real del calendario y espera determinista contra el JSON
+  de `/citas/horarios`; clic→POST medido en el reloj de la página: **728 ms**;
+  capturas regeneradas (`boton-en-curso-1280.png` 1152×1090,
+  `ocupado-1280.png` 1280×1539 con 0 radios seleccionables) y `qa-hu-006.md`
+  actualizado (veredicto **PASS**, 17/17 TC).

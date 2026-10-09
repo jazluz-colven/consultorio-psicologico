@@ -69,7 +69,10 @@ el plan asociado):
 - **Estado en curso**: mientras se procesa el envío, el botón de envío queda
   deshabilitado, muestra `MSG_SUBMITTING` y el formulario marca `aria-busy`; un
   envío repetido mientras está en curso se bloquea en el cliente (sin segundo
-  `POST`). [RF-5]
+  `POST`). El estado permanece visible al menos **700 ms** (`SUBMITTING_MIN_MS`,
+  enmienda 2026-10-09) antes de enviar el formulario; si el servidor tarda más,
+  se mantiene hasta la navegación. La espera mínima queda cubierta por el mismo
+  bloqueo de envíos repetidos. [RF-5]
 
 ## Duplicados históricos (duda cerrada 2026-10-09, usuaria)
 
@@ -89,3 +92,7 @@ el plan asociado):
   índice `UNIQUE` y detectar mediante diagnóstico en los tests, **sin saneamiento
   automático**; cualquier limpieza exige decisión explícita de la usuaria con
   respaldo/auditoría previo. Detalle en «Duplicados históricos».
+- **Duración mínima del estado en curso (cerrada 2026-10-09, usuaria; observación
+  «El mensaje de «Registrando tu cita…» es muy rápido»)**: el estado debe percibirse
+  incluso con respuestas casi instantáneas → mínimo **700 ms** visibles antes de
+  enviar el formulario (`SUBMITTING_MIN_MS = 700`, decisión D13 del plan).

@@ -8,9 +8,11 @@
 > botón), literal «Registrando tu cita…», reintento rechazado con `MSG_SLOT_TAKEN`
 > y rama `feature/hu-006` desde `main`.
 > **HU-005 ACEPTADA Y MERGEADA (2026-10-09, `8463087`)** → §8.0 cumplido.
-> **Spec 006 ENMENDADA (2026-10-09)** (§8.1, bloqueante cumplido).
+> **Spec 006 ENMENDADA (2026-10-09, dos enmiendas)** (§8.1, bloqueantes cumplidos):
+> la 1ª cerró Q1/Q3/Q4 y los contratos RF-4/RF-5; la **2ª (Q6/D13)** fija
+> `SUBMITTING_MIN_MS = 700` (duración mínima visible del estado en curso).
 > **Rama `feature/hu-006` creada y sincronizada** (HEAD =
-> `origin/feature/hu-006`); `python -m pytest -q` → **133 PASS / 0 FAIL**; QA
+> `origin/feature/hu-006`); `python -m pytest -q` → **134 PASS / 0 FAIL**; QA
 > **PASS** en `docs/evidencias/hu-006/qa-hu-006.md`; solo queda T17 (aceptación).
 
 ---
@@ -214,9 +216,12 @@ FUNCTION initBookingSubmit():
             event.preventDefault()          # evita el segundo POST    [RF-5]
             RETURN
         submitting = True
+        event.preventDefault()   # retiene el envío nativo 700 ms     [RF-5]
         button.disabled = True
         button.textContent = dataAttr("data-submitting")   # «Registrando tu cita…»
-        form.setAttribute("aria-busy", "true"))             [RNF-3]
+        form.setAttribute("aria-busy", "true")             [RNF-3]
+        # enmienda Q6/D13: el estado se ve al menos 700 ms
+        setTimeout(() => form.submit(), SUBMITTING_MIN_MS)           [RF-5]
 
 # --- diagnóstico de duplicados (solo en tests; Q1/D8) -----------------
 # SELECT service, date, time FROM appointments
@@ -232,7 +237,7 @@ FUNCTION initBookingSubmit():
 | Comando | Descripción | Salida esperada | Exit code |
 |---|---|---|---|
 | `python app.py` | Arranca el servidor (BD existente) | `Running on http://127.0.0.1:5000` | `0` con Ctrl+C; `1` si falla |
-| `python -m pytest -q` | Suite completa (118 actuales + ~16 nuevos) | `N passed` | `0` / `1` |
+| `python -m pytest -q` | Suite completa (118 previos + 16 nuevos = 134) | `134 passed` | `0` / `1` |
 | `python -m pytest tests/test_hu_006.py -v` | Pruebas de la HU | listado PASS/FAIL | `0` / `1` |
 
 ### 4.2 Contrato HTTP `[RF-1..RF-5]`
@@ -288,6 +293,7 @@ FUNCTION initBookingSubmit():
 | D10 | **Rama `feature/hu-006` desde `main`, tras aceptar y mergear HU-005** (Q5, aceptada 2026-10-09) | AGENTS.md: aislamiento de HU por rama; `main` vuelve a ser el punto de partida con 118 tests en verde | *Rama desde `feature/hu-005`*: arrastra pendientes de cierre. *Seguir en `feature/hu-005`*: mezcla dos HU en una rama | regresión |
 | D11 | **Identificadores en inglés, mensajes en español; espejo único en `expected_content.py` actualizado junto con la enmienda de la spec** | Constitución #6 y AGENTS.md (textos contractuales: spec y espejo cambian juntos; patrón D15/D11) | *Literales solo en código*: rompe la trazabilidad spec → test | todos |
 | D12 | **Tests de concurrencia deterministas**: `threading.Barrier` antes del INSERT, un `test_client` por hilo, BD temporal por fixture, sin `sleep` como sincronización | RF-3 necesita evidencia real de concurrencia; la determinización evita falsos positivos/negativos (pytest-qa) | *Pruebas secuenciales disfrazadas*: no demuestran RF-3. *`sleep` como coordinación*: flaky | RF-3, RF-6 |
+| D13 | **Duración mínima visible del estado en curso: `SUBMITTING_MIN_MS = 700` ms**, constante en el JS: el primer envío hace `preventDefault()` (retiene la navegación), pinta el estado y programa `form.submit()` con `setTimeout`; el guard `submitting` cubre la espera (Q6, enmienda 2026-10-09) | La usuaria percibe el feedback incluso con respuestas casi instantáneas (observación «muy rápido»); sin `preventDefault` el navegador navega de inmediato y el retardo no garantizaría nada; PRG intacto (el envío sigue siendo el POST del formulario); el valor queda fijado como contrato en la spec y verificado por TC-006-017 | *Sin retardo*: el estado no se percibe en local. *Retardo > 1 s*: la reserva parece lenta. *Retardo o fetch en servidor*: reescribe el flujo PRG (D4). *JS deshabilitado*: el form se envía nativamente (mejora progresiva intacta) | RF-5, RNF-3 |
 
 ---
 
@@ -319,12 +325,13 @@ concentra el literal nuevo (espejo único, D11).
 | TC-006-014 | `test_hu_006.py` | Espejo: `expected_content.MSG_SUBMITTING == appointment_content.MSG_SUBMITTING == "Registrando tu cita…"`; `MSG_SLOT_TAKEN` idéntico al de specs 004/005 | RF-4, RF-5 |
 | TC-006-015 | `test_hu_006.py` | **CL-3:** BD temporal cuya tabla `appointments` se crea **sin** el índice (DDL del test) con 2 filas idénticas → el diagnóstico las detecta (valida la política Q1: detectar, no sanear) | RF-6, CL-3 |
 | TC-006-016 | `test_hu_006.py` | **Regresión total:** `python -m pytest -q` → **0 FAIL** con los **118 tests previos** intactos (HU-001/002/003/016/004/005) | todos, finalización |
+| TC-006-017 | `test_hu_006.py` | **RF-5 (enmienda Q6/D13, inspección estática):** `availability.js` con `SUBMITTING_MIN_MS = 700`, `setTimeout` hacia `form.submit()` tras pintar el estado y el guard `submitting` cubriendo la espera | RF-5 |
 
 > **Nota de recuento (2026-10-09, verificada en ejecución)**: TC-006-016 es la propia
-> corrida de la suite, no una función de test; los TC con función son **15**, de modo
-> que el total es **133** (118 previos + 15). La cifra «134» de §4.1/§6.2 y del
-> `task.md` contaba los 16 TC incluyendo la corrida; se corrige aquí sin tocar los
-> criterios: **0 FAIL con los 118 previos intactos** sigue siendo la condición real.
+> corrida de la suite, no una función de test; con la enmienda Q6 los TC con función
+> son **16** (TC-006-001…015 + TC-006-017), de modo que el total es **134**
+> (118 previos + 16). Se corrige aquí sin tocar los criterios: **0 FAIL con los 118
+> previos intactos** sigue siendo la condición real.
 
 ### 6.2 Pirámide
 
@@ -378,6 +385,7 @@ Evidencia visual: docs/evidencias/hu-006/escritorio-1280.png, movil-375.png, bot
 | Q3 | Literal del estado en curso | **«Registrando tu cita…» → `MSG_SUBMITTING`** (D6). Texto contractual: **fijado en la spec 006 y en `expected_content.py` (enmienda 2026-10-09)**. **Aprobada 2026-10-09.** |
 | Q4 | Caso límite «reintento de una misma solicitud» | **Rechazo con `MSG_SLOT_TAKEN` y 0 filas nuevas** (D9). **Aprobada y fijada en la spec 006 — enmienda 2026-10-09.** |
 | Q5 | Rama de trabajo | **`feature/hu-006` desde `main`, tras aceptar y mergear HU-005** (D10). HU-005 **aceptada y mergeada 2026-10-09 (`8463087`)**; `feature/hu-006` **creada 2026-10-09**. |
+| Q6 | Duración mínima visible del estado en curso (observación de la usuaria: «El mensaje de «Registrando tu cita…» es muy rápido») | **`SUBMITTING_MIN_MS = 700` ms visibles antes de enviar el formulario** (D13, enmienda de spec + plan). **Aprobada 2026-10-09.** |
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
@@ -403,6 +411,10 @@ Evidencia visual: docs/evidencias/hu-006/escritorio-1280.png, movil-375.png, bot
 - [x] Commit/Push por fases y actualización de `MEMORY.md` — **2026-10-09 (5 commits;
       HEAD = `origin/feature/hu-006`).**
 - [ ] Aceptación de la HU (checkbox del informe QA).
+- [x] Enmienda 2 (Q6/D13, 2026-10-09): duración mínima visible de **700 ms** del
+      estado en curso — spec + plan enmendados, JS (`SUBMITTING_MIN_MS` +
+      `preventDefault` + `setTimeout`), TC-006-017, suite **134 PASS / 0 FAIL** y
+      evidencia/`qa-hu-006.md` actualizados (clic→POST medido: **728 ms**).
 
 ---
 
