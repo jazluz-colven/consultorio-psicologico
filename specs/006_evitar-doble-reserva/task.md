@@ -159,12 +159,18 @@
   `despues-reserva-1280.png` 1280×900 y `ocupado-1280.png` 1280×1539 (08:30 «Ocupado»,
   0 radios seleccionables). Servidor en marcha → http://127.0.0.1:5000/citas.
 
-- [ ] **T16 — Commits por fase, Push y `MEMORY.md` (plan §8.10)** `[trazabilidad]`
+- [x] **T16 — Commits por fase, Push y `MEMORY.md` (plan §8.10)** `[trazabilidad]`
   Commits separados por fase (spec+plan+task, espejo+contenido, servicio, web+plantilla,
   JS, CSS, tests, evidencia) con mensajes que citan HU-006/Spec 006.
   Hecho cuando: `git status` limpio, `git rev-parse HEAD` = `git rev-parse origin/feature/hu-006`
   y `MEMORY.md` registra HU-006 (IntegrityError/locked → `SLOT_TAKEN`, estado en curso
   «Registrando tu cita…», política de duplicados).
+  **Hecho 2026-10-09**: 5 commits — `e6a8f4f` (spec+plan+task), `6233f9d`
+  (literal + servicio + tests de servicio), `afa4423` (web + plantilla + JS + CSS +
+  tests de ruta/HU), `4a26e5d` (progreso T1–T15) y `d028c0b` (evidencia +
+  `MEMORY.md`). Rama limpia y sincronizada: HEAD = `origin/feature/hu-006` =
+  `d028c0b`. **Desviación**: web/JS/CSS/tests quedaron en un solo commit de
+  fase en lugar de uno por capa (mensajes citan HU-006 y Spec 006).
 
 - [ ] **T17 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-006/qa-hu-006.md`
