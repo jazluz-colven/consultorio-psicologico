@@ -1,17 +1,17 @@
-# Informe QA — HU-004 Agendar una cita
+﻿# Informe QA — HU-004 Agendar una cita
 
 - **HU:** HU-004 — Spec 004 (`specs/004_agendar-cita/spec.md`, enmendada 2026-10-09)
 - **Rama:** `feature/hu-004`
-- **Commit:** `eb10fc3` (suite sobre esta revisión)
+- **Commit:** `a6eb26c` (suite sobre la revisión con modificación D19)
 - **Fecha:** 2026-10-09
-- **Ejecución:** `python -m pytest -q` → **101 PASS / 0 FAIL** (74 previos de
-  HU-001/002/003/016 + 27 nuevos de HU-004)
+- **Ejecución:** `python -m pytest -q` → **102 PASS / 0 FAIL** (74 previos de
+  HU-001/002/003/016 + 28 nuevos de HU-004)
 
 ## Resumen
 
 | Total | PASS | FAIL | BLOCKED |
 |---|---|---|---|
-| 27 | 27 | 0 | 0 |
+| 28 | 28 | 0 | 0 |
 
 ## Casos de prueba
 
@@ -44,13 +44,14 @@
 | TC-004-025 | `python -m pytest tests/test_hu_004.py -v` | PASS | Formulario estrictamente de 8 campos (sin textarea ni campos extra) |
 | TC-004-026 | `python -m pytest tests/test_hu_004.py -v` | PASS | E2E: home → «Agendar cita» → submit → confirmación con «Pendiente» |
 | TC-004-027 | `python -m pytest tests/test_hu_004.py -v` | PASS | Fuera de alcance: sin textos de correo/WhatsApp/cancelación/n8n; portada y `/servicios` sin `<form>` |
+| TC-004-028 | `python -m pytest tests/test_hu_004.py -v` | PASS | D19: layout 2 columnas, datepicker propio (`#booking-calendar` sin `type="date"`), horas en fieldsets Mañana/Tarde con radios; CSS y JS con calendario |
 
 ## Regresión
 
 | Suite | Resultado |
 |---|---|
 | HU-001/002/003/016 (74 tests previos) | PASS (0 FAIL, sin relajar aserciones) |
-| `python -m pytest -q` (101 tests) | **101 PASS / 0 FAIL** |
+| `python -m pytest -q` (102 tests) | **102 PASS / 0 FAIL** |
 
 ## Demo manual (servidor `python app.py`, 2026-10-09)
 
@@ -70,12 +71,26 @@ Recorrido del flujo completo contra `http://127.0.0.1:5000`:
    por `(service, date)`; Psicología Integral conserva sus 14 horas mientras
    Psiconutrición muestra 13. ✔
 
+### Modificación visual D19 (2026-10-09)
+
+1. `GET /citas` → **200**; en escritorio se ven las 2 columnas «Datos del
+   paciente» ‖ «Fecha y hora» con datepicker y los bloques Mañana/Tarde. ✔
+2. CDP: calendario de octubre con 16 días agendables (lun–vie ≥ hoy)
+   diferenciados, 15 deshabilitados (pasados + fines de semana), botón de mes
+   anterior deshabilitado en el mes actual. ✔
+3. CDP: cambiar servicio a Psiconutrición + clic en día 2026-10-14 →
+   `booking-date` = `2026-10-14`, fetch `/citas/horarios` → 7+6 horas (la 09:00
+   ocupada desaparece) y radio marcado correctamente. ✔
+4. `POST /citas` (2026-10-15 09:30) → **303** → `GET /citas/confirmada/3` →
+   **200**; el JSON de 2026-10-15 ya no incluye `09:30`. ✔
+5. Sin desborde: `scrollWidth` = `clientWidth` (1280 y 375). ✔
+
 ## Evidencia visual
 
 | Fichero | Medidas programáticas | Verificación |
 |---|---|---|
-| `docs/evidencias/hu-004/escritorio-1280.png` | 1280×1488 | CDP `Emulation.setDeviceMetricsOverride`; `scrollWidth` = 1280 (sin desborde) |
-| `docs/evidencias/hu-004/movil-375.png` | 375×1728 | CDP; `scrollWidth` = 375 (sin desborde) |
+| `docs/evidencias/hu-004/escritorio-1280.png` | 1280×1681 | CDP `Emulation.setDeviceMetricsOverride`; `scrollWidth` = 1280 (sin desborde) |
+| `docs/evidencias/hu-004/movil-375.png` | 375×2542 | CDP; `scrollWidth` = 375 (sin desborde) |
 
 ## Defectos encontrados
 
@@ -88,14 +103,17 @@ Ninguno.
 | Spec 004 enmendada (dudas Q1/Q2 cerradas, literales fijados) | ✔ commit `f68b765` |
 | Plan 004 (Q1–Q10 decididas) | ✔ commit `f68b765` |
 | `task.md` T1–T18 | ✔ |
+| `task.md` T20 (modificación visual D19) | ✔ |
 | Commits por fase (docs, contenido, persistencia, servicio, web, tests) | ✔ `f68b765`…`eb10fc3` |
+| Commits de la modificación D19 (docs, feat, test) | ✔ `f43902b`, `9948822`, `a6eb26c` |
 | Servidor de revisión | `python app.py` → http://127.0.0.1:5000/citas |
 
 ## Veredicto
 
-**PASS** — 27/27 TC en verde, 101/101 de la suite, regresión intacta y demo
-manual del flujo completo verificada.
+**PASS** — 28/28 TC en verde, 102/102 de la suite, regresión intacta, demo
+manual del flujo completo y de la modificación D19 verificadas.
 
 ## Aceptación de la HU
 
 - [ ] **ACEPTADA por la usuaria** (fecha: ____-__-__)
+
