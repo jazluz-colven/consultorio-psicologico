@@ -59,8 +59,9 @@ aporte.
    «Agendar cita» pasan a la columna izquierda** (Servicio sobre «Datos del
    paciente»; helper + botón debajo de los campos), solo reposición en la
    plantilla. **Mergeada a `main` (ff → `b793686`).**
-- Tests: **118 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
-  3.1.3 + pytest 9.1.1 (102 previos + 16 nuevos TC-005-001..016).
+- Tests: **133 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
+  3.1.3 + pytest 9.1.1 (118 previos de HU-001/002/003/004/005/016 + 15 nuevos
+  TC-006-001..015; **TC-006-016 es la corrida de la suite, no una función**).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
   sean el buscador.
 - **HU-005 (Spec 005) ACEPTADA Y CERRADA** (2026-10-09, rama `feature/hu-005`):
@@ -75,7 +76,17 @@ aporte.
   (`accb304`). Veredicto **PASS** en `docs/evidencias/hu-005/qa-hu-005.md`
   (16/16 TC, demo manual 16/16, capturas `escritorio-1280.png` 1280×1539,
   `movil-375.png` 375×2726 y `dia-lleno-1280.png` 1280×1486).
-  **Aceptada por la usuaria el 2026-10-09 (T18) y mergeada a `main`.**
+  **Aceptada por la usuaria el 2026-10-09 (T18) y mergeada a `main` (`8463087`).**
+- **HU-006 (Spec 006) IMPLEMENTADA — QA PASS, PENDIENTE DE ACEPTACIÓN** (2026-10-09,
+  rama `feature/hu-006` creada desde `main`): evitar doble reserva. Spec+plan+task
+  (`e6a8f4f`), literal `MSG_SUBMITTING` «Registrando tu cita…»,
+  `create_booking()` endurecido (`sqlite3.IntegrityError`/`OperationalError` →
+  `SLOT_TAKEN`; sin `except Exception`), guard JS de envío + CSS `:disabled` /
+  `[aria-busy]`, `data-submitting` en la plantilla y 15 tests nuevos (`6233f9d`,
+  `afa4423`). Veredicto **PASS** en `docs/evidencias/hu-006/qa-hu-006.md`
+  (16/16 TC, suite 133/133, demo antes-durante-después con el botón capturado en
+  «Registrando tu cita…»; capturas CDP 1280/375 medidas por IHDR).
+  **Pendiente: T17 (aceptación de la usuaria) y merge a `main`.**
 - **Tipografía vigente**: **Open Sans** (18 px base), h1 con `text-wrap: balance` y
   **justificación generalizada** (`text-align: justify` + `hyphens: none`).
   Decisiones en `docs/design-typography.md` (sección «Decisión vigente — Open Sans»);
@@ -140,6 +151,16 @@ aporte.
 - **Nunca lanzar dos capturas CDP en paralelo**: compiten sobre el mismo
   target/puerto 9444 (incidente HU-005: mes y medidas cruzados); ejecutarlas
   secuencialmente y re-medir `scrollHeight` hasta que se estabilice.
+- **Chrome headless: `Network.emulateNetworkConditions` no retrasa el `POST`**
+  (incidente HU-006): para capturar el estado «en curso» usar
+  **`Fetch.requestPaused`** (`requestStage: "Request"`), comparar el frame
+  antes/después y liberar con `Fetch.continueRequest`; mientras la petición está
+  pausada el renderer queda en estado provisional y **`Runtime.evaluate` se
+  bloquea** (no evaluar; capturar el screenshot directamente). Además, el clic
+  debe enviarse **sin aguardar** la respuesta de `Runtime.evaluate`.
+- **Reservas de demostración en `data/consultorio.db`**: las demos HU-004/005/006
+  dejan filas reales (ids 1–4 y 24); si un script de evidencia falla a medias,
+  eliminar sus filas antes de reintentar (incidente HU-006: ids 21–23).
 - **`/citas` arranca con servicio `""`** (placeholder): `loadDayStates()` y
   `refreshHours()` no hacen fetch hasta elegir servicio; en la demo manual
   primero `select.value = … + dispatchEvent(change)` y después clic en el día.
@@ -151,8 +172,9 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **HU-006 (Spec 006, evitar doble reserva) EN EJECUCIÓN**: `plan.md` aprobado
-  (Q1–Q5, 2026-10-09) y `task.md` con T1–T17; flujo: cierre HU-005 → rama
-  `feature/hu-006` → enmienda de la spec → código/tests → evidencia.
+- **HU-006: T17 — pedir la aceptación de la usuaria** sobre
+  `docs/evidencias/hu-006/qa-hu-006.md` (veredicto PASS, 16/16 TC, suite
+  133/133); al aceptarla: marcar el checkbox de aceptación, merge a `main` y
+  actualizar esta memoria.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).
