@@ -57,3 +57,10 @@ BOOKING_HELPER: str = (
     "representante con su documento; si es extranjero, puede usar "
     "pasaporte o cédula de extranjería."
 )
+
+# HU-005: availability states (spec 005 «Literales y contrato»)
+MSG_OCCUPIED_HOUR: str = "Ocupado"
+MSG_CHECKING_HOURS: str = "Consultando disponibilidad…"
+CALENDAR_LEGEND_FREE: str = "Con horarios disponibles"
+CALENDAR_LEGEND_FULL: str = "Sin horarios disponibles"
+DAY_LABEL_NO_HOURS: str = ", sin horarios disponibles"

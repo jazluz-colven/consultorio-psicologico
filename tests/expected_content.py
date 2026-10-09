@@ -219,3 +219,15 @@ BOOKING_HELPER = (
     "representante con su documento; si es extranjero, puede usar "
     "pasaporte o cédula de extranjería."
 )
+
+# --- HU-005: Validar disponibilidad de horarios (espejo único de la spec 005) ---
+
+MSG_OCCUPIED_HOUR = "Ocupado"
+
+MSG_CHECKING_HOURS = "Consultando disponibilidad…"
+
+CALENDAR_LEGEND_FREE = "Con horarios disponibles"
+
+CALENDAR_LEGEND_FULL = "Sin horarios disponibles"
+
+DAY_LABEL_NO_HOURS = ", sin horarios disponibles"
