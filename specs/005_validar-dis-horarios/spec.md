@@ -33,7 +33,36 @@ El paciente necesita seleccionar únicamente horarios que puedan ser reservados.
 - Notificaciones posteriores a la reserva.
 
 ## Criterios de finalización
-Todos los RF con test en verde, incluida actualización tras reserva y cambios de fecha/servicio, más demo manual del calendario.
+Todos los RF con test en verde, incluida actualización tras reserva y cambios de fecha/servicio, más demo manual del calendario. El contrato de datos y los literales de la sección siguiente forman parte de la verificación.
 
-## Dudas abiertas
-- [NECESITA ACLARACIÓN] Confirmar si la disponibilidad depende exclusivamente de servicio + fecha + hora o de reglas adicionales.
+## Literales y contrato (enmienda 2026-10-09, aprobada por la usuaria)
+
+Los literales de esta tabla son contrato (AGENTS.md «Textos contractuales»): sus
+claves técnicas viven en `consultorio/content/appointment_content.py` y su espejo en
+`tests/expected_content.py`, y cambian junto con esta spec en el mismo PR.
+
+| Literal | Texto | RF |
+|---|---|---|
+| `MSG_NO_HOURS` (reutilizado; fijado en Spec 004 como base de esta HU) | No hay horarios disponibles para esta fecha. | RF-4 |
+| `MSG_OCCUPIED_HOUR` | Ocupado | RF-2, RF-6 |
+| `MSG_CHECKING_HOURS` | Consultando disponibilidad… | RNF (actualización perceptible) |
+| `CALENDAR_LEGEND_FREE` | Con horarios disponibles | RF-6 |
+| `CALENDAR_LEGEND_FULL` | Sin horarios disponibles | RF-4, RF-6 |
+| `DAY_LABEL_NO_HOURS` | «, sin horarios disponibles» (sufijo del aria-label de un día sin horarios libres) | RF-6 |
+
+Contrato de datos que soporta los RF (el detalle de rutas, métodos y códigos vive en
+el plan asociado):
+
+- `GET /citas/horarios?service=…&date=…` → JSON con `available` (horas libres) y
+  `occupied` (horas ya reservadas) para la terna servicio+fecha.
+  [RF-1, RF-2, RF-5, RF-6]
+- `GET /citas/disponibilidad?service=…&month=YYYY-MM` → JSON con `days` (días
+  laborables ≥ hoy con al menos una hora libre para el servicio; lista vacía si no
+  hay ninguno). [RF-1, RF-4]
+
+## Dudas cerradas
+
+- **Regla de disponibilidad (cerrada 2026-10-09, usuaria)**: la disponibilidad
+  depende exclusivamente de la combinación `servicio + fecha + hora`; no se aplican
+  reglas adicionales (cupos por día, anticipación máxima, etc.). Coherente con la
+  Spec 006 RF-2 («la misma combinación de servicio, fecha y hora»).
