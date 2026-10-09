@@ -63,7 +63,8 @@ aporte.
   3.1.3 + pytest 9.1.1 (102 previos + 16 nuevos TC-005-001..016).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
   sean el buscador.
-- **HU-005 (Spec 005) EN CIERRE — rama `feature/hu-005`** (2026-10-09): validar
+- **HU-005 (Spec 005) ACEPTADA Y CERRADA** (2026-10-09, rama `feature/hu-005`):
+  validar
   disponibilidad de horarios. Spec+plan+task enmendados/aprobados (`e92112b`,
   `56cff54`), repositorio `list_booked_times_by_date` (`40a71ac`), servicio
   `get_hours_with_status`/`get_available_days`/`is_valid_month` (`9d92e0c`,
@@ -74,7 +75,7 @@ aporte.
   (`accb304`). Veredicto **PASS** en `docs/evidencias/hu-005/qa-hu-005.md`
   (16/16 TC, demo manual 16/16, capturas `escritorio-1280.png` 1280×1539,
   `movil-375.png` 375×2726 y `dia-lleno-1280.png` 1280×1486).
-  **Pendiente: T18 (aceptación de la usuaria).**
+  **Aceptada por la usuaria el 2026-10-09 (T18) y mergeada a `main`.**
 - **Tipografía vigente**: **Open Sans** (18 px base), h1 con `text-wrap: balance` y
   **justificación generalizada** (`text-align: justify` + `hyphens: none`).
   Decisiones en `docs/design-typography.md` (sección «Decisión vigente — Open Sans»);
@@ -150,9 +151,8 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **HU-005: T18 — pedir la aceptación de la usuaria** sobre
-  `docs/evidencias/hu-005/qa-hu-005.md` (veredicto PASS, 118 tests) y, al
-  aceptarla, marcar los checkboxes de cierre, merge a `main` y nueva memoria.
-- Siguiente HU según prioridad de la usuaria (006 u otra).
+- **HU-006 (Spec 006, evitar doble reserva) EN EJECUCIÓN**: `plan.md` aprobado
+  (Q1–Q5, 2026-10-09) y `task.md` con T1–T17; flujo: cierre HU-005 → rama
+  `feature/hu-006` → enmienda de la spec → código/tests → evidencia.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).

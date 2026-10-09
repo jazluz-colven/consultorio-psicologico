@@ -129,4 +129,4 @@ manual del flujo completo (16/16 comprobaciones) y demo visual verificadas.
 
 ## Aceptación de la HU
 
-- [ ] **PENDIENTE** — T18: aceptación de la usuaria.
+- [x] **ACEPTADA 2026-10-09** — T18: aceptación de la usuaria («Se acepta HU-005»).
