@@ -161,4 +161,6 @@ antes-durante-después con el estado en curso medido (**728 ms** hasta el POST r
 
 ## Aceptación de la HU
 
-- [ ] **PENDIENTE** — T17: aceptación de la usuaria.
+- [x] **ACEPTADA** — T17: aceptación de la usuaria el **2026-10-09** (incluye la
+  enmienda 2 Q6/D13: estado en curso visible ≥ 700 ms). HU cerrada y mergeada a
+  `main`.

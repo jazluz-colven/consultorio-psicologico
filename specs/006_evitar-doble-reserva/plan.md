@@ -2,18 +2,17 @@
 
 > Trazabilidad: **HU-006 → Spec 006 (`specs/006_evitar-doble-reserva/spec.md`) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs`.
-> Etapa actual: **IMPLEMENTACIÓN COMPLETA + QA PASS — PENDIENTE DE ACEPTACIÓN**
-> (2026-10-09). Decisiones Q1–Q5 aprobadas: política de duplicados históricos
-> (prevenir + detectar), mecanismo RF-5 (POST de formulario con estado en el
-> botón), literal «Registrando tu cita…», reintento rechazado con `MSG_SLOT_TAKEN`
-> y rama `feature/hu-006` desde `main`.
+> Etapa actual: **HU-006 ACEPTADA Y CERRADA** (2026-10-09). Decisiones Q1–Q6
+> aprobadas: política de duplicados históricos (prevenir + detectar), mecanismo
+> RF-5 (POST de formulario con estado en el botón), literal «Registrando tu
+> cita…», reintento rechazado con `MSG_SLOT_TAKEN`, rama `feature/hu-006` desde
+> `main` y duración mínima visible del estado en curso (700 ms).
 > **HU-005 ACEPTADA Y MERGEADA (2026-10-09, `8463087`)** → §8.0 cumplido.
 > **Spec 006 ENMENDADA (2026-10-09, dos enmiendas)** (§8.1, bloqueantes cumplidos):
 > la 1ª cerró Q1/Q3/Q4 y los contratos RF-4/RF-5; la **2ª (Q6/D13)** fija
 > `SUBMITTING_MIN_MS = 700` (duración mínima visible del estado en curso).
-> **Rama `feature/hu-006` creada y sincronizada** (HEAD =
-> `origin/feature/hu-006`); `python -m pytest -q` → **134 PASS / 0 FAIL**; QA
-> **PASS** en `docs/evidencias/hu-006/qa-hu-006.md`; solo queda T17 (aceptación).
+> `python -m pytest -q` → **134 PASS / 0 FAIL**; QA **PASS** en
+> `docs/evidencias/hu-006/qa-hu-006.md`; §7.2 íntegra en `[x]`; merge a `main`.
 
 ---
 
@@ -410,7 +409,8 @@ Evidencia visual: docs/evidencias/hu-006/escritorio-1280.png, movil-375.png, bot
       **2026-10-09 (`d028c0b`).**
 - [x] Commit/Push por fases y actualización de `MEMORY.md` — **2026-10-09 (5 commits;
       HEAD = `origin/feature/hu-006`).**
-- [ ] Aceptación de la HU (checkbox del informe QA).
+- [x] Aceptación de la HU (checkbox del informe QA) — **aceptada por la usuaria
+      el 2026-10-09** (incluida la enmienda 2 Q6/D13).
 - [x] Enmienda 2 (Q6/D13, 2026-10-09): duración mínima visible de **700 ms** del
       estado en curso — spec + plan enmendados, JS (`SUBMITTING_MIN_MS` +
       `preventDefault` + `setTimeout`), TC-006-017, suite **134 PASS / 0 FAIL** y

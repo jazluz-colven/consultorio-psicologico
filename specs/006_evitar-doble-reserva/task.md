@@ -172,9 +172,11 @@
   `d028c0b`. **Desviación**: web/JS/CSS/tests quedaron en un solo commit de
   fase en lugar de uno por capa (mensajes citan HU-006 y Spec 006).
 
-- [ ] **T17 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T17 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-006/qa-hu-006.md`
   está marcado con fecha y la §7.2 del plan queda íntegramente en `[x]`.
+  **Hecho 2026-10-09**: aceptada por la usuaria (incluida la enmienda 2 Q6/D13);
+  checkbox marcado y §7.2 íntegra en `[x]`; merge a `main`.
 
 > **Nota**: tras la revisión de T17 la usuaria observó que el estado
 > «Registrando tu cita…» es «muy rápido» → **cambio de requisito (Q6)** que abre

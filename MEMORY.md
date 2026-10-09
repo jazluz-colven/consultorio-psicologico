@@ -92,7 +92,8 @@ aporte.
   medido en el reloj de la página: **728 ms**; capturas CDP 1280/375 medidas por
   IHDR). BD de desarrollo: filas 25–28 = pruebas manuales de la usuaria; fila 34 =
   demo de la evidencia; se limpiaron las filas 29–33 de ejecuciones intermedias.
-  **Pendiente: T17 (aceptación de la usuaria) y merge a `main`.**
+  **Aceptada por la usuaria el 2026-10-09 (T17, incluida la enmienda 2) y
+  mergeada a `main` (fast-forward).**
 - **Tipografía vigente**: **Open Sans** (18 px base), h1 con `text-wrap: balance` y
   **justificación generalizada** (`text-align: justify` + `hyphens: none`).
   Decisiones en `docs/design-typography.md` (sección «Decisión vigente — Open Sans»);
@@ -192,9 +193,7 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **HU-006: T17 — pedir la aceptación de la usuaria** sobre
-  `docs/evidencias/hu-006/qa-hu-006.md` (veredicto PASS, 17/17 TC, suite
-  134/134; estado en curso visible ≥ 700 ms tras la enmienda 2); al aceptarla:
-  marcar el checkbox de aceptación, merge a `main` y actualizar esta memoria.
+- **HU-006 CERRADA** (aceptada 2026-10-09, incluida la enmienda 2 de los 700 ms);
+  `main` actualizada. Sin pendientes abiertos de esta HU.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).
