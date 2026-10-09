@@ -102,3 +102,21 @@ def list_booked_times(
             (service, date),
         ).fetchall()
     return [row["time"] for row in rows]
+
+
+def list_booked_times_by_date(
+    service: str, date_from: str, date_to: str, database_path: str | Path
+) -> dict[str, list[str]]:
+    with get_connection(database_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT date, time FROM appointments
+            WHERE service = ? AND date >= ? AND date <= ?
+            ORDER BY date, time
+            """,
+            (service, date_from, date_to),
+        ).fetchall()
+    booked: dict[str, list[str]] = {}
+    for row in rows:
+        booked.setdefault(row["date"], []).append(row["time"])
+    return booked
