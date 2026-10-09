@@ -40,6 +40,13 @@ MSG_INVALID_PHONE: str = "Ingresa un celular válido (entre 7 y 15 dígitos)."
 MSG_SLOT_TAKEN: str = "Ese horario ya no está disponible. Selecciona otro horario."
 MSG_NO_HOURS: str = "No hay horarios disponibles para esta fecha."
 MSG_INVALID_PARAMS: str = "Parámetros inválidos."
+MSG_SELECT_DATE_HINT: str = "Selecciona una fecha para ver las horas disponibles."
+
+BOOKING_BLOCK_MORNING: str = "Mañana"
+BOOKING_BLOCK_AFTERNOON: str = "Tarde"
+
+BOOKING_PATIENT_SECTION_TITLE: str = "Datos del paciente"
+BOOKING_SCHEDULE_SECTION_TITLE: str = "Fecha y hora"
 
 CONFIRMATION_TITLE: str = "Cita registrada"
 STATUS_PENDING: str = "pending"

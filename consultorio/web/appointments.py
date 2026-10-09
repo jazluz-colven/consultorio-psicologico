@@ -7,12 +7,17 @@ from flask import Blueprint, abort, current_app, jsonify, redirect, render_templ
 from flask import request, url_for
 
 from consultorio.content.appointment_content import (
+    BOOKING_BLOCK_AFTERNOON,
+    BOOKING_BLOCK_MORNING,
     BOOKING_HELPER,
     BOOKING_PAGE_TITLE,
+    BOOKING_PATIENT_SECTION_TITLE,
+    BOOKING_SCHEDULE_SECTION_TITLE,
     CONFIRMATION_TITLE,
     DOCUMENT_TYPES,
     MSG_INVALID_PARAMS,
     MSG_NO_HOURS,
+    MSG_SELECT_DATE_HINT,
     MSG_SLOT_TAKEN,
     STATUS_PENDING_LABEL,
 )
@@ -62,14 +67,24 @@ def _render_form(values: dict[str, str], errors: dict[str, str], status: int = 2
     service = values.get("service", "") or default_service
     booking_date = values.get("date", "") or default_date
     hours = get_available_hours(service, booking_date, _database_path())
+    morning_hours = [hour for hour in hours if hour < "12:00"]
+    afternoon_hours = [hour for hour in hours if hour >= "12:00"]
     return (
         render_template(
             "appointments/index.html",
             view=get_home_view(),
             services=get_services_view(),
             document_types=DOCUMENT_TYPES,
-            hours=hours,
+            morning_hours=morning_hours,
+            afternoon_hours=afternoon_hours,
             hours_empty_message=MSG_NO_HOURS,
+            block_morning=BOOKING_BLOCK_MORNING,
+            block_afternoon=BOOKING_BLOCK_AFTERNOON,
+            patient_section_title=BOOKING_PATIENT_SECTION_TITLE,
+            schedule_section_title=BOOKING_SCHEDULE_SECTION_TITLE,
+            select_date_hint=MSG_SELECT_DATE_HINT,
+            today_iso=date.today().isoformat(),
+            selected_date=booking_date,
             helper=BOOKING_HELPER,
             page_title=BOOKING_PAGE_TITLE,
             values=values,

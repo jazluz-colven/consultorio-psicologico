@@ -429,7 +429,7 @@ a:focus {
 }
 
 .appointment {
-    max-width: 65ch;
+    max-width: 64rem;
     margin-inline: auto;
 }
 
@@ -458,6 +458,167 @@ a:focus {
     flex-direction: column;
     gap: 0.35rem;
     margin: 0;
+}
+
+.appointment__layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.appointment__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: 1.25rem;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-primary);
+    border-radius: 12px;
+}
+
+.appointment__panel-title {
+    margin: 0;
+    color: var(--color-primary);
+    font-size: 1.2rem;
+}
+
+.appointment__calendar {
+    padding: 0.75rem;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-primary);
+    border-radius: 12px;
+}
+
+.appointment__calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.appointment__calendar-nav {
+    padding: 0.3rem 0.7rem;
+    font-family: inherit;
+    font-size: 1.2rem;
+    color: var(--color-background);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.appointment__calendar-nav:disabled {
+    background-color: var(--color-support);
+    color: var(--color-text);
+    cursor: not-allowed;
+}
+
+.appointment__calendar-month {
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.appointment__calendar-weekdays,
+.appointment__calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+}
+
+.appointment__calendar-weekdays {
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--color-primary);
+    text-align: center;
+}
+
+.appointment__calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    background-color: var(--color-secondary);
+    border: 1px solid transparent;
+    border-radius: 8px;
+}
+
+.appointment__calendar-day.is-blank {
+    background-color: transparent;
+}
+
+.appointment__calendar-day.is-bookable {
+    background-color: var(--color-secondary);
+    border-color: var(--color-primary);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.appointment__calendar-day.is-bookable:hover,
+.appointment__calendar-day.is-bookable:focus-visible {
+    background-color: var(--color-accent);
+    color: var(--color-text);
+    outline: none;
+}
+
+.appointment__calendar-day.is-disabled {
+    background-color: var(--color-support);
+    color: var(--color-text);
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.appointment__calendar-day.is-selected {
+    background-color: var(--color-primary);
+    color: var(--color-background);
+    border-color: var(--color-primary);
+}
+
+.appointment__hours-block {
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--color-primary);
+    border-radius: 12px;
+}
+
+.appointment__hours-legend {
+    padding: 0 0.4rem;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.appointment__hours-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.appointment__hour {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    background-color: var(--color-secondary);
+    border: 1px solid var(--color-primary);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.appointment__hour:has(.appointment__hour-input:checked) {
+    background-color: var(--color-primary);
+    color: var(--color-background);
+}
+
+.appointment__hour-input {
+    margin: 0;
+    accent-color: var(--color-accent);
 }
 
 .appointment__label {
@@ -645,6 +806,16 @@ a:focus {
 
     .service-card {
         flex: 1;
+    }
+
+    .appointment__layout {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .appointment__panel {
+        flex: 1;
+        min-width: 0;
     }
 
     .appointment__summary-row {
