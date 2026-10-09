@@ -59,10 +59,22 @@ aporte.
    «Agendar cita» pasan a la columna izquierda** (Servicio sobre «Datos del
    paciente»; helper + botón debajo de los campos), solo reposición en la
    plantilla. **Mergeada a `main` (ff → `b793686`).**
-- Tests: **102 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
-  3.1.3 + pytest 9.1.1 (74 previos + 28 nuevos TC-004-001..028).
+- Tests: **118 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
+  3.1.3 + pytest 9.1.1 (102 previos + 16 nuevos TC-005-001..016).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
   sean el buscador.
+- **HU-005 (Spec 005) EN CIERRE — rama `feature/hu-005`** (2026-10-09): validar
+  disponibilidad de horarios. Spec+plan+task enmendados/aprobados (`e92112b`,
+  `56cff54`), repositorio `list_booked_times_by_date` (`40a71ac`), servicio
+  `get_hours_with_status`/`get_available_days`/`is_valid_month` (`9d92e0c`,
+  `ef8a5ca`), capa web con `occupied` + **`GET /citas/disponibilidad`** y
+  plantilla con horas «Ocupado» + leyenda (`faf967c`, `c37fd53`; enmienda
+  TC-004-021 a dos claves, D9), JS con estados de día (`is-full`/`is-bookable`),
+  guard `seq` y estado de carga (`f9b62f1`), CSS (`6dedebd`) y tests de HU
+  (`accb304`). Veredicto **PASS** en `docs/evidencias/hu-005/qa-hu-005.md`
+  (16/16 TC, demo manual 16/16, capturas `escritorio-1280.png` 1280×1539,
+  `movil-375.png` 375×2726 y `dia-lleno-1280.png` 1280×1486).
+  **Pendiente: T18 (aceptación de la usuaria).**
 - **Tipografía vigente**: **Open Sans** (18 px base), h1 con `text-wrap: balance` y
   **justificación generalizada** (`text-align: justify` + `hyphens: none`).
   Decisiones en `docs/design-typography.md` (sección «Decisión vigente — Open Sans»);
@@ -88,7 +100,16 @@ aporte.
   literal `MSG_SLOT_TAKEN` y 0 filas nuevas; la concurrencia avanzada queda para
   HU-006.
 - **Disponibilidad por `(service, date)`** (D18): coherente con Spec 006 RF-2;
-  HU-005 reutilizará `/citas/horarios` y añadirá el calendario.
+  HU-005 la usó con `/citas/horarios` (`available` + `occupied`) y añadió
+  **`GET /citas/disponibilidad?service=&month=YYYY-MM`** (días del mes con ≥ 1
+  hueco; 400 con servicio/mes inválidos, 405 en otros métodos).
+- **HU-005 — decisiones clave**: disponibilidad = `servicio + fecha + hora` (duda
+  cerrada en la enmienda); día con huecos → `is-bookable`, día sin huecos →
+  `is-full` + `disabled` + «, sin horarios disponibles» en el aria-label; hora
+  ocupada → radio `disabled` **sin** `name` + badge «Ocupado» (imposible
+  postear); literales de estado servidos por `data-*` del calendario (nunca en
+  el JS); guards `daySeq`/`hoursSeq` descartan respuestas obsoletas al
+  cambiar de servicio/mes rápido.
 - **Spec 001/002 con textos literales contractuales** (Q8): cambiar un copy obliga a PR
   de spec primero; `tests/expected_content.py` es su espejo.
 - **Rutas placeholder** (Q1): ahora solo `/articulos`, `/contacto`, `/citas` responden
@@ -115,6 +136,12 @@ aporte.
 - **La emulación CDP es por sesión**: al cerrar el WebSocket se limpia; todo script
   (capture, measure, eval) debe fijar su propio viewport, y conviene perfil de Chrome
   nuevo para no servir CSS de caché (incidente visto en `/nosotros`).
+- **Nunca lanzar dos capturas CDP en paralelo**: compiten sobre el mismo
+  target/puerto 9444 (incidente HU-005: mes y medidas cruzados); ejecutarlas
+  secuencialmente y re-medir `scrollHeight` hasta que se estabilice.
+- **`/citas` arranca con servicio `""`** (placeholder): `loadDayStates()` y
+  `refreshHours()` no hacen fetch hasta elegir servicio; en la demo manual
+  primero `select.value = … + dispatchEvent(change)` y después clic en el día.
 - **Jinja + claves de dict con nombre de método**: `{{ d.values }}` resuelve a
   `dict.values`; usar `{{ d["values"] }}` (bug HU-002).
 - El lector de imágenes del asistente puede adjuntar ficheros equivocados/caché:
@@ -123,9 +150,9 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-004 **ACEPTADA (2026-10-09) y MERGEADA a `main`** (ff → `b793686`,
-  sincronizada con el remoto; 102 PASS en `main`). HU-004 cerrada.
-- Siguiente HU según prioridad de la usuaria (005/006 u otra).
+- **HU-005: T18 — pedir la aceptación de la usuaria** sobre
+  `docs/evidencias/hu-005/qa-hu-005.md` (veredicto PASS, 118 tests) y, al
+  aceptarla, marcar los checkboxes de cierre, merge a `main` y nueva memoria.
+- Siguiente HU según prioridad de la usuaria (006 u otra).
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
-- HU-005 (validar disponibilidad) puede reutilizar `/citas/horarios`; HU-006
-  se apoya en el `UNIQUE` de HU-004.
+- HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).
