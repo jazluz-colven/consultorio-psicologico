@@ -37,7 +37,55 @@ Una doble reserva sobre el mismo horario genera conflictos de agenda y deteriora
 - Cancelación de citas.
 
 ## Criterios de finalización
-Todos los RF con test en verde, incluida concurrencia y regresión de disponibilidad/agendamiento, más demo manual del flujo antes-durante-después de una reserva.
+Todos los RF con test en verde, incluida concurrencia y regresión de disponibilidad/agendamiento, más demo manual del flujo antes-durante-después de una reserva. El contrato de datos y los literales de la sección siguiente forman parte de la verificación.
 
-## Dudas abiertas
-- [NECESITA ACLARACIÓN] Confirmar la política definitiva para tratar duplicados históricos si aparecen antes del cierre.
+## Literales y contrato (enmienda 2026-10-09, aprobada por la usuaria)
+
+Los literales de esta tabla son contrato (AGENTS.md «Textos contractuales»): sus
+claves técnicas viven en `consultorio/content/appointment_content.py` y su espejo en
+`tests/expected_content.py`, y cambian junto con esta spec en el mismo PR.
+
+| Literal | Texto | RF |
+|---|---|---|
+| `MSG_SUBMITTING` | Registrando tu cita… | RF-5 |
+| `MSG_SLOT_TAKEN` (reutilizado; fijado en Spec 004) | Ese horario ya no está disponible. Selecciona otro horario. | RF-2, RF-3, RF-4 |
+| `MSG_OCCUPIED_HOUR` (reutilizado; fijado en Spec 005) | Ocupado | RF-4 |
+
+Contrato de datos que soporta los RF (el detalle de rutas, métodos y códigos vive en
+el plan asociado):
+
+- **Clave de unicidad**: exclusivamente `servicio + fecha + hora`. Una única cita
+  válida por esa combinación. [RF-1, RF-2, RF-6]
+- `POST /citas` sobre un horario libre → `303` a la confirmación con exactamente
+  1 fila nueva. [RF-1]
+- `POST /citas` sobre una combinación ya reservada **o reintento idéntico de una
+  solicitud ya registrada** → `200` re-renderizando el formulario con
+  `MSG_SLOT_TAKEN`, **0 filas** nuevas y la hora servida como «Ocupado» (sin radio
+  seleccionable). [RF-2, RF-3, RF-4, caso «Reintento de una misma solicitud»]
+- **Concurrencia**: de N solicitudes simultáneas sobre la misma combinación, máximo
+  1 registra cita (`303`) y las restantes se rechazan con el mismo literal (`200`);
+  la integridad la garantiza el índice `UNIQUE (service, date, time)` en el punto de
+  persistencia. [RF-3, RF-6]
+- **Estado en curso**: mientras se procesa el envío, el botón de envío queda
+  deshabilitado, muestra `MSG_SUBMITTING` y el formulario marca `aria-busy`; un
+  envío repetido mientras está en curso se bloquea en el cliente (sin segundo
+  `POST`). [RF-5]
+
+## Duplicados históricos (duda cerrada 2026-10-09, usuaria)
+
+- **Prevención**: el índice `UNIQUE (service, date, time)` impide la creación de
+  nuevos duplicados desde la creación de la tabla.
+- **Detección**: los tests ejecutan el diagnóstico
+  `SELECT service, date, time FROM appointments GROUP BY service, date, time
+  HAVING COUNT(*) > 1` y exigen 0 filas.
+- **Sin saneamiento automático**: ante duplicados reales se requiere decisión
+  explícita de la usuaria con respaldo/auditoría previo (AGENTS.md «Base de datos e
+  integridad»); esta HU solo garantiza que no se creen nuevos ni que pasen
+  desapercibidos.
+
+## Dudas cerradas
+
+- **Política de duplicados históricos (cerrada 2026-10-09, usuaria)**: prevenir con el
+  índice `UNIQUE` y detectar mediante diagnóstico en los tests, **sin saneamiento
+  automático**; cualquier limpieza exige decisión explícita de la usuaria con
+  respaldo/auditoría previo. Detalle en «Duplicados históricos».
