@@ -7,19 +7,19 @@
     <h1 class="appointment__title">{{ page_title }}</h1>
 
     <form class="appointment__form" method="post" action="{{ url_for('appointments.index') }}" novalidate>
-        <p class="appointment__field appointment__field--service{% if errors.get('service') %} appointment__field--error{% endif %}">
-            <label class="appointment__label" for="service">Servicio</label>
-            <select class="appointment__input" id="service" name="service" required>
-                <option value="" disabled {% if not values.get('service') %}selected{% endif %}>Selecciona un servicio</option>
-                {% for item in services.items %}
-                <option value="{{ item.key }}" {% if values.get('service') == item.key %}selected{% endif %}>{{ item.name }}</option>
-                {% endfor %}
-            </select>
-            {% if errors.get('service') %}<span class="appointment__error">{{ errors['service'] }}</span>{% endif %}
-        </p>
-
         <div class="appointment__layout">
             <section class="appointment__panel" aria-labelledby="patient-section-title">
+                <p class="appointment__field appointment__field--service{% if errors.get('service') %} appointment__field--error{% endif %}">
+                    <label class="appointment__label" for="service">Servicio</label>
+                    <select class="appointment__input" id="service" name="service" required>
+                        <option value="" disabled {% if not values.get('service') %}selected{% endif %}>Selecciona un servicio</option>
+                        {% for item in services.items %}
+                        <option value="{{ item.key }}" {% if values.get('service') == item.key %}selected{% endif %}>{{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.get('service') %}<span class="appointment__error">{{ errors['service'] }}</span>{% endif %}
+                </p>
+
                 <h2 class="appointment__panel-title" id="patient-section-title">{{ patient_section_title }}</h2>
 
                 <p class="appointment__field{% if errors.get('document_type') %} appointment__field--error{% endif %}">
@@ -59,6 +59,12 @@
                     <input class="appointment__input" id="phone" name="phone" type="tel" inputmode="numeric" required
                            value="{{ values.get('phone', '') }}">
                     {% if errors.get('phone') %}<span class="appointment__error">{{ errors['phone'] }}</span>{% endif %}
+                </p>
+
+                <p class="appointment__helper">{{ helper }}</p>
+
+                <p class="appointment__actions">
+                    <button class="appointment__submit" type="submit">Agendar cita</button>
                 </p>
             </section>
 
@@ -117,12 +123,6 @@
                 {% if errors.get('time') %}<span class="appointment__error" id="time-error">{{ errors['time'] }}</span>{% endif %}
             </section>
         </div>
-
-        <p class="appointment__helper">{{ helper }}</p>
-
-        <p class="appointment__actions">
-            <button class="appointment__submit" type="submit">Agendar cita</button>
-        </p>
     </form>
 
     <p class="appointment__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
