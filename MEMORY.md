@@ -54,8 +54,11 @@ aporte.
   servicio, `7a25fd2` web+JS+CSS, `eb10fc3` tests, `cee1528` evidencia+memoria,
   y los commits de D19 en el mismo orden de fases. Veredicto **PASS** en
   `docs/evidencias/hu-004/qa-hu-004.md`; capturas `escritorio-1280.png`
-  (1280×1681) y `movil-375.png` (375×2542), sin desborde verificado por
-  `scrollWidth`.
+  (1280×1433) y `movil-375.png` (375×2569), sin desborde verificado por
+  `scrollWidth`. Ajuste posterior (2026-10-09): **Servicio, helper y botón
+  «Agendar cita» pasan a la columna izquierda** (Servicio sobre «Datos del
+  paciente»; helper + botón debajo de los campos), solo reposición en la
+  plantilla.
 - Tests: **102 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
   3.1.3 + pytest 9.1.1 (74 previos + 28 nuevos TC-004-001..028).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no

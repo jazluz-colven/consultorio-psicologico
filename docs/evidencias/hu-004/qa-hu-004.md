@@ -89,8 +89,8 @@ Recorrido del flujo completo contra `http://127.0.0.1:5000`:
 
 | Fichero | Medidas programáticas | Verificación |
 |---|---|---|
-| `docs/evidencias/hu-004/escritorio-1280.png` | 1280×1681 | CDP `Emulation.setDeviceMetricsOverride`; `scrollWidth` = 1280 (sin desborde) |
-| `docs/evidencias/hu-004/movil-375.png` | 375×2542 | CDP; `scrollWidth` = 375 (sin desborde) |
+| `docs/evidencias/hu-004/escritorio-1280.png` | 1280×1433 | CDP `Emulation.setDeviceMetricsOverride`; `scrollWidth` = 1280 (sin desborde) |
+| `docs/evidencias/hu-004/movil-375.png` | 375×2569 | CDP; `scrollWidth` = 375 (sin desborde) |
 
 ## Defectos encontrados
 
