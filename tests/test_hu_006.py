@@ -196,3 +196,27 @@ def test_tc_006_015_diagnostico_detecta_duplicados_sin_indice(tmp_path) -> None:
     service, day, hour, total = duplicates[0]
     assert (service, day, hour) == ("nutrition", "2026-10-12", "08:00")
     assert total == 2
+
+
+def test_tc_006_017_js_duracion_minima_visible_del_estado_en_curso() -> None:
+    js = AVAILABILITY_JS.read_text(encoding="utf-8")
+
+    assert re.search(r"SUBMITTING_MIN_MS\s*=\s*700\b", js)
+    # El primer envío retiene la navegación y difiere el POST real.
+    assert re.search(
+        r"submitting = true;\s*event\.preventDefault\(\);.*?"
+        r"setTimeout\(\s*function\s*\(\)\s*\{\s*form\.submit\(\);\s*\}\s*,"
+        r"\s*SUBMITTING_MIN_MS\s*\)",
+        js,
+        re.S,
+    )
+    # La espera mínima queda cubierta por el mismo guard de envío repetido.
+    assert re.search(
+        r"if\s*\(\s*submitting\s*\)\s*\{[^}]*event\.preventDefault\(\)", js, re.S
+    )
+
+    spec_006 = (SPECS_DIR / "006_evitar-doble-reserva" / "spec.md").read_text(
+        encoding="utf-8"
+    )
+    assert "SUBMITTING_MIN_MS" in spec_006
+    assert re.search(r"\b700\s*ms", spec_006)

@@ -20,6 +20,7 @@
   var dayStates = null;
   var daySeq = 0;
   var hoursSeq = 0;
+  var SUBMITTING_MIN_MS = 700;
 
   function pad(value) {
     return value < 10 ? "0" + value : String(value);
@@ -356,11 +357,15 @@
         return;
       }
       submitting = true;
+      event.preventDefault();
       if (button) {
         button.disabled = true;
         button.textContent = dataAttr("data-submitting");
       }
       form.setAttribute("aria-busy", "true");
+      setTimeout(function () {
+        form.submit();
+      }, SUBMITTING_MIN_MS);
     });
   }
 
