@@ -131,3 +131,10 @@
 - [ ] **T19 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-004/qa-hu-004.md`
   está marcado con fecha y la §7.2 del plan queda íntegramente en `[x]`.
+
+- [x] **T20 — Modificación visual: 2 columnas + datepicker + bloques (plan D19)** `[RNF-2]`
+  Layout en 2 columnas (datos del paciente ‖ datepicker + horas), datepicker
+  vanilla con días agendables (lun–vie ≥ hoy) diferenciados y navegación de
+  meses, horas en bloques Mañana/Tarde; literales nuevos en content/espejo.
+  Hecho cuando: `python -m pytest -q` → **0 FAIL** (101 + 1 nuevo TC-004-028),
+  `GET /citas` → 200 con las dos columnas, y evidencia visual regenerada.

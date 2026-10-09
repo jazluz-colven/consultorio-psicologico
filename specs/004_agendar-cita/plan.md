@@ -85,18 +85,19 @@ Consultorio_Carolina/
 │                                 #   [regresión HU-001/002/003]
 ├── templates/
 │   └── appointments/
-│       ├── index.html               # h1 «Agendar cita» + <form> de 8 campos
-│       │                         # (servicio, fecha, hora, tipo y nº documento,
-│       │                         # nombre, correo, celular) + «Volver al inicio»
-│       │                         #   [RF-1][RF-2][RF-5][RNF-1][RNF-2]
+│       ├── index.html               # h1 «Agendar cita» + <form> de 8 campos en
+│       │                         # 2 columnas (datos del paciente ‖ datepicker
+│       │                         # + bloques Mañana/Tarde) + «Volver al inicio»
+│       │                         #   [RF-1][RF-2][RF-5][RNF-1][RNF-2][D19]
 │       └── confirmation.html        # «Cita registrada» + resumen + estado «Pendiente»
 │                                 #   [RF-1][RF-4]
 ├── static/
 │   ├── css/main.css                 # .appointment-* mobile-first; paleta intacta
 │   │                             #   [RNF-2]
-│   └── js/availability.js           # vanilla: fetch /citas/horarios al cambiar
-│                                 # servicio/fecha y rellena el <select> de horas
-│                                 #   [RF-1][RF-3][RNF-2]
+│   └── js/availability.js           # vanilla: datepicker con días agendables
+│                                 # diferenciados + fetch /citas/horarios al
+│                                 # cambiar servicio/día y rellena los bloques
+│                                 # Mañana/Tarde (D19)  [RF-1][RF-3][RNF-2]
 ├── consultorio/config.py            # + DATABASE_PATH (data/consultorio.db)
 │                                 #   [RF-1][RF-4]
 └── tests/
@@ -207,6 +208,9 @@ MSG_INVALID_PHONE      = "Ingresa un celular válido (entre 7 y 15 dígitos)."
 MSG_SLOT_TAKEN         = "Ese horario ya no está disponible. Selecciona otro horario."   # RF-3
 MSG_NO_HOURS           = "No hay horarios disponibles para esta fecha."                  # base Spec 005 RF-4
 MSG_INVALID_PARAMS     = "Parámetros inválidos."                    # GET /citas/horarios 400
+BOOKING_BLOCK_MORNING  = "Mañana"                  # bloque 08:00–11:30 (D19)
+BOOKING_BLOCK_AFTERNOON = "Tarde"                  # bloque 14:00–16:30 (D19)
+MSG_SELECT_DATE_HINT   = "Selecciona una fecha para ver las horas disponibles."
 CONFIRMATION_TITLE     = "Cita registrada"
 STATUS_PENDING_LABEL   = "Pendiente"         # etiqueta en español de status="pending"
 BOOKING_HELPER         = ("Si el paciente es menor de edad, registra los datos del "
@@ -317,7 +321,7 @@ Ambos caminos producen el mismo literal `MSG_SLOT_TAKEN` y **ninguna fila nueva*
 
 | Método | Ruta | Salida (cuerpo) | Códigos |
 |---|---|---|---|
-| `GET` | `/citas` | `appointments/index.html` con h1 «Agendar cita», `<form>` de 8 campos, `<select>` de horas y «Volver al inicio» | **200** |
+| `GET` | `/citas` | `appointments/index.html` con h1 «Agendar cita», `<form>` de 8 campos en 2 columnas (paciente ‖ datepicker + horas en bloques Mañana/Tarde) y «Volver al inicio» | **200** |
 | `POST` | `/citas` (válido y libre) | redirige a la confirmación | **303** → **200** |
 | `POST` | `/citas` (dato faltante/inválido/servicio no válido) | formulario con mensajes, **0 filas** nuevas | **200** |
 | `POST` | `/citas` (horario ocupado) | formulario con `MSG_SLOT_TAKEN`, **0 filas** nuevas | **200** |
@@ -355,8 +359,11 @@ Ambos caminos producen el mismo literal `MSG_SLOT_TAKEN` y **ninguna fila nueva*
 [RNF-2] <meta viewport>, ≥1 @media (max-width…), paleta ⊆ 6 hex,
        párrafos justify + hyphens:none, sin desborde a 375 px
                                                        → absent ⇒ FAIL
-[horas] select/JSON con exactamente los 14 slots
-       08:00–11:30 y 14:00–16:30; finde → lista vacía   → absent ⇒ FAIL
+[horas] HTML/JSON con exactamente los 14 slots
+       08:00–11:30 y 14:00–16:30 repartidos en los bloques Mañana/Tarde;
+       finde → lista vacía                       → absent ⇒ FAIL
+[D19]  datepicker propio (sin `type="date"`), 2 columnas ≥768 px y días
+       agendables (lun–vie ≥ hoy) diferenciados  → absent ⇒ FAIL
 [regresión] /citas ∉ PLACEHOLDER_SECTIONS; /articulos y /contacto con
        «Sección en construcción.»; nav de 6 hrefs → 200 con
        «Volver al inicio»                                → absent ⇒ FAIL
@@ -388,6 +395,7 @@ Ambos caminos producen el mismo literal `MSG_SLOT_TAKEN` y **ninguna fila nueva*
 | D16 | **Retirada de `/citas` de `placeholders.py` y de `PLACEHOLDER_SECTIONS`** (junto con la ruta) | Patrón D6/D11 de los planes 002/003: los tests que iteran el espejo se ajustan solos | *Tocar las specs 001/003*: su CL es genérica («aún no implementada»), no requiere enmienda | regresión |
 | D17 | **Sin estado «en curso», sin deshabilitar el botón ni transacciones de concurrencia en esta HU** | Eso es RF-5 y la concurrencia de la Spec 006; AGENTS.md solo exige esos estados «cuando así lo establezca la especificación» | *Anticipar el comportamiento de 006*: funcionalidad sin spec propia (AGENTS: nada por conveniencia) | fuera de alcance |
 | D18 | **La disponibilidad se calcula por `(service, date)`** | Coherente con la unicidad de D4 y con Spec 006 RF-2; Spec 005 deja su duda equivalente abierta y podrá ampliarla | *Agenda única por fecha (todas las citas)*: impediría dos servicios a la misma hora, contradiciendo 006 RF-2 | RF-1, RF-3 |
+| D19 | **Layout en 2 columnas (datos del paciente ‖ calendario + horas en bloques)** y **datepicker propio vanilla** con días disponibles diferenciados (usuaria, 2026-10-09, modificación visual posterior a la primera entrega) | Petición explícita de la usuaria; materializa RNF-2 (comprensible y usable en escritorio y móvil); el calendario distingue visualmente días agendables (lun–vie ≥ hoy, D12) de no agendables; las horas se muestran en dos bloques diferenciados **Mañana** (08:00–11:30) y **Tarde** (14:00–16:30) siguiendo el catálogo D8; JS vanilla (constitución #1) y paleta intacta | *`<input type="date">` nativo*: no permite diferenciar días disponibles/no disponibles. *Librería de calendario (flatpickr etc.)*: dependencia sin aprobación. *Select único de horas*: estado anterior, menos comprensible por bloques. *Marcar días con citas libres/ocupadas*: eso es el estado por día de HU-005 (Q10); aquí solo se aplica la regla D12 | RNF-2, RF-1 |
 
 ---
 
@@ -418,7 +426,7 @@ D15).
 | TC-004-012 | `test_appointment_service.py` | `get_available_hours()` = catálogo − ocupadas para (servicio, fecha); fin de semana/pasada → `[]`; sin citas → los 14 slots | RF-1, RF-3 |
 | TC-004-013 | `test_appointment_service.py` | **CL-3:** tras `create_booking()`, esa hora desaparece de la disponibilidad | RF-3, CL-3 |
 | TC-004-014 | `test_appointment_service.py` | **CL-3/CL-4:** `create_booking()` sobre horario ocupado → `SLOT_TAKEN` con `MSG_SLOT_TAKEN` y 0 inserts nuevos | RF-3, CL-3, CL-4 |
-| TC-004-015 | `test_appointment_routes.py` | `GET /citas` → **200** con h1 «Agendar cita», `<form>` con los 8 campos, select de horas, «Volver al inicio» y nav de 6 | RF-1, RNF-1 |
+| TC-004-015 | `test_appointment_routes.py` | `GET /citas` → **200** con h1 «Agendar cita», `<form>` con los 8 campos (horas en bloques, D19), «Volver al inicio» y nav de 6 | RF-1, RNF-1 |
 | TC-004-016 | `test_appointment_routes.py` | `POST /citas` válido → **303** → confirmación **200** con «Cita registrada», datos de la cita y «Pendiente»; 1 fila creada | RF-1, RF-4 |
 | TC-004-017 | `test_appointment_routes.py` | **CL-1:** `POST` sin cada dato obligatorio → **200** con su mensaje y **0 filas** | RF-2, CL-1 |
 | TC-004-018 | `test_appointment_routes.py` | **CL-2:** `POST` con dato inválido → **200**, mensaje visible, valores conservados en el formulario y 0 filas | RF-2, CL-2 |
@@ -431,6 +439,7 @@ D15).
 | TC-004-025 | `test_hu_004.py` | **RNF-1:** el `<form>` de `/citas` contiene exactamente los 8 campos permitidos (sin dirección, motivo ni textarea) | RNF-1 |
 | TC-004-026 | `test_hu_004.py` | **E2E:** desde `GET /` seguir «Agendar cita» → **200**, completar el formulario → submit → confirmación visible con estado «Pendiente» | RF-1, RF-4, criterios de finalización |
 | TC-004-027 | `test_hu_004.py` | **Fuera de alcance:** `/citas` sin textos de correo/WhatsApp/cancelación/n8n; portada y `/servicios` sin `<form>` de reserva (TC-001-008/TC-003-015 siguen verdes) | fuera de alcance |
+| TC-004-028 | `test_hu_004.py` | **D19/RNF-2:** `/citas` con layout 2 columnas (`.appointment__layout` + 2 paneles), datepicker propio (`#booking-calendar` con `data-today`, sin `type="date"`), horas en `<fieldset>` Mañana/Tarde con radios `name="time"`; `main.css` con reglas de calendario y bloques y `availability.js` con navegación de meses/días agendables | RNF-2, D19 |
 
 ### 6.2 Pirámide
 
@@ -480,7 +489,7 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
 | Q7 | Catálogo de horas | **Bloques de 30 min: 08:00–12:00 y 14:00–17:00 como horas de FINALIZACIÓN** → 14 slots 08:00–11:30 y 14:00–16:30 (usuaria, 2026-10-09). |
 | Q8 | Días agendables | **Solo lunes a viernes** (usuaria, 2026-10-09). |
 | Q9 | Literales de mensajes (errores, confirmación, helper) | **Aprobados por la usuaria el 2026-10-09** y **enmendados el mismo día**: número de documento y celular **solo dígitos** (§2.2/§2.3). Textos contractuales (AGENTS.md); se fijan en la spec 004 (§8.1) antes de codificar. |
-| Q10 | Solape con HU-005 | **Delimitado**: 004 entrega el endpoint `/citas/horarios` y el select; 005 conserva el calendario con navegación de fechas, el mensaje de «fecha sin horarios», la distinción comprensible de estados (no solo color) y su RNF de actualización perceptible. Sin cambio de specs (005 RF-1/RF-2/RF-5 quedan testeables sobre esta base). |
+| Q10 | Solape con HU-005 | **Delimitado**: 004 entrega el endpoint `/citas/horarios`, el select de horas y (enmienda D19, 2026-10-09) un datepicker propio que diferencia días agendables por la regla D12; 005 conserva el estado **por día** (días con/sin citas libres), el mensaje de «fecha sin horarios», la distinción comprensible de estados (no solo color) y su RNF de actualización perceptible. Sin cambio de specs (005 RF-1/RF-2/RF-5 quedan testeables sobre esta base). |
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
@@ -496,7 +505,7 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
 - [x] Evidencia QA (`qa-hu-004.md`, veredicto PASS) y evidencia visual
       (`escritorio-1280.png`, `movil-375.png`) con demo sobre el servidor
       (`GET /citas` → 200 y reserva completa).
-- [ ] Commit/Push de la evidencia y actualización de `MEMORY.md`.
+- [x] Commit/Push de la evidencia y actualización de `MEMORY.md`.
 - [ ] Aceptación de la HU (checkbox del informe QA).
 
 ---

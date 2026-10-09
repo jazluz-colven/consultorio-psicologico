@@ -39,6 +39,11 @@ aporte.
   `/citas` — formulario de 8 campos, disponibilidad en vivo
   (`GET /citas/horarios` + `availability.js`), alta con PRG (303 →
   `/citas/confirmada/<id>`), estado inicial **«Pendiente»** (`pending`).
+  **Modificación visual D19 (2026-10-09)**: layout en **2 columnas** (datos del
+  paciente ‖ fecha y hora), **datepicker vanilla propio** (días agendables
+  lun–vie ≥ hoy diferenciados, navegación de meses) y horas en **bloques
+  Mañana/Tarde** con radios; textos nuevos (`MSG_SELECT_DATE_HINT`,
+  `BOOKING_BLOCK_*`, títulos de sección) en content + espejo.
   **Primera persistencia del proyecto**: `consultorio/persistence/` con SQLite
   stdlib, tabla `appointments` (11 columnas) e índice **`UNIQUE (service,
   date, time)`**; `data/consultorio.db` en `.gitignore`; tests con BD temporal
@@ -46,13 +51,13 @@ aporte.
   documento y celular **solo dígitos** (enmienda de la usuaria 2026-10-09).
   Spec 004 enmendada (dudas Q1/Q2 cerradas + literales fijados). Commits:
   `f68b765` docs, `392227f` contenido, `e8274cf` persistencia, `ef62651`
-  servicio, `7a25fd2` web+JS+CSS, `eb10fc3` tests (27 nuevos), evidencia en el
-  commit siguiente. Veredicto **PASS** en
+  servicio, `7a25fd2` web+JS+CSS, `eb10fc3` tests, `cee1528` evidencia+memoria,
+  y los commits de D19 en el mismo orden de fases. Veredicto **PASS** en
   `docs/evidencias/hu-004/qa-hu-004.md`; capturas `escritorio-1280.png`
-  (1280×1488) y `movil-375.png` (375×1728), sin desborde verificado por
+  (1280×1681) y `movil-375.png` (375×2542), sin desborde verificado por
   `scrollWidth`.
-- Tests: **101 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
-  3.1.3 + pytest 9.1.1 (74 previos + 27 nuevos TC-004-001..027).
+- Tests: **102 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
+  3.1.3 + pytest 9.1.1 (74 previos + 28 nuevos TC-004-001..028).
   TC-001-004 acotado al `<figure>` del hero y TC-001-008 a formularios que no
   sean el buscador.
 - **Tipografía vigente**: **Open Sans** (18 px base), h1 con `text-wrap: balance` y
@@ -115,8 +120,9 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-004 **implementada, QA PASS** (2026-10-09): **falta la aceptación de la
-  usuaria** (checkbox de `qa-hu-004.md`) para cerrarla y hacer merge a `main`.
+- HU-004 **implementada, QA PASS** (2026-10-09, incluida la modificación visual
+  D19): **falta la aceptación de la usuaria** (checkbox de `qa-hu-004.md`) para
+  cerrarla y hacer merge a `main`.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-005 (validar disponibilidad) puede reutilizar `/citas/horarios`; HU-006
   se apoya en el `UNIQUE` de HU-004.
