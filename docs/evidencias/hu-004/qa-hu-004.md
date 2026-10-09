@@ -104,6 +104,7 @@ Ninguno.
 | Plan 004 (Q1–Q10 decididas) | ✔ commit `f68b765` |
 | `task.md` T1–T18 | ✔ |
 | `task.md` T20 (modificación visual D19) | ✔ |
+| `task.md` T19 (aceptación de la HU, 2026-10-09) | ✔ |
 | Commits por fase (docs, contenido, persistencia, servicio, web, tests) | ✔ `f68b765`…`eb10fc3` |
 | Commits de la modificación D19 (docs, feat, test) | ✔ `f43902b`, `9948822`, `a6eb26c` |
 | Servidor de revisión | `python app.py` → http://127.0.0.1:5000/citas |
@@ -115,5 +116,5 @@ manual del flujo completo y de la modificación D19 verificadas.
 
 ## Aceptación de la HU
 
-- [ ] **ACEPTADA por la usuaria** (fecha: ____-__-__)
+- [x] **ACEPTADA por la usuaria** (fecha: 2026-10-09)
 

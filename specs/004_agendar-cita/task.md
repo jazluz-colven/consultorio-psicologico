@@ -128,9 +128,11 @@
   Hecho cuando: `git status` limpio, `git rev-parse HEAD` = `git rev-parse origin/feature/hu-004`
   y `MEMORY.md` registra HU-004 (incluida la primera persistencia del proyecto).
 
-- [ ] **T19 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T19 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-004/qa-hu-004.md`
   está marcado con fecha y la §7.2 del plan queda íntegramente en `[x]`.
+  **Aceptada el 2026-10-09** (incluye la modificación visual D19 y el ajuste de
+  columna izquierda).
 
 - [x] **T20 — Modificación visual: 2 columnas + datepicker + bloques (plan D19)** `[RNF-2]`
   Layout en 2 columnas (datos del paciente ‖ datepicker + horas), datepicker

@@ -34,8 +34,8 @@ aporte.
   `docs/evidencias/hu-016/qa-hu-016.md` (aceptación 2026-10-08, sin PNG por Q6).
   Specs/plans 001-003 enmendados; `docs/design-identity.md` nuevo. Mergeada a
   `main` (`fac427d`).
-- **HU-004 (Spec 004) IMPLEMENTADA Y QA PASS — PENDIENTE DE ACEPTACIÓN**
-  (2026-10-09, rama `feature/hu-004` desde `main`): flujo de reserva en
+- **HU-004 (Spec 004) ACEPTADA Y CERRADA** (2026-10-09, rama `feature/hu-004`
+  desde `main`): flujo de reserva en
   `/citas` — formulario de 8 campos, disponibilidad en vivo
   (`GET /citas/horarios` + `availability.js`), alta con PRG (303 →
   `/citas/confirmada/<id>`), estado inicial **«Pendiente»** (`pending`).
@@ -123,9 +123,9 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- HU-004 **implementada, QA PASS** (2026-10-09, incluida la modificación visual
-  D19): **falta la aceptación de la usuaria** (checkbox de `qa-hu-004.md`) para
-  cerrarla y hacer merge a `main`.
+- HU-004 **ACEPTADA el 2026-10-09** (incluye D19 y el ajuste de columna
+  izquierda): **falta merge de `feature/hu-004` a `main`** y verificar
+  sincronización.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-005 (validar disponibilidad) puede reutilizar `/citas/horarios`; HU-006
   se apoya en el `UNIQUE` de HU-004.

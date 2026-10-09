@@ -506,7 +506,8 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
       (`escritorio-1280.png`, `movil-375.png`) con demo sobre el servidor
       (`GET /citas` → 200 y reserva completa).
 - [x] Commit/Push de la evidencia y actualización de `MEMORY.md`.
-- [ ] Aceptación de la HU (checkbox del informe QA).
+- [x] Aceptación de la HU (checkbox del informe QA) — **2026-10-09**, incluye la
+      modificación visual D19 y el ajuste de columna izquierda.
 
 ---
 
