@@ -17,6 +17,9 @@
   var selectedISO = "";
   var viewYear = 0;
   var viewMonth = 0;
+  var dayStates = null;
+  var daySeq = 0;
+  var hoursSeq = 0;
 
   function pad(value) {
     return value < 10 ? "0" + value : String(value);
@@ -42,6 +45,10 @@
     var parts = fromISO(iso);
     var weekday = new Date(parts.year, parts.month, parts.day).getDay();
     return weekday >= 1 && weekday <= 5;
+  }
+
+  function dataAttr(name) {
+    return calendarEl ? calendarEl.getAttribute(name) || "" : "";
   }
 
   function renderCalendar() {
@@ -73,13 +80,19 @@
         button.type = "button";
         button.className = "appointment__calendar-day";
         button.textContent = String(dayNumber);
-        button.setAttribute(
-          "aria-label",
-          dayNumber + " de " + MONTHS[viewMonth] + " de " + viewYear
-        );
+        var baseLabel =
+          dayNumber + " de " + MONTHS[viewMonth] + " de " + viewYear;
+        button.setAttribute("aria-label", baseLabel);
         if (!isBookable(iso)) {
           button.disabled = true;
           button.className += " is-disabled";
+        } else if (dayStates && !dayStates[iso]) {
+          button.disabled = true;
+          button.className += " is-full";
+          button.setAttribute(
+            "aria-label",
+            baseLabel + dataAttr("data-day-no-hours")
+          );
         } else {
           button.className += " is-bookable";
           button.addEventListener("click", function () {
@@ -110,7 +123,9 @@
     var next = new Date(viewYear, viewMonth + delta, 1);
     viewYear = next.getFullYear();
     viewMonth = next.getMonth();
+    dayStates = null;
     renderCalendar();
+    loadDayStates();
   }
 
   function currentService() {
@@ -143,7 +158,25 @@
     return label;
   }
 
-  function fillBlock(blockId, hours, previous) {
+  function createTakenHour(hour) {
+    var label = document.createElement("label");
+    label.className = "appointment__hour appointment__hour--taken";
+    var input = document.createElement("input");
+    input.className = "appointment__hour-input";
+    input.type = "radio";
+    input.disabled = true;
+    var text = document.createElement("span");
+    text.textContent = hour;
+    var badge = document.createElement("span");
+    badge.className = "appointment__hour-badge";
+    badge.textContent = dataAttr("data-occupied-label");
+    label.appendChild(input);
+    label.appendChild(text);
+    label.appendChild(badge);
+    return label;
+  }
+
+  function fillBlock(blockId, hours, taken, previous) {
     var block = document.getElementById(blockId);
     if (!block) {
       return;
@@ -152,10 +185,17 @@
     hours.forEach(function (hour) {
       block.appendChild(createHour(hour, hour === previous));
     });
+    taken.forEach(function (hour) {
+      block.appendChild(createTakenHour(hour));
+    });
   }
 
-  function fillHours(hours) {
-    var previous = selectedTime();
+  function clearBlocks() {
+    fillBlock("hours-morning", [], [], "");
+    fillBlock("hours-afternoon", [], [], "");
+  }
+
+  function splitByBlock(hours) {
     var morning = [];
     var afternoon = [];
     hours.forEach(function (hour) {
@@ -165,15 +205,26 @@
         afternoon.push(hour);
       }
     });
-    fillBlock("hours-morning", morning, previous);
-    fillBlock("hours-afternoon", afternoon, previous);
+    return { morning: morning, afternoon: afternoon };
+  }
+
+  function fillHours(available, occupied) {
+    var previous = selectedTime();
+    var free = splitByBlock(available);
+    var taken = splitByBlock(occupied);
+    fillBlock("hours-morning", free.morning, taken.morning, previous);
+    fillBlock("hours-afternoon", free.afternoon, taken.afternoon, previous);
 
     var status = document.getElementById("hours-status");
-    if (status) {
-      status.textContent =
-        hours.length === 0
-          ? calendarEl.getAttribute("data-empty-message") || ""
-          : "";
+    if (!status) {
+      return;
+    }
+    if (available.length === 0) {
+      status.textContent = dataAttr("data-empty-message");
+    } else if (previous && occupied.indexOf(previous) !== -1) {
+      status.textContent = dataAttr("data-slot-taken");
+    } else {
+      status.textContent = "";
     }
   }
 
@@ -186,14 +237,17 @@
     var status = document.getElementById("hours-status");
 
     if (!service || !date) {
-      fillBlock("hours-morning", [], "");
-      fillBlock("hours-afternoon", [], "");
+      clearBlocks();
       if (status) {
-        status.textContent = calendarEl.getAttribute("data-hint") || "";
+        status.textContent = dataAttr("data-hint");
       }
       return;
     }
 
+    if (status) {
+      status.textContent = dataAttr("data-checking");
+    }
+    var seq = ++hoursSeq;
     var url =
       "/citas/horarios?service=" +
       encodeURIComponent(service) +
@@ -208,10 +262,59 @@
         return response.json();
       })
       .then(function (data) {
-        fillHours(data.available || []);
+        if (seq !== hoursSeq) {
+          return;
+        }
+        fillHours(data.available || [], data.occupied || []);
       })
       .catch(function () {
-        fillHours([]);
+        if (seq !== hoursSeq) {
+          return;
+        }
+        fillHours([], []);
+      });
+  }
+
+  function loadDayStates() {
+    if (!calendarEl) {
+      return;
+    }
+    var service = currentService();
+    if (!service) {
+      return;
+    }
+    var seq = ++daySeq;
+    var month = viewYear + "-" + pad(viewMonth + 1);
+    var url =
+      "/citas/disponibilidad?service=" +
+      encodeURIComponent(service) +
+      "&month=" +
+      encodeURIComponent(month);
+
+    fetch(url)
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("days failed");
+        }
+        return response.json();
+      })
+      .then(function (data) {
+        if (seq !== daySeq) {
+          return;
+        }
+        var map = {};
+        (data.days || []).forEach(function (iso) {
+          map[iso] = true;
+        });
+        dayStates = map;
+        renderCalendar();
+      })
+      .catch(function () {
+        if (seq !== daySeq) {
+          return;
+        }
+        dayStates = null;
+        renderCalendar();
       });
   }
 
@@ -245,8 +348,15 @@
 
     var serviceField = document.getElementById("service");
     if (serviceField) {
-      serviceField.addEventListener("change", refreshHours);
+      serviceField.addEventListener("change", function () {
+        dayStates = null;
+        renderCalendar();
+        loadDayStates();
+        refreshHours();
+      });
     }
+
+    loadDayStates();
 
     if (calendarEl && dateField && serviceField && serviceField.value && dateField.value) {
       refreshHours();
