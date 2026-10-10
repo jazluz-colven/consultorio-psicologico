@@ -18,6 +18,18 @@ CREATE TABLE IF NOT EXISTS appointments (
     created_at      TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     UNIQUE (service, date, time)
 );
+
+CREATE TABLE IF NOT EXISTS automation_events (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id        TEXT NOT NULL UNIQUE,
+    event_type      TEXT NOT NULL,
+    event_version   INTEGER NOT NULL,
+    appointment_id  INTEGER NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'pending',
+    detail          TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    sent_at         TEXT
+);
 """
 
 
