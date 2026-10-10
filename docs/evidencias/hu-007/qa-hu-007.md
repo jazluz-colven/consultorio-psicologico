@@ -71,4 +71,4 @@ apuntando a un receptor stdlib local (puerto 8765). Evidencia en
 
 **PASS** (12/12 TC; suite 146/146; demo manual completa).
 
-- [ ] **Aceptación de la HU** por la usuaria: ______________ (fecha: ________)
+- [x] **Aceptación de la HU** por la usuaria: **aceptada el 2026-10-10**.

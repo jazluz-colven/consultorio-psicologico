@@ -3,12 +3,12 @@
 > Trazabilidad: **HU-007 → Spec 007 (`specs/007_automatizacion-reservas/spec.md`) →
 > este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs`.
-> Etapa actual: **PLAN APROBADO (2026-10-10)**. Decisiones Q1–Q5 respondidas por la
-> usuaria (2026-10-10): webhook genérico a n8n, payload sin datos personales, POST
-> síncrono con timeout corto, registro en tabla `automation_events` y sin reintento
-> automático. **Enmienda de la spec 007 confirmada por la usuaria (2026-10-10)**:
-> cierra las dos dudas [NECESITA ACLARACIÓN] y fija el contrato del evento (§2.2) y
-> de incidencias (§2.3).
+> Etapa actual: **HU-007 ACEPTADA Y CERRADA** (2026-10-10). Decisiones Q1–Q5
+> respondidas por la usuaria (2026-10-10): webhook genérico a n8n, payload sin
+> datos personales, POST síncrono con timeout corto, registro en tabla
+> `automation_events` y sin reintento automático. **Enmienda de la spec 007
+> confirmada (2026-10-10)**. QA **PASS** en `docs/evidencias/hu-007/qa-hu-007.md`
+> (12/12 TC, suite **146 PASS / 0 FAIL**); merge a `main`.
 > Baseline declarado en `MEMORY.md` (2026-10-09): **134 PASS / 0 FAIL**; verificar al
 > crear la rama.
 
@@ -472,16 +472,23 @@ Evidencia: payload del POST capturado + dump de automation_events (demo §6.2)
       `UNIQUE(event_id)`), la interpretación de «reserva confirmada» (D7), el
       comportamiento ante no-configurado/timeout/no-2xx y el alcance «sin
       reintento» (Q5) — **confirmada por la usuaria 2026-10-10**.
-- [ ] Creación de `feature/hu-007` desde `main` (Q6) y verificación del baseline
-      **134 PASS / 0 FAIL**.
-- [ ] Implementación de §1–§5 (config → content → repositorio → servicio →
-      `create_booking` → inyección web) con commits por fase.
-- [ ] Tests §6 en verde: **146 PASS / 0 FAIL** con los 134 previos intactos.
-- [ ] Demo manual §6.2 (definir entorno de demo: n8n real de la usuaria o receptor
-      local stdlib) + evidencia en `docs/evidencias/hu-007/`.
-- [ ] Informe QA `qa-hu-007.md` con PASS/FAIL por TC y checkbox de aceptación.
-- [ ] Commit/Push por fases, actualización de `MEMORY.md` y aceptación de la HU.
-- [ ] Dejar el servidor de revisión en marcha (AGENTS.md) y comunicar la URL.
+- [x] Creación de `feature/hu-007` desde `main` (Q6) y verificación del baseline
+      **134 PASS / 0 FAIL** — **2026-10-10 (`4735576`; baseline 134 PASS).**
+- [x] Implementación de §1–§5 (config → content → repositorio → servicio →
+      `create_booking` → inyección web) con commits por fase — **2026-10-10
+      (`d1a1bd5`, `31367d0`).**
+- [x] Tests §6 en verde: **146 PASS / 0 FAIL** con los 134 previos intactos —
+      **2026-10-10 (`138b547`; suite 146/146).**
+- [x] Demo manual §6.2 (webhook arriba → `sent` + payload; abajo → reserva
+      intacta + `failed`; reproceso → 0 POST) + evidencia en
+      `docs/evidencias/hu-007/` — **2026-10-10 (receptor stdlib; `9d039a9`).**
+- [x] Informe QA `qa-hu-007.md` con PASS/FAIL por TC y checkbox de aceptación —
+      **2026-10-10 (veredicto PASS, 12/12 TC).**
+- [x] Commit/Push por fases, actualización de `MEMORY.md` y aceptación de la HU —
+      **2026-10-10 (6 commits; HEAD sincronizado con `origin/feature/hu-007`;
+      aceptada por la usuaria 2026-10-10).**
+- [x] Dejar el servidor de revisión en marcha (AGENTS.md) y comunicar la URL —
+      **2026-10-10 (http://127.0.0.1:5001/citas).**
 
 ---
 

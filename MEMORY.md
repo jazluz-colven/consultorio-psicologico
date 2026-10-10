@@ -104,6 +104,19 @@ aporte.
   tras la enmienda de identidad (Q6: no se regeneran).
 - Servidor de revisión en marcha: `python app.py` → http://127.0.0.1:5000/
   (`/buscar?q=psicología` responde 200).
+- **HU-007 (Spec 007, automatización n8n) ACEPTADA Y CERRADA** (2026-10-10, rama
+  `feature/hu-007`): plan aprobado y spec enmendada (Q1 webhook genérico
+  `appointment.confirmed`, Q2 payload **sin PII**, `automation_events` con
+  `UNIQUE(event_id)`, POST síncrono stdlib timeout 3 s, sin reintentos). Config
+  por env (`AUTOMATION_WEBHOOK_URL` vacío = deshabilitado, parse defensivo de
+  timeout), repositorio de eventos (dedup → 0 POST en reproceso), aislamiento
+  total (la automatización nunca invalida la reserva; demo: webhook caído →
+  303 intacto + evento `failed`). 12 tests nuevos (TC-007-001…012); suite
+  **146 PASS / 0 FAIL**. Veredicto **PASS** en
+  `docs/evidencias/hu-007/qa-hu-007.md`. BD dev: citas 36–40 de la demo.
+  Commits: `4735576` docs, `d1a1bd5` config+persistencia+contenido, `31367d0`
+  servicio+disparo+web, `138b547` tests, `9d039a9` evidencia+memoria; aceptación
+  y merge a `main` 2026-10-10.
 
 ## Decisiones (y por qué)
 - **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
@@ -193,18 +206,8 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **HU-006 CERRADA** (aceptada 2026-10-09, incluida la enmienda 2 de los 700 ms);
-  `main` actualizada. Sin pendientes abiertos de esta HU.
-- **HU-007 (Spec 007, automatización n8n) IMPLEMENTADA — QA PASS, PENDIENTE DE
-  ACEPTACIÓN** (2026-10-10, rama `feature/hu-007`): plan aprobado y spec enmendada
-  (Q1 webhook genérico `appointment.confirmed`, Q2 payload **sin PII**,
-  `automation_events` con `UNIQUE(event_id)`, POST síncrono stdlib timeout 3 s,
-  sin reintentos). Config por env (`AUTOMATION_WEBHOOK_URL` vacío = deshabilitado,
-  parse defensivo de timeout), repositorio de eventos (dedup → 0 POST en
-  reproceso), aislamiento total (la automatización nunca invalida la reserva;
-  demo: webhook caído → 303 intacto + evento `failed`). 12 tests nuevos
-  (TC-007-001…012); suite **146 PASS / 0 FAIL**. Veredicto **PASS** en
-  `docs/evidencias/hu-007/qa-hu-007.md` (demo con receptor stdlib: sent/failed/
-  dedup). BD dev: citas 36–40 de la demo.
-- Servidor de revisión en marcha: http://127.0.0.1:5000/citas
-- HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).
+- **HU-007 CERRADA** (aceptada 2026-10-10); merge a `main`. Sin pendientes
+  abiertos de esta HU.
+- Servidor de revisión en marcha: http://127.0.0.1:5001/citas (demo HU-007 con
+  `AUTOMATION_WEBHOOK_URL`; el 5000 puede no estar activo).
+- HU-007 se apoya en el `UNIQUE` de HU-004 y no toca el modelo de `appointments`.

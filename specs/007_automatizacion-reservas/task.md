@@ -145,6 +145,8 @@
   `138b547` (tests) y `9d039a9` (evidencia+MEMORY). HEAD =
   `origin/feature/hu-007` = `9d039a9`; `MEMORY.md` registra HU-007.
 
-- [ ] **T14 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T14 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-007/qa-hu-007.md`
   está marcado con fecha y la §7.2 del plan queda íntegramente en `[x]`.
+  **Hecho 2026-10-10**: aceptada por la usuaria («Puedes cerrar la HU. Y realizar
+  el merge»); checkbox marcado y §7.2 del plan íntegra en `[x]`; merge a `main`.
