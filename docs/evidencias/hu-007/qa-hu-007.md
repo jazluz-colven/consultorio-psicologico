@@ -86,6 +86,7 @@ token solo en entorno, nunca en el repo).
 | TC-007-011 ampliado (default `""`) | `python -m pytest tests/test_hu_007.py -v` | PASS |
 | Suite completa | `python -m pytest -q` | **147 passed / 0 FAIL** |
 | Live contra n8n (webhook-test con «Listen») | POST con payload de §2.2 + cabecera | **HTTP 200** «Workflow was started» |
+| **E2E app → n8n** (webhook-test, «Listen») | Reserva real `POST /citas` (cita **42**, 2026-11-02 14:00) con `AUTOMATION_WEBHOOK_URL` + `AUTOMATION_WEBHOOK_AUTH_HEADER` | **303** → `/citas/confirmada/42`; evento `appointment.confirmed:42:v1` con estado **`sent`** (`sent_at` rellenado); n8n devolvió 2xx |
 
 Commits enmienda: `ae854cb` (docs), `5c817cf` (feat), `7dff948` (test).
 Veredicto enmienda 2: **PASS**.
