@@ -195,5 +195,11 @@ aporte.
 ## Próximos pasos
 - **HU-006 CERRADA** (aceptada 2026-10-09, incluida la enmienda 2 de los 700 ms);
   `main` actualizada. Sin pendientes abiertos de esta HU.
+- **HU-007 (Spec 007, automatización n8n)**: plan `specs/007_automatizacion-reservas/plan.md`
+  **APROBADO** (2026-10-10) y spec **ENMENDADA** (Q1 webhook genérico
+  `appointment.confirmed`, Q2 payload sin PII, tabla `automation_events` con
+  `UNIQUE(event_id)`, POST síncrono stdlib timeout 3 s, sin reintentos). Archivos
+  sin commitear en `main`; siguiente paso: `task.md` → rama `feature/hu-007` →
+  implementación (baseline 134 PASS).
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).
