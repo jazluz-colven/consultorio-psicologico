@@ -27,6 +27,7 @@ from consultorio.content.appointment_content import (
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import Appointment
+from consultorio.services import automation_service
 
 SLOT_TAKEN: str = "slot_taken"
 
@@ -135,14 +136,17 @@ def get_available_days(
 
 
 def create_booking(
-    data: dict[str, str], database_path: str | Path
+    data: dict[str, str],
+    database_path: str | Path,
+    automation_url: str = "",
+    automation_timeout: float = 3.0,
 ) -> Appointment | str:
     if repository.is_slot_taken(
         data["service"], data["date"], data["time"], database_path
     ):
         return SLOT_TAKEN
     try:
-        return repository.insert_appointment(data, database_path)
+        appointment = repository.insert_appointment(data, database_path)
     except sqlite3.IntegrityError:
         # UNIQUE (service, date, time) enforced at the persistence point
         return SLOT_TAKEN
@@ -150,6 +154,11 @@ def create_booking(
         # lock/busy under concurrency: user-facing rejection, never a raw 500
         return SLOT_TAKEN
     # any other exception propagates (a real 500 must not be silenced)
+    # best-effort automation: never raises, never conditions the booking (RF-2/RF-7)
+    automation_service.on_appointment_confirmed(
+        appointment, database_path, automation_url, automation_timeout
+    )
+    return appointment
 
 
 def is_valid_iso_date(raw_date: str) -> bool:

@@ -123,7 +123,12 @@ def index():
     if errors:
         return _render_form(data, errors)
 
-    result = create_booking(data, _database_path())
+    result = create_booking(
+        data,
+        _database_path(),
+        current_app.config["AUTOMATION_WEBHOOK_URL"],
+        current_app.config["AUTOMATION_TIMEOUT_SECONDS"],
+    )
     if result == SLOT_TAKEN:
         return _render_form(data, {"time": MSG_SLOT_TAKEN})
 
