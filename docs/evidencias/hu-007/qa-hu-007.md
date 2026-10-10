@@ -72,3 +72,20 @@ apuntando a un receptor stdlib local (puerto 8765). Evidencia en
 **PASS** (12/12 TC; suite 146/146; demo manual completa).
 
 - [x] **Aceptación de la HU** por la usuaria: **aceptada el 2026-10-10**.
+
+## Enmienda 2 — cabecera de autenticación (Q7/D14, 2026-10-10)
+
+Tras el **403** real del webhook n8n de la usuaria («Authorization data is
+wrong!»), la spec y el plan se enmendaron y se añadió
+`AUTOMATION_WEBHOOK_AUTH_HEADER` (formato `Nombre: valor`, vacía por defecto;
+token solo en entorno, nunca en el repo).
+
+| Validación | Comando/acción | Resultado |
+|---|---|---|
+| TC-007-014 (cabecera en el POST, token falso) | `python -m pytest tests/test_automation_service.py -v` | PASS |
+| TC-007-011 ampliado (default `""`) | `python -m pytest tests/test_hu_007.py -v` | PASS |
+| Suite completa | `python -m pytest -q` | **147 passed / 0 FAIL** |
+| Live contra n8n (webhook-test con «Listen») | POST con payload de §2.2 + cabecera | **HTTP 200** «Workflow was started» |
+
+Commits enmienda: `ae854cb` (docs), `5c817cf` (feat), `7dff948` (test).
+Veredicto enmienda 2: **PASS**.

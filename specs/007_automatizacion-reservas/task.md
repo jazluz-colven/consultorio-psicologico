@@ -161,4 +161,6 @@
   Hecho cuando: spec y plan enmendados, `python -m pytest -q` → **147 PASS /
   0 FAIL** y TC-007-014 PASS.
   **Hecho 2026-10-10**: enmienda + implementación + TC-007-014; suite
-  **147 PASS / 0 FAIL**.
+  **147 PASS / 0 FAIL**; prueba live contra `webhook-test/hu-007-cita-creada`
+  con la cabecera → **HTTP 200** «Workflow was started»; evidencia en
+  `qa-hu-007.md` (sección enmienda 2).

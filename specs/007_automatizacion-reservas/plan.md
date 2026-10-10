@@ -3,14 +3,14 @@
 > Trazabilidad: **HU-007 → Spec 007 (`specs/007_automatizacion-reservas/spec.md`) →
 > este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs`.
-> Etapa actual: **HU-007 ACEPTADA Y CERRADA** (2026-10-10); **enmienda 2
+> Etapa actual: **HU-007 ACEPTADA Y CERRADA** (2026-10-10); **enmienda 2 completada
 > (2026-10-10): cabecera de autenticación opcional `AUTOMATION_WEBHOOK_AUTH_HEADER`
->** (Q7, decisión D14) — pendiente de implementar/evidenciar (task T15). Decisiones
-> Q1–Q5 respondidas por la usuaria (2026-10-10): webhook genérico a n8n, payload sin
-> datos personales, POST síncrono con timeout corto, registro en tabla
-> `automation_events` y sin reintento automático. **Enmienda de la spec 007
-> confirmada (2026-10-10)**. QA **PASS** en `docs/evidencias/hu-007/qa-hu-007.md`
-> (12/12 TC, suite **146 PASS / 0 FAIL**); merge a `main`.
+>** (Q7, decisión D14) — suite **147 PASS / 0 FAIL**, TC-007-014 PASS y live
+> contra n8n **HTTP 200**. Decisiones Q1–Q5 respondidas por la usuaria
+> (2026-10-10): webhook genérico a n8n, payload sin datos personales, POST
+> síncrono con timeout corto, registro en tabla `automation_events` y sin
+> reintento automático. **Enmienda de la spec 007 confirmada (2026-10-10)**.
+> QA **PASS** en `docs/evidencias/hu-007/qa-hu-007.md` (12/12 TC + enmienda 2).
 > Baseline declarado en `MEMORY.md` (2026-10-09): **134 PASS / 0 FAIL**; verificar al
 > crear la rama.
 

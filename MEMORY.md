@@ -116,7 +116,11 @@ aporte.
   `docs/evidencias/hu-007/qa-hu-007.md`. BD dev: citas 36–40 de la demo.
   Commits: `4735576` docs, `d1a1bd5` config+persistencia+contenido, `31367d0`
   servicio+disparo+web, `138b547` tests, `9d039a9` evidencia+memoria; aceptación
-  y merge a `main` 2026-10-10.
+  y merge a `main` 2026-10-10. **Enmienda 2 (Q7/D14)** tras el 403 del n8n cloud:
+  cabecera opcional **`AUTOMATION_WEBHOOK_AUTH_HEADER`** (`Nombre: valor`,
+  default vacío; **el token es secreto de entorno, nunca en el repo**);
+  TC-007-014, suite **147 PASS**, live n8n `webhook-test` → **HTTP 200**
+  (commits `ae854cb`/`5c817cf`/`7dff948`).
 
 ## Decisiones (y por qué)
 - **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
@@ -157,6 +161,11 @@ aporte.
 - `pip` está **bloqueado por AppLocker**: usar `python -m pip install ...` (así se
   instaló Pillow 12.3.0 para convertir imágenes; es herramienta del entorno, no
   dependencia del proyecto).
+- **n8n cloud**: los webhooks exigen autenticación (403 «Authorization data is
+  wrong!» sin cabecera) y la URL `webhook-test/...` solo responde a **1 llamada**
+  tras pulsar «Execute workflow» (si no, 404). La URL de producción es
+  `webhook/...` con el workflow **activado**. El token vive solo en
+  `AUTOMATION_WEBHOOK_AUTH_HEADER` (entorno), nunca en el repo.
 - Imágenes de portada: `hero-presentacion.png` es el hero (380×511);
   `hero-contenidas.png` (720×713) ahora es el logotipo de cabecera; llegó
   `hero-contenidas.png.png` (nombres dobles) y su fondo blanco se ve como caja
