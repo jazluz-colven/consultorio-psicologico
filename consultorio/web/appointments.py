@@ -128,6 +128,7 @@ def index():
         _database_path(),
         current_app.config["AUTOMATION_WEBHOOK_URL"],
         current_app.config["AUTOMATION_TIMEOUT_SECONDS"],
+        current_app.config["AUTOMATION_WEBHOOK_AUTH_HEADER"],
     )
     if result == SLOT_TAKEN:
         return _render_form(data, {"time": MSG_SLOT_TAKEN})

@@ -26,6 +26,11 @@ class Config:
     AUTOMATION_TIMEOUT_SECONDS: float = _parse_timeout_seconds(
         os.environ.get("AUTOMATION_TIMEOUT_SECONDS", "")
     )
+    # HU-007 enmienda 2 (Q7/D14): optional auth header "Name: value"; empty = none.
+    # The token is an environment secret: never commit it to the repository.
+    AUTOMATION_WEBHOOK_AUTH_HEADER: str = os.environ.get(
+        "AUTOMATION_WEBHOOK_AUTH_HEADER", ""
+    )
 
 
 class TestConfig(Config):

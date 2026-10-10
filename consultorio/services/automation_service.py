@@ -46,6 +46,7 @@ def on_appointment_confirmed(
     database_path: str | Path,
     webhook_url: str = "",
     timeout_seconds: float = 3.0,
+    auth_header: str = "",
 ) -> None:
     """Register the event and best-effort dispatch it; never raises (RF-2/RF-4/RF-7)."""
     try:
@@ -67,7 +68,9 @@ def on_appointment_confirmed(
             )
             return
         try:
-            status_code = _post_webhook(webhook_url, event, timeout_seconds)
+            status_code = _post_webhook(
+                webhook_url, event, timeout_seconds, auth_header
+            )
         except TimeoutError:
             events_repository.mark_failed(event_id, DETAIL_TIMEOUT, database_path)
             return
@@ -95,13 +98,24 @@ def on_appointment_confirmed(
 
 
 def _post_webhook(
-    url: str, payload: dict[str, object], timeout_seconds: float
+    url: str,
+    payload: dict[str, object],
+    timeout_seconds: float,
+    auth_header: str = "",
 ) -> int:
-    """POST JSON with the stdlib only (constitution #1); returns the HTTP status."""
+    """POST JSON with the stdlib only (constitution #1); returns the HTTP status.
+
+    `auth_header` (enmienda 2, Q7/D14) is a "Name: value" pair sent as-is;
+    empty means no extra header. The value is an environment secret.
+    """
+    headers = {"Content-Type": "application/json"}
+    name, separator, value = auth_header.partition(": ")
+    if separator and name:
+        headers[name] = value.strip()
     request = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout_seconds) as response:

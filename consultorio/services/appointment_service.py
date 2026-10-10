@@ -140,6 +140,7 @@ def create_booking(
     database_path: str | Path,
     automation_url: str = "",
     automation_timeout: float = 3.0,
+    automation_auth_header: str = "",
 ) -> Appointment | str:
     if repository.is_slot_taken(
         data["service"], data["date"], data["time"], database_path
@@ -156,7 +157,11 @@ def create_booking(
     # any other exception propagates (a real 500 must not be silenced)
     # best-effort automation: never raises, never conditions the booking (RF-2/RF-7)
     automation_service.on_appointment_confirmed(
-        appointment, database_path, automation_url, automation_timeout
+        appointment,
+        database_path,
+        automation_url,
+        automation_timeout,
+        automation_auth_header,
     )
     return appointment
 
