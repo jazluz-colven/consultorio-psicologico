@@ -133,13 +133,17 @@
   `automation_events_dump.json`, `demo_appointments.json`. Servidor de demo en
   marcha → http://127.0.0.1:5001/citas (receptor apagado tras la demo).
 
-- [ ] **T13 — Commits por fase, Push y `MEMORY.md` (plan §8.10)** `[trazabilidad]`
+- [x] **T13 — Commits por fase, Push y `MEMORY.md` (plan §8.10)** `[trazabilidad]`
   Commits separados por fase (spec+plan+task → config+persistencia+contenido →
   servicio+disparo+web → tests → evidencia+MEMORY) con mensajes que citan
   HU-007/Spec 007.
   Hecho cuando: `git status` limpio, `git rev-parse HEAD` =
   `git rev-parse origin/feature/hu-007` y `MEMORY.md` registra HU-007
   (`appointment.confirmed`, `automation_events`, aislamiento, sin PII).
+  **Hecho 2026-10-10**: 5 commits — `4735576` (spec+plan+task),
+  `d1a1bd5` (config+persistencia+contenido), `31367d0` (servicio+disparo+web),
+  `138b547` (tests) y `9d039a9` (evidencia+MEMORY). HEAD =
+  `origin/feature/hu-007` = `9d039a9`; `MEMORY.md` registra HU-007.
 
 - [ ] **T14 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-007/qa-hu-007.md`
