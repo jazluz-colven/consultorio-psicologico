@@ -1,0 +1,39 @@
+{
+  "webhook_down": {
+    "http": 303,
+    "location": "/citas/confirmada/40",
+    "appointment_id": 40,
+    "booking_date": "2026-10-23",
+    "time": "11:30",
+    "confirmation_page_ok": true,
+    "event": {
+      "id": 5,
+      "event_id": "appointment.confirmed:40:v1",
+      "event_type": "appointment.confirmed",
+      "event_version": 1,
+      "appointment_id": 40,
+      "status": "failed",
+      "detail": "Servicio de automatización no disponible.",
+      "created_at": "2026-10-09 19:56:50",
+      "sent_at": null
+    }
+  },
+  "reprocess_38": {
+    "posts_before": 4,
+    "posts_after": 4,
+    "posts_added": 0,
+    "events_for_38": [
+      {
+        "id": 3,
+        "event_id": "appointment.confirmed:38:v1",
+        "event_type": "appointment.confirmed",
+        "event_version": 1,
+        "appointment_id": 38,
+        "status": "sent",
+        "detail": null,
+        "created_at": "2026-10-09 19:53:56",
+        "sent_at": "2026-10-09 19:53:56"
+      }
+    ]
+  }
+}

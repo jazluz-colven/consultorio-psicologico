@@ -195,11 +195,16 @@ aporte.
 ## Próximos pasos
 - **HU-006 CERRADA** (aceptada 2026-10-09, incluida la enmienda 2 de los 700 ms);
   `main` actualizada. Sin pendientes abiertos de esta HU.
-- **HU-007 (Spec 007, automatización n8n)**: plan `specs/007_automatizacion-reservas/plan.md`
-  **APROBADO** (2026-10-10) y spec **ENMENDADA** (Q1 webhook genérico
-  `appointment.confirmed`, Q2 payload sin PII, tabla `automation_events` con
-  `UNIQUE(event_id)`, POST síncrono stdlib timeout 3 s, sin reintentos). Archivos
-  sin commitear en `main`; siguiente paso: `task.md` → rama `feature/hu-007` →
-  implementación (baseline 134 PASS).
+- **HU-007 (Spec 007, automatización n8n) IMPLEMENTADA — QA PASS, PENDIENTE DE
+  ACEPTACIÓN** (2026-10-10, rama `feature/hu-007`): plan aprobado y spec enmendada
+  (Q1 webhook genérico `appointment.confirmed`, Q2 payload **sin PII**,
+  `automation_events` con `UNIQUE(event_id)`, POST síncrono stdlib timeout 3 s,
+  sin reintentos). Config por env (`AUTOMATION_WEBHOOK_URL` vacío = deshabilitado,
+  parse defensivo de timeout), repositorio de eventos (dedup → 0 POST en
+  reproceso), aislamiento total (la automatización nunca invalida la reserva;
+  demo: webhook caído → 303 intacto + evento `failed`). 12 tests nuevos
+  (TC-007-001…012); suite **146 PASS / 0 FAIL**. Veredicto **PASS** en
+  `docs/evidencias/hu-007/qa-hu-007.md` (demo con receptor stdlib: sent/failed/
+  dedup). BD dev: citas 36–40 de la demo.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-006 se apoya en el `UNIQUE` de HU-004 (concurrencia).
