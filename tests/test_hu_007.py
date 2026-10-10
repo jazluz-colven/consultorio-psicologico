@@ -70,6 +70,7 @@ def test_tc_007_010_esquema_unique_y_dedup(database_path: Path) -> None:
 def test_tc_007_011_config_defaults_y_parse_defensivo() -> None:
     assert Config.AUTOMATION_WEBHOOK_URL == ""
     assert Config.AUTOMATION_TIMEOUT_SECONDS == 3.0
+    assert Config.AUTOMATION_WEBHOOK_AUTH_HEADER == ""
     assert _parse_timeout_seconds("no-numerico") == 3.0
     assert _parse_timeout_seconds("") == 3.0
     assert _parse_timeout_seconds("-1") == 3.0

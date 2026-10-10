@@ -150,3 +150,15 @@
   está marcado con fecha y la §7.2 del plan queda íntegramente en `[x]`.
   **Hecho 2026-10-10**: aceptada por la usuaria («Puedes cerrar la HU. Y realizar
   el merge»); checkbox marcado y §7.2 del plan íntegra en `[x]`; merge a `main`.
+
+- [x] **T15 — Enmienda 2 (Q7/D14): cabecera de autenticación `AUTOMATION_WEBHOOK_AUTH_HEADER`** `[RF-2][RF-6][RNF-1][trazabilidad]`
+  Tras el 403 real del webhook n8n de la usuaria: enmienda de la spec 007 (§Envío)
+  y del plan (§2.4/§3/D14/Q7/§6.1 TC-007-014/§4.1); implementación en `Config`
+  (env `AUTOMATION_WEBHOOK_AUTH_HEADER`, vacía por defecto), `_post_webhook()`
+  (partition «Nombre: valor» → cabecera) y paso por `create_booking()` y la capa
+  web. **El token es secreto de entorno: nunca en el repo, docs ni tests** (solo
+  `X-Test-Token: fake-token` en TC-007-014).
+  Hecho cuando: spec y plan enmendados, `python -m pytest -q` → **147 PASS /
+  0 FAIL** y TC-007-014 PASS.
+  **Hecho 2026-10-10**: enmienda + implementación + TC-007-014; suite
+  **147 PASS / 0 FAIL**.

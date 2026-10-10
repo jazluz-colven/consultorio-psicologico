@@ -89,9 +89,10 @@ def test_tc_007_002_respuesta_2xx_marca_sent_y_un_post(database_path: Path) -> N
             TIMEOUT,
         )
     assert post.call_count == 1
-    url, payload, timeout = post.call_args[0]
+    url, payload, timeout, auth_header = post.call_args[0]
     assert url == WEBHOOK_URL
     assert timeout == TIMEOUT
+    assert auth_header == ""
     assert payload["event_id"] == _event_id(appointment.id)
     assert payload["appointment"]["id"] == appointment.id
     event = automation.events_repository.get_by_event_id(
@@ -242,3 +243,25 @@ def test_tc_007_009_timeout_a_nivel_urllib(database_path: Path) -> None:
     assert event is not None
     assert event.status == "failed"
     assert event.detail == "Tiempo de espera agotado (timeout)."
+
+
+def test_tc_007_014_cabecera_auth_opcional_en_el_post() -> None:
+    payload = {"event_id": "appointment.confirmed:1:v1"}
+    with mock.patch.object(
+        automation.urllib.request, "urlopen"
+    ) as urlopen_mock:
+        urlopen_mock.return_value.__enter__.return_value.status = 200
+        automation._post_webhook(
+            WEBHOOK_URL, payload, 3.0, "X-Test-Token: fake-token"
+        )
+        request = urlopen_mock.call_args[0][0]
+        assert request.get_header("X-test-token") == "fake-token"
+        assert request.get_header("Content-type") == "application/json"
+
+    with mock.patch.object(
+        automation.urllib.request, "urlopen"
+    ) as urlopen_mock:
+        urlopen_mock.return_value.__enter__.return_value.status = 200
+        automation._post_webhook(WEBHOOK_URL, payload, 3.0)
+        request = urlopen_mock.call_args[0][0]
+        assert request.get_header("X-test-token") is None
