@@ -3,8 +3,10 @@
 > Trazabilidad: **HU-007 → Spec 007 (`specs/007_automatizacion-reservas/spec.md`) →
 > este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs`.
-> Etapa actual: **HU-007 ACEPTADA Y CERRADA** (2026-10-10). Decisiones Q1–Q5
-> respondidas por la usuaria (2026-10-10): webhook genérico a n8n, payload sin
+> Etapa actual: **HU-007 ACEPTADA Y CERRADA** (2026-10-10); **enmienda 2
+> (2026-10-10): cabecera de autenticación opcional `AUTOMATION_WEBHOOK_AUTH_HEADER`
+>** (Q7, decisión D14) — pendiente de implementar/evidenciar (task T15). Decisiones
+> Q1–Q5 respondidas por la usuaria (2026-10-10): webhook genérico a n8n, payload sin
 > datos personales, POST síncrono con timeout corto, registro en tabla
 > `automation_events` y sin reintento automático. **Enmienda de la spec 007
 > confirmada (2026-10-10)**. QA **PASS** en `docs/evidencias/hu-007/qa-hu-007.md`
@@ -91,7 +93,9 @@ Consultorio_Carolina/
 ├── consultorio/
 │   ├── config.py                      # + AUTOMATION_WEBHOOK_URL (env, default "")
 │   │                              #   + AUTOMATION_TIMEOUT_SECONDS (env, default 3.0,
-│   │                              #   parse defensivo)                     [RF-2][RF-6]
+│   │                              #   parse defensivo)
+│   │                              #   + AUTOMATION_WEBHOOK_AUTH_HEADER (env, default "",
+│   │                              #   formato "Nombre: valor")              [RF-2][RF-6]
 │   ├── content/
 │   │   └── automation_content.py      # EVENT_TYPE="appointment.confirmed",
 │   │                              #   EVENT_VERSION=1, motivos de incidencia
@@ -224,6 +228,10 @@ el duplicado (RF-5).
   automatización deshabilitada** (el sistema sigue operativo; evento `skipped`).
 - `AUTOMATION_TIMEOUT_SECONDS` (env): **3.0 s** por defecto; parse defensivo (valor
   no numérico → 3.0, sin arrancar la app).
+- `AUTOMATION_WEBHOOK_AUTH_HEADER` (env, enmienda 2 / Q7): cabecera opcional en
+  formato `Nombre: valor`; vacía por defecto = POST sin cabecera extra. El token es
+  un secreto de entorno: **nunca** en el repositorio, documentación ni tests
+  (solo valores falsos en los tests).
 - Se declaran en `Config` (visibles en `app.config`) y se **inyectan como
   parámetros** desde `web/appointments.py` a `create_booking()` →
   `on_appointment_confirmed()`, mismo patrón de DI que `database_path`.
@@ -256,7 +264,8 @@ FUNCTION build_event(appointment) -> dict:                 # allowlist, sin PII
         "appointment": {"id": …, "service": …, "date": …,
                         "time": …, "status": appointment.status}}
 
-FUNCTION on_appointment_confirmed(appointment, db, url, timeout) -> None:
+FUNCTION on_appointment_confirmed(appointment, db, url, timeout,
+                                  auth_header="") -> None:
     TRY:                                                   # nunca propaga
         event = build_event(appointment)
         IF NOT insert_event(event, db):
@@ -265,7 +274,7 @@ FUNCTION on_appointment_confirmed(appointment, db, url, timeout) -> None:
             mark_skipped(event_id, "Automatización no configurada.")  [RF-2]
             RETURN
         TRY:
-            status_code = _post_webhook(url, event, timeout)
+            status_code = _post_webhook(url, event, timeout, auth_header)
         CATCH TimeoutError:
             mark_failed(…, "Tiempo de espera agotado (timeout).")     [CL-2]
             RETURN
@@ -284,28 +293,35 @@ FUNCTION on_appointment_confirmed(appointment, db, url, timeout) -> None:
         RETURN   # fallo de registro/log: la reserva ya es válida
                                                           [RF-2][RF-4][RF-7]
 
-FUNCTION _post_webhook(url, payload, timeout) -> int:      # stdlib, sin dependencias
+FUNCTION _post_webhook(url, payload, timeout, auth_header="") -> int:  # stdlib
+    headers = {"Content-Type": "application/json"}
+    IF auth_header NOT EMPTY:                    # enmienda 2 (Q7/D14)
+        name, _, value = auth_header.partition(": ")   # primer "Nombre: valor"
+        IF name NOT EMPTY: headers[name] = value.strip()
     request = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"}, method="POST")
+        headers=headers, method="POST")
     WITH urllib.request.urlopen(request, timeout=timeout) AS response:
         RETURN response.status                             [RF-6]
 
 # --- services/appointment_service.py (único punto tocado) -------------
-FUNCTION create_booking(data, db, automation_url="", automation_timeout=3.0):
+FUNCTION create_booking(data, db, automation_url="", automation_timeout=3.0,
+                        automation_auth_header=""):
     IF repository.is_slot_taken(…): RETURN SLOT_TAKEN      # sin cambios (HU-006)
     TRY:
         appointment = repository.insert_appointment(data, db)  # 1 fila
     CATCH sqlite3.IntegrityError / OperationalError:
         RETURN SLOT_TAKEN                                  # sin cambios (HU-006)
     automation_service.on_appointment_confirmed(
-        appointment, db, automation_url, automation_timeout)   [RF-1][RF-7]
+        appointment, db, automation_url, automation_timeout,
+        automation_auth_header)                                [RF-1][RF-7]
     RETURN appointment                                     # la reserva no depende
                                                           # de la automatización [RF-2]
 
 # --- web/appointments.py (POST /citas) --------------------------------
     result = create_booking(data, _database_path(),
         current_app.config["AUTOMATION_WEBHOOK_URL"],
-        current_app.config["AUTOMATION_TIMEOUT_SECONDS"])      [RF-2][RF-6]
+        current_app.config["AUTOMATION_TIMEOUT_SECONDS"],
+        current_app.config["AUTOMATION_WEBHOOK_AUTH_HEADER"])     [RF-2][RF-6]
     # contrato intacto: 303 a /citas/confirmada/<id>             [RF-7]
 ```
 
@@ -318,7 +334,7 @@ FUNCTION create_booking(data, db, automation_url="", automation_timeout=3.0):
 | Comando | Descripción | Salida esperada | Exit code |
 |---|---|---|---|
 | `python app.py` | Arranca el servidor (BD existente) | `Running on http://127.0.0.1:5000` | `0` con Ctrl+C; `1` si falla |
-| `python -m pytest -q` | Suite completa (134 previos + 12 nuevos = 146) | `146 passed` | `0` / `1` |
+| `python -m pytest -q` | Suite completa (134 previos + 13 nuevos = 147) | `147 passed` | `0` / `1` |
 | `python -m pytest tests/test_hu_007.py -v` | Pruebas de la HU | listado PASS/FAIL | `0` / `1` |
 
 ### 4.2 Contrato HTTP `[RF-7]` — **sin cambios de endpoints**
@@ -369,6 +385,7 @@ consulta en la BD; un panel sería otra HU).
 | D11 | **Sin dependencias nuevas**: `urllib.request`, `json`, `sqlite3` de la stdlib | Constitución #1; todo lo necesario ya está en la stdlib | *requests, celery, colas*: dependencias sin aprobación escrita | todos |
 | D12 | **Identificadores en inglés; literales de `automation_content.py` y `detail` en español**; sin espejo en `expected_content.py` (no hay UI) | Constitución #6; el espejo existe para textos visibles al usuario y esta HU no añade copy visible | *Texto hardcodeado en el servicio*: rompe la trazabilidad y la coherencia | todos |
 | D13 | **Tests deterministas parcheando `_post_webhook`/`urlopen`** (respuestas 2xx/500, `URLError`, `TimeoutError` simulados), sin red real ni `sleep` | La demo manual (§6.2) usa el webhook real; los tests no deben depender de n8n ni de la red (pytest-qa) | *Levantar un servidor real en los tests*: lentitud y fragilidad. *`sleep` para simular timeout*: flaky | RF-2, RF-4, CL-1..CL-3 |
+| D14 | **Cabecera de autenticación opcional vía `AUTOMATION_WEBHOOK_AUTH_HEADER`** (formato `Nombre: valor`, vacía por defecto), añadida al POST por `_post_webhook()` (enmienda 2, Q7) | n8n en la nube exige auth en el webhook (403 real de la usuaria, 2026-10-10); una sola variable de entorno permite usar Header Auth de n8n sin código específico y mantiene el token **fuera del repositorio** (seguridad: nunca en código, docs ni tests) | *Token hardcodeado o en la BD*: secreto en el repo/datos. *Soporte de Basic Auth/queries*: más alcance sin necesidad. *Parchear el código por instancia*: rompe la configuración por entorno (D9) | RF-2, RF-6, RNF-1 |
 
 ---
 
@@ -394,14 +411,15 @@ tocar el entorno del proceso.
 | TC-007-008 | `test_automation_service.py` | **RF-7 (aislamiento):** parchear el repositorio de eventos para que lance `RuntimeError` → `create_booking()` **devuelve la `Appointment`** (reserva válida) y el 303 no se ve afectado | RF-2, RF-4, RF-7 |
 | TC-007-009 | `test_automation_service.py` | Timeout **efectivo**: `timeout=0.01` con un `urlopen` que tarda (o parche que lanza `socket.timeout`) → `failed`, sin bloquear el retorno | RF-2, RF-4, CL-2 |
 | TC-007-010 | `test_hu_007.py` | **RF-5 (esquema):** `sqlite_master` con `automation_events` y `UNIQUE(event_id)`; tras flujo completo + reproceso, `COUNT(*)=1` por `event_id` | RF-5, RNF-3, RNF-4 |
-| TC-007-011 | `test_hu_007.py` | **Config:** `Config.AUTOMATION_WEBHOOK_URL == ""` y `AUTOMATION_TIMEOUT_SECONDS == 3.0` por defecto; valores no numéricos → 3.0 (parse defensivo) | RF-2, RF-6 |
+| TC-007-011 | `test_hu_007.py` | **Config:** `Config.AUTOMATION_WEBHOOK_URL == ""`, `AUTOMATION_TIMEOUT_SECONDS == 3.0` y `AUTOMATION_WEBHOOK_AUTH_HEADER == ""` por defecto; parse defensivo del timeout y de la cabecera | RF-2, RF-6 |
 | TC-007-012 | `test_hu_007.py` | **Regresión funcional HU-004/005/006:** flujo de reserva completo con webhook configurado y sin configurar → `/citas/horarios` (`available`+`occupied`), `/citas/disponibilidad`, `/citas/confirmada/<id>` y bloqueo de doble reserva **idénticos** al contrato vigente | RF-7 |
 | TC-007-013 | `test_hu_007.py` | **Regresión total:** `python -m pytest -q` → **0 FAIL** con los **134 tests previos** intactos (HU-001/002/003/016/004/005/006) | todos, finalización |
+| TC-007-014 | `test_automation_service.py` | **Enmienda 2 (Q7/D14):** `_post_webhook()` con `auth_header="X-Test-Token: fake-token"` → la petición `urllib` parcheada lleva la cabecera `X-Test-Token: fake-token` además de `Content-Type`; sin `auth_header` no se añade ninguna cabecera extra. (Solo valores falsos: el token real es secreto de entorno.) | RF-2, RF-6, RNF-1 |
 
 > **Nota de recuento**: TC-007-013 es la corrida de la suite, no una función de test;
-> las funciones nuevas son **12** (TC-007-001…012), de modo que el total esperado es
-> **146** (134 previos + 12). **0 FAIL con los 134 previos intactos** es la condición
-> real de cierre.
+> las funciones nuevas son **13** (TC-007-001…012 + TC-007-014), de modo que el
+> total esperado es **147** (134 previos + 13). **0 FAIL con los 134 previos
+> intactos** es la condición real de cierre.
 
 ### 6.2 Pirámide
 
@@ -461,6 +479,7 @@ Evidencia: payload del POST capturado + dump de automation_events (demo §6.2)
 | Q4 | Registro de eventos e incidencias / deduplicación | **Tabla `automation_events` con `UNIQUE(event_id)` + estados y detalle** (D4, D5, D8). **Respondida 2026-10-10; exige enmienda de spec + plan (AGENTS.md) → enmienda confirmada.** |
 | Q5 | Reintentos automáticos | **Sin reintento en la app**: 1 intento; la re-ejecución la decide el administrador/n8n y el UNIQUE evita duplicados (D3, D5). **Respondida 2026-10-10.** |
 | Q6 | Rama de trabajo | **`feature/hu-007` desde `main`** (D10), tras aprobar plan y enmienda. |
+| Q7 | Autenticación del webhook n8n (la nube devuelve 403 sin credenciales; la usuaria aporta una cabecera `X-HU007-Token`) | **Cabecera opcional configurable `AUTOMATION_WEBHOOK_AUTH_HEADER`** (formato `Nombre: valor`, vacía por defecto; token solo en entorno, nunca en el repo) (D14). Enmienda 2 de la spec **confirmada 2026-10-10**. |
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 

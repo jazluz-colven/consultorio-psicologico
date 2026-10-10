@@ -91,6 +91,11 @@ Quedan excluidos `patient_name`, `email`, `phone`, `document_type`,
   administrador/n8n.
 - URL por variable de entorno `AUTOMATION_WEBHOOK_URL`; vacía por defecto =
   automatización deshabilitada (evento registrado como `skipped`, nunca un error).
+- **Cabecera de autenticación opcional** (enmienda 2, 2026-10-10): variable de
+  entorno `AUTOMATION_WEBHOOK_AUTH_HEADER` con formato `Nombre: valor` (p. ej.
+  `X-HU007-Token: <token>`); vacía por defecto = POST sin cabecera extra. El
+  valor se envía tal cual. El token es un **secreto de entorno**: no se almacena
+  en el repositorio, la documentación ni los tests (allí solo valores falsos).
 - Éxito = HTTP 2xx. `URLError`, timeout, respuesta no-2xx o cualquier excepción se
   registran como incidencia y **en ningún caso invalidan la reserva**.
 
