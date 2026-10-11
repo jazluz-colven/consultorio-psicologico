@@ -29,10 +29,54 @@ El paciente necesita un comprobante de su reserva para reducir incertidumbre y c
 - Confirmación por WhatsApp.
 - Notificación de cancelación.
 - Gestión de campañas o correos masivos.
+- Envío de correo directo desde la aplicación (SMTP propio): el transporte lo gestiona n8n.
+
+## Contratos fijados (enmienda 2026-10-10)
+
+Cierra las dudas [NECESITA ACLARACIÓN] y fija el mecanismo aprobado por la usuaria.
+
+### Mecanismo — envío vía n8n (Q3)
+- CUANDO una cita se registre correctamente, EL SISTEMA emitirá el evento estructurado `appointment.confirmation_email` (versión 1) al webhook de automatización configurado (`AUTOMATION_WEBHOOK_URL`, con `AUTOMATION_WEBHOOK_AUTH_HEADER` si existe). n8n recibirá el evento y enviará el correo al paciente con el mensaje incluido en el payload (RF-1).
+- La aplicación compondrá el mensaje (asunto, texto plano y HTML); n8n solo lo transporta (RF-2). El workflow de n8n vive fuera del repositorio (ver «Contrato de integración en n8n»).
+- El evento de HU-007 (`appointment.confirmed`) permanece intacto, sin datos personales e independiente de este.
+
+### Registro y deduplicación (RF-4)
+- La confirmación se registrará en la tabla `automation_events` (HU-007) con `event_id` determinista `appointment.confirmation_email:{appointment.id}:v1` y `UNIQUE(event_id)`: un solo envío por reserva, sin duplicados ante reprocesos, en el punto de persistencia.
+- Estados: `pending` → `sent` | `skipped` | `failed`, con `detail` en español.
+
+### Payload del evento (contrato)
+```json
+{
+  "event_id": "appointment.confirmation_email:34:v1",
+  "event_type": "appointment.confirmation_email",
+  "event_version": 1,
+  "occurred_at": "2026-10-10 12:34:56",
+  "recipient": { "to": "paciente@ejemplo.com", "patient_name": "Ana Pérez" },
+  "message": { "subject": "…", "text": "…", "html": "…" },
+  "appointment": { "id": 34, "service": "individual", "date": "2026-10-15", "time": "10:00", "status": "pending" }
+}
+```
+- `recipient` y `message` son exclusivos de este tipo de evento; es una excepción documentada a la minimización de datos: el correo no puede llegar sin destinatario ni mensaje.
+- Campos excluidos: `document_type`, `document_number`, `phone`.
+
+### Contenido del mensaje (cierra Q1)
+- Asunto: «Confirmación de tu cita — {servicio} · {fecha legible en español} · {hora}».
+- Cuerpo multipart: texto plano + HTML con la paleta Serenidad Natural, estilos inline y sin recursos remotos.
+- Contenido mínimo: saludo con el nombre del paciente, servicio, fecha, hora, estado «Pendiente», Referencia #{id} y pie de comprobante.
+- Los literales son contractuales: sus valores viven en `consultorio/content/email_content.py` y se reflejan en `tests/expected_content.py`; cambiar un copy obliga a PR de spec primero.
+
+### Fallo de entrega (cierra Q2)
+- Mejor esfuerzo: SI el webhook falla (timeout, servicio no disponible o respuesta no válida), ENTONCES el evento quedará `failed` con su motivo en español, la cita permanecerá intacta y el paciente verá la confirmación de la reserva.
+- Sin reintentos automáticos; la re-ejecución la decide el administrador y el `UNIQUE(event_id)` impide el duplicado.
+
+### Contrato de integración en n8n (fuera del repositorio)
+- El workflow enrutará por `event_type == "appointment.confirmation_email"` y enviará un correo con: To = `recipient.to`, Subject = `message.subject`, cuerpo texto = `message.text` y alternativa HTML = `message.html`.
+- La autenticación del webhook es la misma de HU-007 (`AUTOMATION_WEBHOOK_AUTH_HEADER`; el token es secreto de entorno).
+- La configuración del workflow y del servidor SMTP de n8n vive en n8n, no en el repositorio.
 
 ## Criterios de finalización
-Todos los RF con test en verde y demo manual de una reserva con confirmación por correo.
+Todos los RF con test en verde y demo manual de una reserva con confirmación por correo (evento emitido y correo recibido vía n8n).
 
 ## Dudas abiertas
-- [NECESITA ACLARACIÓN] Definir el contenido completo y formato del mensaje de confirmación.
-- [NECESITA ACLARACIÓN] Definir el comportamiento ante un fallo de entrega.
+- [RESUELTA — Q1] Contenido completo y formato del mensaje → fijado en «Contratos fijados» (multipart texto + HTML con paleta).
+- [RESUELTA — Q2] Comportamiento ante un fallo de entrega → fijado en «Contratos fijados» (best-effort, sin reintentos).
