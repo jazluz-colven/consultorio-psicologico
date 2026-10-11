@@ -472,21 +472,21 @@ Evidencia: payload del evento confirmation_email capturado + dump de automation_
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
-- [ ] Aprobación de este `plan.md` revisado (alcance, matriz RF, D1–D15, §2–§3)
+- [x] Aprobación de este `plan.md` revisado (alcance, matriz RF, D1–D15, §2–§3)
       por la usuaria — **aprobado 2026-10-10 («Confirmo»)**.
 - [x] **Escritura de la spec 008 enmendada** («Contratos fijados»: mecanismo
       n8n, payload, contenido, fallo de entrega, contrato de integración) —
       petición explícita de la usuaria («Modifiquemos la spec») —
       **2026-10-10**.
-- [ ] Creación de `feature/hu-008` desde `main` (Q5) y verificación del baseline
+- [x] Creación de `feature/hu-008` desde `main` (Q5) y verificación del baseline
       **147 PASS / 0 FAIL**.
-- [ ] Espejo + `email_content.py` + `email_service.py` + disparo en
+- [x] Espejo + `email_content.py` + `email_service.py` + disparo en
       `create_booking()` con commits por fase.
-- [ ] Adaptación D15 de TC-007-002/TC-007-007 (filtro por `event_type`) y tests
+- [x] Adaptación D15 de TC-007-002/TC-007-007 (filtro por `event_type`) y tests
       §6 en verde: **163 PASS / 0 FAIL**.
-- [ ] Demo manual §6.2 (+ live n8n si la usuaria lo indica) + evidencia en
+- [x] Demo manual §6.2 (+ live n8n si la usuaria lo indica) + evidencia en
       `docs/evidencias/hu-008/`.
-- [ ] Informe QA `qa-hu-008.md` con PASS/FAIL por TC y checkbox de aceptación.
+- [x] Informe QA `qa-hu-008.md` con PASS/FAIL por TC y checkbox de aceptación.
 - [ ] Commit/Push por fases, `MEMORY.md` y aceptación de la HU.
 - [ ] Servidor de revisión en marcha (AGENTS.md) y URL comunicada.
 

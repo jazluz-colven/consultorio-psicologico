@@ -1,0 +1,32 @@
+{
+  "case": "(a)+(b) receptor arriba",
+  "post_citas_status": 303,
+  "confirmada_status": 200,
+  "captured_posts": 2,
+  "event_types": [
+    "appointment.confirmed",
+    "appointment.confirmation_email"
+  ],
+  "email_payload": {
+    "event_id": "appointment.confirmation_email:1:v1",
+    "event_type": "appointment.confirmation_email",
+    "event_version": 1,
+    "occurred_at": "2026-10-10 18:44:03",
+    "recipient": {
+      "to": "ana@correo.com",
+      "patient_name": "Ana Pérez"
+    },
+    "message": {
+      "subject": "Confirmación de tu cita — Psiconutrición · lunes, 12 de octubre de 2026 · 10:00",
+      "text": "Carolina Gómez\n\nHola Ana Pérez:\nTu cita ha sido registrada. Estos son los datos de la reserva:\n\nServicio: Psiconutrición\nFecha: lunes, 12 de octubre de 2026\nHora: 10:00\nEstado: Pendiente\nReferencia de la reserva: #1\n\nGuarda este correo como comprobante de tu reserva. Si necesitas modificar o cancelar tu cita, contáctate con el consultorio.",
+      "html": "<!DOCTYPE html>\n<html lang=\"es\">\n<body style=\"margin:0; padding:0; background-color:#F7F3EA; font-family:'Segoe UI', Helvetica, Arial, sans-serif;\">\n  <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F7F3EA; padding:24px 0;\">\n    <tr>\n      <td align=\"center\">\n        <table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px; width:100%; background-color:#F7F3EA; border:1px solid #E8D5B5;\">\n          <tr>\n            <td style=\"background-color:#B8D8CE; color:#30454B; padding:20px 28px; font-size:20px; font-weight:600;\">\n              Carolina Gómez\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:24px 28px 8px 28px; color:#30454B; font-size:16px;\">\n              Hola Ana Pérez:\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:8px 28px; color:#30454B; font-size:15px;\">\n              Tu cita ha sido registrada. Estos son los datos de la reserva:\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:8px 28px 4px 28px;\">\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F7F3EA; border-left:4px solid #D99A7A; border-top:1px solid #E8D5B5; border-right:1px solid #E8D5B5; border-bottom:1px solid #E8D5B5;\">\n                <tr>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:14px; border-bottom:1px solid #E8D5B5;\">Servicio</td>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:15px; font-weight:600; border-bottom:1px solid #E8D5B5;\">Psiconutrición</td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:14px; border-bottom:1px solid #E8D5B5;\">Fecha</td>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:15px; font-weight:600; border-bottom:1px solid #E8D5B5;\">lunes, 12 de octubre de 2026</td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:14px; border-bottom:1px solid #E8D5B5;\">Hora</td>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:15px; font-weight:600; border-bottom:1px solid #E8D5B5;\">10:00</td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:14px; border-bottom:1px solid #E8D5B5;\">Estado</td>\n                  <td style=\"padding:12px 16px; color:#30454B; font-size:15px; font-weight:600; border-bottom:1px solid #E8D5B5;\">Pendiente</td>\n                </tr>\n                <tr>\n                  <td colspan=\"2\" style=\"background-color:#E8D5B5; padding:12px 16px; color:#30454B; font-size:14px;\">\n                    Referencia de la reserva: #1\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:16px 28px 24px 28px; color:#30454B; font-size:14px;\">\n              Guarda este correo como comprobante de tu reserva. Si necesitas modificar o cancelar tu cita, contáctate con el consultorio.\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>"
+    },
+    "appointment": {
+      "id": 1,
+      "service": "nutrition",
+      "date": "2026-10-12",
+      "time": "10:00",
+      "status": "pending"
+    }
+  }
+}

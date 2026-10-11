@@ -1,0 +1,63 @@
+{
+  "case": "(d) receptor apagado",
+  "post_citas_status": 303,
+  "captured_posts_delta": 0,
+  "failed_events": [
+    {
+      "event_id": "appointment.confirmed:2:v1",
+      "event_type": "appointment.confirmed",
+      "event_version": 1,
+      "appointment_id": 2,
+      "status": "failed",
+      "detail": "Tiempo de espera agotado (timeout).",
+      "sent_at": null
+    },
+    {
+      "event_id": "appointment.confirmation_email:2:v1",
+      "event_type": "appointment.confirmation_email",
+      "event_version": 1,
+      "appointment_id": 2,
+      "status": "failed",
+      "detail": "Tiempo de espera agotado (timeout).",
+      "sent_at": null
+    }
+  ],
+  "appointments_status": [
+    {
+      "event_id": "appointment.confirmed:1:v1",
+      "event_type": "appointment.confirmed",
+      "event_version": 1,
+      "appointment_id": 1,
+      "status": "sent",
+      "detail": null,
+      "sent_at": "2026-10-10 18:44:03"
+    },
+    {
+      "event_id": "appointment.confirmation_email:1:v1",
+      "event_type": "appointment.confirmation_email",
+      "event_version": 1,
+      "appointment_id": 1,
+      "status": "sent",
+      "detail": null,
+      "sent_at": "2026-10-10 18:44:03"
+    },
+    {
+      "event_id": "appointment.confirmed:2:v1",
+      "event_type": "appointment.confirmed",
+      "event_version": 1,
+      "appointment_id": 2,
+      "status": "failed",
+      "detail": "Tiempo de espera agotado (timeout).",
+      "sent_at": null
+    },
+    {
+      "event_id": "appointment.confirmation_email:2:v1",
+      "event_type": "appointment.confirmation_email",
+      "event_version": 1,
+      "appointment_id": 2,
+      "status": "failed",
+      "detail": "Tiempo de espera agotado (timeout).",
+      "sent_at": null
+    }
+  ]
+}

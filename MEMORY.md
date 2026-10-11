@@ -59,9 +59,9 @@ aporte.
    «Agendar cita» pasan a la columna izquierda** (Servicio sobre «Datos del
    paciente»; helper + botón debajo de los campos), solo reposición en la
    plantilla. **Mergeada a `main` (ff → `b793686`).**
-- Tests: **134 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
-  3.1.3 + pytest 9.1.1 (118 previos de HU-001/002/003/004/005/016 + 16 nuevos
-  TC-006-001..015 y TC-006-017; **TC-006-016 es la corrida de la suite, no una
+- Tests: **163 PASS / 0 FAIL** (`python -m pytest -q`), Python 3.14.8 + Flask
+  3.1.3 + pytest 9.1.1 (147 previos de HU-001/002/003/016/004/005/006/007 +
+  16 nuevos TC-008-001..016; **TC-008-017 es la corrida de la suite, no una
   función**). TC-001-004 acotado al `<figure>` del hero y TC-001-008 a
   formularios que no sean el buscador.
 - **HU-005 (Spec 005) ACEPTADA Y CERRADA** (2026-10-09, rama `feature/hu-005`):
@@ -119,9 +119,26 @@ aporte.
   y merge a `main` 2026-10-10. **Enmienda 2 (Q7/D14)** tras el 403 del n8n cloud:
   cabecera opcional **`AUTOMATION_WEBHOOK_AUTH_HEADER`** (`Nombre: valor`,
   default vacío; **el token es secreto de entorno, nunca en el repo**);
-  TC-007-014, suite **147 PASS**, live n8n `webhook-test` → **HTTP 200** y **E2E
-  app→n8n OK** (cita 42 → evento `sent`; usuaria: «La prueba de conexión fue
-  satisfactoria», 2026-10-10; commits `ae854cb`/`5c817cf`/`7dff948`).
+   TC-007-014, suite **147 PASS**, live n8n `webhook-test` → **HTTP 200** y **E2E
+   app→n8n OK** (cita 42 → evento `sent`; usuaria: «La prueba de conexión fue
+   satisfactoria», 2026-10-10; commits `ae854cb`/`5c817cf`/`7dff948`).
+- **HU-008 (Spec 008, correo de confirmación vía n8n) IMPLEMENTADA — QA PASS,
+  PENDIENTE DE ACEPTACIÓN** (2026-10-10, rama `feature/hu-008` desde `main`):
+  spec 008 **enmendada** («Contratos fijados») y plan revisado/reaprobado con
+  Q1–Q7; nuevo evento **`appointment.confirmation_email` (v1)** al **mismo
+  webhook de HU-007**, con `recipient` (`to`+`patient_name`, PII documentada) y
+  `message` (subject/text/html **compuestos por la app**); n8n solo transporta.
+  `email_content.py` (paleta Serenidad Natural inline, fecha legible en español)
+  + espejo en `expected_content.py`; `email_service.py` reutiliza
+  `automation_service._post_webhook` **por referencia de módulo (D14)** y
+  `automation_events` con `event_id` determinista (Q4); **D15**: TC-007-002/007
+  filtran POSTs por `event_type` (2 eventos por reserva). Sin SMTP, sin env vars
+  nuevas, firma de `create_booking()` intacta. 16 tests nuevos (TC-008-001…016);
+  suite **163 PASS / 0 FAIL**. Veredicto **PASS** en
+  `docs/evidencias/hu-008/qa-hu-008.md` (demo §6.2: 2 POST → `sent`, receptor
+  caído → `failed` con motivo + 303 intacto, reproceso → 0 POST). Commits:
+  `7a3d9df` docs, `e2040fa` contenido, `da18850` servicio+disparo, `62f06cd`
+  tests.
 
 ## Decisiones (y por qué)
 - **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
@@ -216,8 +233,10 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **HU-007 CERRADA** (aceptada 2026-10-10); merge a `main`. Sin pendientes
-  abiertos de esta HU.
-- Servidor de revisión en marcha: http://127.0.0.1:5001/citas (demo HU-007 con
-  `AUTOMATION_WEBHOOK_URL`; el 5000 puede no estar activo).
-- HU-007 se apoya en el `UNIQUE` de HU-004 y no toca el modelo de `appointments`.
+- **HU-008 implementada, QA PASS, PENDIENTE DE ACEPTACIÓN** (2026-10-10):
+  commit de evidencia+memoria, push a `origin/feature/hu-008`, aceptación de la
+  usuaria (checkbox de `qa-hu-008.md`) y merge a `main`. Demo live n8n opcional
+  (workflow ampliado con nodo de email que enruta por `event_type`).
+- Servidor de revisión en marcha: http://127.0.0.1:5000/citas
+- HU-008 se apoya en el `UNIQUE(event_id)` de HU-007 y no toca el modelo de
+  `appointments` ni `config.py`.
