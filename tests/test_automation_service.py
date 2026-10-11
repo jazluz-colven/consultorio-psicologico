@@ -79,6 +79,16 @@ def test_tc_007_001_payload_permitido_sin_datos_personales(database_path: Path) 
     assert forbidden.isdisjoint(event["appointment"].keys())
 
 
+def _confirmed_posts(post: mock.MagicMock) -> list[mock.call]:
+    """D15 (HU-008): only appointment.confirmed POSTs; the booking now also
+    emits appointment.confirmation_email to the same webhook."""
+    return [
+        call
+        for call in post.call_args_list
+        if call[0][1].get("event_type") == "appointment.confirmed"
+    ]
+
+
 def test_tc_007_002_respuesta_2xx_marca_sent_y_un_post(database_path: Path) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
@@ -88,8 +98,9 @@ def test_tc_007_002_respuesta_2xx_marca_sent_y_un_post(database_path: Path) -> N
             WEBHOOK_URL,
             TIMEOUT,
         )
-    assert post.call_count == 1
-    url, payload, timeout, auth_header = post.call_args[0]
+    confirmed_posts = _confirmed_posts(post)
+    assert len(confirmed_posts) == 1
+    url, payload, timeout, auth_header = confirmed_posts[0][0]
     assert url == WEBHOOK_URL
     assert timeout == TIMEOUT
     assert auth_header == ""
@@ -190,7 +201,7 @@ def test_tc_007_007_reproceso_sin_duplicados(database_path: Path) -> None:
         automation.on_appointment_confirmed(
             appointment, database_path, WEBHOOK_URL, TIMEOUT
         )
-    assert post.call_count == 1
+    assert len(_confirmed_posts(post)) == 1
     import sqlite3
 
     connection = sqlite3.connect(str(database_path))

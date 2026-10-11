@@ -196,7 +196,6 @@ def send_confirmation(
 def _has_complete_data(appointment: Appointment) -> bool:
     required = (
         appointment.id,
-        appointment.email,
         appointment.service,
         appointment.date,
         appointment.time,
