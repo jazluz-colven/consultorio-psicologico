@@ -122,8 +122,8 @@ aporte.
    TC-007-014, suite **147 PASS**, live n8n `webhook-test` → **HTTP 200** y **E2E
    app→n8n OK** (cita 42 → evento `sent`; usuaria: «La prueba de conexión fue
    satisfactoria», 2026-10-10; commits `ae854cb`/`5c817cf`/`7dff948`).
-- **HU-008 (Spec 008, correo de confirmación vía n8n) IMPLEMENTADA — QA PASS,
-  PENDIENTE DE ACEPTACIÓN** (2026-10-10, rama `feature/hu-008` desde `main`):
+- **HU-008 (Spec 008, correo de confirmación vía n8n) ACEPTADA Y CERRADA**
+  (2026-10-11, rama `feature/hu-008`):
   spec 008 **enmendada** («Contratos fijados») y plan revisado/reaprobado con
   Q1–Q7; nuevo evento **`appointment.confirmation_email` (v1)** al **mismo
   webhook de HU-007**, con `recipient` (`to`+`patient_name`, PII documentada) y
@@ -137,8 +137,11 @@ aporte.
   suite **163 PASS / 0 FAIL**. Veredicto **PASS** en
   `docs/evidencias/hu-008/qa-hu-008.md` (demo §6.2: 2 POST → `sent`, receptor
   caído → `failed` con motivo + 303 intacto, reproceso → 0 POST). Commits:
-  `7a3d9df` docs, `e2040fa` contenido, `da18850` servicio+disparo, `62f06cd`
-  tests.
+  `7a3d9df`   docs, `e2040fa` contenido, `da18850` servicio+disparo, `62f06cd`
+  tests. **Live E2E 2026-10-11**: workflow de la usuaria (correo + **Google
+  Calendar**) activo en producción → cita 46, ambos eventos `sent` y correo
+  recibido («Sí, llegó»). La cita queda `pending` por diseño (spec 004; sin
+  transiciones de estado aún — cancelación = Spec 010).
 
 ## Decisiones (y por qué)
 - **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
@@ -183,7 +186,11 @@ aporte.
   wrong!» sin cabecera) y la URL `webhook-test/...` solo responde a **1 llamada**
   tras pulsar «Execute workflow» (si no, 404). La URL de producción es
   `webhook/...` con el workflow **activado**. El token vive solo en
-  `AUTOMATION_WEBHOOK_AUTH_HEADER` (entorno), nunca en el repo.
+  `AUTOMATION_WEBHOOK_AUTH_HEADER` (entorno), nunca en el repo. **Con 2 eventos
+  por reserva (HU-007+HU-008) el Listen de `webhook-test` solo captura el
+  primero** (incidente live 2026-10-11: `confirmed` sent + `confirmation_email`
+  failed); para pruebas E2E con ambos eventos hacer el workflow **Active** y
+  usar la URL de producción.
 - Imágenes de portada: `hero-presentacion.png` es el hero (380×511);
   `hero-contenidas.png` (720×713) ahora es el logotipo de cabecera; llegó
   `hero-contenidas.png.png` (nombres dobles) y su fondo blanco se ve como caja
@@ -233,10 +240,10 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **HU-008 implementada, QA PASS, PENDIENTE DE ACEPTACIÓN** (2026-10-10):
-  commit de evidencia+memoria, push a `origin/feature/hu-008`, aceptación de la
-  usuaria (checkbox de `qa-hu-008.md`) y merge a `main`. Demo live n8n opcional
-  (workflow ampliado con nodo de email que enruta por `event_type`).
+- **HU-008 CERRADA** (aceptada 2026-10-11); pendiente merge a `main`
+  (`git checkout main && git merge feature/hu-008`) y borrado de la rama.
 - Servidor de revisión en marcha: http://127.0.0.1:5000/citas
 - HU-008 se apoya en el `UNIQUE(event_id)` de HU-007 y no toca el modelo de
   `appointments` ni `config.py`.
+- Posible HU futura (si la usuaria lo pide): transición de estado de la cita
+  (p. ej. «Confirmada» cuando n8n agende en Google Calendar) — requiere spec.

@@ -487,8 +487,8 @@ Evidencia: payload del evento confirmation_email capturado + dump de automation_
 - [x] Demo manual §6.2 (+ live n8n si la usuaria lo indica) + evidencia en
       `docs/evidencias/hu-008/`.
 - [x] Informe QA `qa-hu-008.md` con PASS/FAIL por TC y checkbox de aceptación.
-- [ ] Commit/Push por fases, `MEMORY.md` y aceptación de la HU.
-- [ ] Servidor de revisión en marcha (AGENTS.md) y URL comunicada.
+- [x] Commit/Push por fases, `MEMORY.md` y aceptación de la HU.
+- [x] Servidor de revisión en marcha (AGENTS.md) y URL comunicada.
 
 ---
 

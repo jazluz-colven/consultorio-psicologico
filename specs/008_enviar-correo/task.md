@@ -115,6 +115,6 @@
   `git rev-parse origin/feature/hu-008` y `MEMORY.md` registra HU-008
   (evento `appointment.confirmation_email`, vía n8n, `automation_events`, D15).
 
-- [ ] **T14 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T14 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `qa-hu-008.md` está marcado con
   fecha y la §7.2 del plan queda íntegramente en `[x]`.

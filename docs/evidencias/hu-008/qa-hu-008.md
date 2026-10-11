@@ -81,4 +81,21 @@ demo con `AUTOMATION_WEBHOOK_URL` apuntando a él. Evidencia en
 
 **PASS** (17/17 TC; suite 163/163; demo manual completa).
 
-- [ ] **Aceptación de la HU** por la usuaria.
+- [x] **Aceptación de la HU** por la usuaria: **aceptada el 2026-10-11**
+  (prueba live E2E: correo recibido en su bandeja).
+
+## Live E2E contra n8n (2026-10-11)
+
+Workflow de la usuaria ampliado con **Google Calendar** además del nodo de
+correo; URL de producción `webhook/hu-007-cita-creada` (workflow **Active**) y
+cabecera `x-hu007-token` (token solo en entorno de la prueba, nunca en el repo).
+
+| Intento | Escenario | Resultado |
+|---|---|---|
+| 1 | URL producción sin activar (404) | Reserva **44** intacta; ambos eventos `failed` «Servicio de automatización no disponible.» (best-effort OK) |
+| 2 | `webhook-test` en modo Listen (1 sola escucha) | Reserva **45** intacta; `appointment.confirmed` **`sent`**, `confirmation_email` `failed` (segundo POST tras cerrarse la escucha) |
+| 3 | Workflow **Active** (producción) | Reserva **46** (2026-10-12 15:00, `jazluz@gmail.com`) → 303; **ambos eventos `sent`** (`17:35:49` / `17:35:50`); **correo recibido por la usuaria** («Sí, llegó») |
+
+Estado de la cita: `pending` («Pendiente») **por diseño** (spec 004: la cita
+nace pendiente; ninguna HU aceptada transiciona el estado todavía; la
+cancelación queda para Spec 010).
