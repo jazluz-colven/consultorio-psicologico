@@ -27,7 +27,7 @@ from consultorio.content.appointment_content import (
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import Appointment
-from consultorio.services import automation_service
+from consultorio.services import automation_service, email_service
 
 SLOT_TAKEN: str = "slot_taken"
 
@@ -157,6 +157,14 @@ def create_booking(
     # any other exception propagates (a real 500 must not be silenced)
     # best-effort automation: never raises, never conditions the booking (RF-2/RF-7)
     automation_service.on_appointment_confirmed(
+        appointment,
+        database_path,
+        automation_url,
+        automation_timeout,
+        automation_auth_header,
+    )
+    # best-effort confirmation e-mail via n8n (HU-008): never raises either
+    email_service.send_confirmation(
         appointment,
         database_path,
         automation_url,
