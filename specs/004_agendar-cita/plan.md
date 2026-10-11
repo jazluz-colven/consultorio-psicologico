@@ -541,3 +541,33 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
     `docs/evidencias/hu-004/` + `qa-hu-004.md` con PASS/FAIL por TC.
 13. **Cierre**: commits por fase, push, `MEMORY.md` (HU-004 + primera persistencia) y
     aceptación de la HU.
+
+---
+
+## 9. Enmienda 2026-10-11 — estado inicial `confirmed` («Confirmada»)
+
+> Petición de la usuaria tras la aceptación de HU-008 y la prueba live de n8n:
+> «una vez se registra la cita pasa a la confirmación». Enmienda coordinada con
+> la **spec 008** (el correo muestra el estado de la cita). Las decisiones
+> Q1–Q10 de §7.1 siguen vigentes salvo Q2, sustituida por esta enmienda.
+
+| Elemento | Antes (D5) | Ahora |
+|---|---|---|
+| Valor en `appointments.status` | `pending` | **`confirmed`** |
+| Etiqueta visible / literal contractual | «Pendiente» (`STATUS_PENDING_LABEL`) | **«Confirmada»** (`STATUS_CONFIRMED_LABEL`) |
+| `DEFAULT` del esquema en `database.py` | `'pending'` | **`'confirmed'`** |
+| Estado en los payloads de HU-007/008 (`appointment.status`) | `pending` | **`confirmed`** (misma forma; `event_version` no cambia) |
+| Estado del evento en `automation_events` | `pending → sent/skipped/failed` | **sin cambios** (ciclo del evento, no de la cita) |
+
+- Renombrado de constantes: `STATUS_PENDING`→`STATUS_CONFIRMED`,
+  `STATUS_PENDING_LABEL`→`STATUS_CONFIRMED_LABEL` en
+  `content/appointment_content.py` + espejo `tests/expected_content.py` (D10);
+  usos en `web/appointments.py` y `services/email_service.py`.
+- **Saneamiento de la BD de desarrollo** (decisión de la usuaria 2026-10-11:
+  «estamos en pruebas, podemos limpiar la BD»): se elimina
+  `data/consultorio.db` y se regenera con `init_db()` en el siguiente arranque;
+  sin migración UPDATE (no hay datos de producción).
+- Impacto en tests: TC-004-005/016/026 y los asserts `status == "pending"` de
+  HU-006/007/008 pasan a `confirmed`; el espejo y el literal del correo pasan a
+  «Confirmada». La alternativa *solo cambiar la etiqueta visible* se descarta
+  por incoherencia BD ↔ UI ↔ payload (la usuaria eligió `confirmed`).

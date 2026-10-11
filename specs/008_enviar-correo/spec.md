@@ -62,7 +62,12 @@ Cierra las dudas [NECESITA ACLARACIÓN] y fija el mecanismo aprobado por la usua
 ### Contenido del mensaje (cierra Q1)
 - Asunto: «Confirmación de tu cita — {servicio} · {fecha legible en español} · {hora}».
 - Cuerpo multipart: texto plano + HTML con la paleta Serenidad Natural, estilos inline y sin recursos remotos.
-- Contenido mínimo: saludo con el nombre del paciente, servicio, fecha, hora, estado «Pendiente», Referencia #{id} y pie de comprobante.
+- Contenido mínimo: saludo con el nombre del paciente, servicio, fecha, hora, estado «Confirmada», Referencia #{id} y pie de comprobante.
+  - **Enmienda 2026-10-11**: el estado mostrado era «Pendiente» (estado inicial
+    de la cita en la spec 004 original); la spec 004 cambia el estado inicial a
+    `confirmed` («Confirmada») y este copy la sigue. El campo `status` del
+    payload pasa a `confirmed`; la forma del payload no cambia
+    (`event_version` permanece en 1).
 - Los literales son contractuales: sus valores viven en `consultorio/content/email_content.py` y se reflejan en `tests/expected_content.py`; cambiar un copy obliga a PR de spec primero.
 
 ### Fallo de entrega (cierra Q2)

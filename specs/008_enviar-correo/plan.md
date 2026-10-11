@@ -514,3 +514,22 @@ Evidencia: payload del evento confirmation_email capturado + dump de automation_
     `qa-hu-008.md`.
 11. **Cierre**: commits por fase, push, `MEMORY.md`, aceptación y servidor de
     revisión en marcha.
+
+---
+
+## 9. Enmienda 2026-10-11 — estado «Confirmada» en el correo
+
+> Coordinada con la **enmienda de la spec 004** (estado inicial de la cita
+> `pending` → `confirmed`, petición de la usuaria 2026-10-11 tras la prueba
+> live de n8n). El correo de HU-008 muestra el estado real de la cita (RF-2).
+
+| Elemento | Antes (§2.2) | Ahora |
+|---|---|---|
+| Literal de estado en text/html | `STATUS_PENDING_LABEL` «Pendiente» | **`STATUS_CONFIRMED_LABEL` «Confirmada»** (renombrado en `appointment_content.py` + espejo) |
+| `message.text` / `message.html` | `Estado: Pendiente` | **`Estado: Confirmada`** |
+| `appointment.status` del payload | `pending` | **`confirmed`** (misma forma; `event_version` sigue en 1) |
+| TC-008-001 / TC-008-013 | esperaban «Pendiente» | esperan **«Confirmada»** |
+
+- Sin cambios de esquema, de configuración ni en la mecánica del evento.
+- Los textos contractuales §2.2 restantes (asunto, etiquetas, pie, motivos)
+  permanecen idénticos.

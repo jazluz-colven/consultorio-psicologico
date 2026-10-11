@@ -53,8 +53,16 @@ Si el paciente es menor de edad, registra los datos del representante con su
 documento; si es extranjero, puede usar pasaporte o cédula de extranjería
 (texto auxiliar del formulario).
 
-### Estado inicial de la cita (duda Q2 cerrada)
-- `pending`, etiqueta visible «Pendiente».
+### Estado inicial de la cita (duda Q2 cerrada; enmienda 2026-10-11)
+- `confirmed`, etiqueta visible «Confirmada».
+- **Enmienda 2026-10-11 (usuaria)**: el estado inicial era `pending`
+  («Pendiente»); se cambia a `confirmed` («Confirmada») porque, al registrarse
+  correctamente la cita, el sistema emite de inmediato la confirmación
+  (HU-007/HU-008) y la reserva queda confirmada. El texto contractual
+  «Pendiente» queda sustituido por «Confirmada» en todo el sitio y en el correo
+  (enmienda coordinada en la spec 008). La tabla `automation_events` de
+  HU-007 conserva su propio ciclo `pending → sent | skipped | failed` (estado
+  del evento, no de la cita).
 
 ### Catálogo de horas
 Bloques de 30 minutos; solo lunes a viernes. La mañana termina a las 12:00 y la
@@ -83,7 +91,7 @@ tarde comienza a las 14:00 (12:00–14:00 libre). Las 14 horas exactas son:
 | Horario ocupado (RF-3) | Ese horario ya no está disponible. Selecciona otro horario. |
 | Fecha sin horas | No hay horarios disponibles para esta fecha. |
 | Confirmación (título) | Cita registrada |
-| Estado inicial | Pendiente |
+| Estado inicial | Confirmada |
 
 ## Criterios de finalización
 Todos los RF con test en verde, incluyendo datos inválidos y pérdida de disponibilidad, más demo manual del flujo completo de reserva.
@@ -93,4 +101,5 @@ Todos los RF con test en verde, incluyendo datos inválidos y pérdida de dispon
   **Cerrada 2026-10-09**: tipo y número de documento (solo dígitos), nombre y
   apellido, correo electrónico y celular (solo dígitos), más servicio, fecha y hora.
 - ~~[NECESITA ACLARACIÓN] Confirmar el estado inicial definitivo de una cita.~~
-  **Cerrada 2026-10-09**: `pending` («Pendiente»).
+  **Cerrada 2026-10-09**: `pending` («Pendiente») → **enmendada 2026-10-11**:
+  `confirmed` («Confirmada»).
