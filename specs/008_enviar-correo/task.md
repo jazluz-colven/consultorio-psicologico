@@ -107,7 +107,7 @@
   163/163), la evidencia en `docs/evidencias/hu-008/` y el servidor en marcha
   con la URL comunicada.
 
-- [ ] **T13 — Commits por fase, Push y `MEMORY.md` (plan §8.11)** `[trazabilidad]`
+- [x] **T13 — Commits por fase, Push y `MEMORY.md` (plan §8.11)** `[trazabilidad]`
   Commits por fase (spec+plan+task+espejo → contenido → servicio+disparo →
   adaptación D15+tests → evidencia+MEMORY) citando HU-008/Spec 008; nunca
   claves, tokens ni PII en repo o memoria.
