@@ -236,3 +236,39 @@ DAY_LABEL_NO_HOURS = ", sin horarios disponibles"
 # MSG_SLOT_TAKEN (spec 004) y MSG_OCCUPIED_HOUR (spec 005) se reutilizan sin cambio.
 
 MSG_SUBMITTING = "Registrando tu cita…"
+
+# --- HU-008: Enviar confirmación por correo (espejo único de la spec 008) ---
+
+EMAIL_SUBJECT_TEMPLATE = (
+    "Confirmación de tu cita — {service_name} · {date_label} · {time}"
+)
+
+EMAIL_SENDER_NAME = "Carolina Gómez"
+
+EMAIL_BODY_HEADER = (
+    "Tu cita ha sido registrada. Estos son los datos de la reserva:"
+)
+
+EMAIL_LABEL_SERVICE = "Servicio"
+
+EMAIL_LABEL_DATE = "Fecha"
+
+EMAIL_LABEL_TIME = "Hora"
+
+EMAIL_LABEL_STATUS = "Estado"
+
+EMAIL_LABEL_REFERENCE = "Referencia de la reserva"
+
+EMAIL_FOOTER = (
+    "Guarda este correo como comprobante de tu reserva. "
+    "Si necesitas modificar o cancelar tu cita, "
+    "contáctate con el consultorio."
+)
+
+MSG_APPOINTMENT_INCOMPLETE = "Datos de la cita incompletos."
+
+DETAIL_EMAIL_NOT_CONFIGURED = "Envío de correo no configurado."
+
+DETAIL_INVALID_RECIPIENT = (
+    "Dirección de correo del paciente ausente o no válida."
+)
