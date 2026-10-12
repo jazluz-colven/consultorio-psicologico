@@ -389,34 +389,70 @@ a:focus {
     text-wrap: balance;
 }
 
-.contact__block {
+.contact__panel {
     margin: 0 0 1.5rem;
     padding: 1.5rem;
     background-color: var(--color-secondary);
     border-radius: 12px;
 }
 
-.contact__block-title {
-    margin: 0 0 0.5rem;
+.contact__rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.contact__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--color-primary);
+}
+
+.contact__rows .contact__row:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.contact__rows .contact__row:last-child {
+    padding-bottom: 0;
+}
+
+.contact__icon {
+    flex: 0 0 auto;
     color: var(--color-primary);
-    font-size: 1.3rem;
 }
 
-.contact__text {
-    margin: 0;
+.contact__label {
+    flex: 0 0 10.5rem;
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.contact__value {
+    flex: 1 1 auto;
     text-align: justify;
     hyphens: none;
 }
 
-.contact__list {
-    margin: 0;
-    padding-left: 1.25rem;
+.contact__map {
+    margin: 0 0 1.5rem;
 }
 
-.contact__list-item {
-    margin: 0 0 0.35rem;
-    text-align: justify;
-    hyphens: none;
+.contact__map iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 12px;
+}
+
+.contact__map a {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-weight: bold;
 }
 
 .contact__back {
@@ -425,6 +461,38 @@ a:focus {
 
 .contact__back a {
     font-weight: bold;
+}
+
+@media (min-width: 900px) {
+    .contact {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+            "title title"
+            "panel map"
+            "back back";
+        column-gap: 1.5rem;
+        max-width: 75ch;
+    }
+
+    .contact__title {
+        grid-area: title;
+    }
+
+    .contact__panel {
+        grid-area: panel;
+        margin-bottom: 0;
+    }
+
+    .contact__map {
+        grid-area: map;
+        margin-bottom: 0;
+        align-self: start;
+    }
+
+    .contact__back {
+        grid-area: back;
+    }
 }
 
 .search-page {

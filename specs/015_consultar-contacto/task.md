@@ -34,45 +34,45 @@
   `MAP_LINK_LABEL`/`MAP_FRAME_TITLE` y «Mapa no disponible», y la suite sigue en
   **179 PASS / 0 FAIL**.
 
-- [ ] **T4 — Commit inicial: spec + plan + task en la rama (plan §7.2)** `[trazabilidad]`
+- [x] **T4 — Commit inicial: spec + plan + task en la rama (plan §7.2)** `[trazabilidad]`
   Commitear la enmienda de la spec y estos documentos de planificación antes de tocar
   código.
   Hecho cuando: `git status` limpio salvo `Campos_n8n.xlsx` (sin versionar, fuera del
   alcance) y `git show --stat HEAD` muestra `specs/015_consultar-contacto/{spec,plan,task}.md`.
 
-- [ ] **T5 — Espejo: `CONTACT_MAP_*` en `tests/expected_content.py` (plan §2, D6)** `[RF-7]`
+- [x] **T5 — Espejo: `CONTACT_MAP_*` en `tests/expected_content.py` (plan §2, D6)** `[RF-7]`
   Añadir `CONTACT_MAP_QUERY`, `CONTACT_MAP_EMBED_URL`, `CONTACT_MAP_LINK_URL`,
   `CONTACT_MAP_LINK_LABEL` y `CONTACT_MAP_FRAME_TITLE` (espejo único de la spec; los
   literales `CONTACT_*` de v1 no se tocan). Sin lógica.
   Hecho cuando: `python -c "import tests.expected_content as e; assert e.CONTACT_MAP_LINK_LABEL == 'Abrir en Google Maps' and e.CONTACT_MAP_EMBED_URL.startswith('https://www.google.com/maps?q=')"` → exit 0
   y `python -m pytest -q` sigue en **179 PASS / 0 FAIL**.
 
-- [ ] **T6 — Contenido: `MAP_*` en `contact_content.py` (plan §2, D2)** `[RF-7][CL-1][CL-5]`
+- [x] **T6 — Contenido: `MAP_*` en `contact_content.py` (plan §2, D2)** `[RF-7][CL-1][CL-5]`
   `MAP_QUERY`, `MAP_EMBED_URL`/`MAP_LINK_URL` con `urllib.parse.quote` (stdlib),
   `MAP_LINK_LABEL`, `MAP_FRAME_TITLE` y `DEFAULT_MAP_QUERY`; el resto del módulo queda
   idéntico a v1.
   Hecho cuando: `python -c "from consultorio.content import contact_content as c; assert c.MAP_QUERY.startswith('Calle 34 #29-18') and c.MAP_EMBED_URL.endswith('&output=embed') and c.DEFAULT_MAP_QUERY == c.MAP_QUERY"` → exit 0.
 
-- [ ] **T7 — Tests de contenido: TC-015-017 (plan §6.1)** `[RF-7]`
+- [x] **T7 — Tests de contenido: TC-015-017 (plan §6.1)** `[RF-7]`
   Unidad de `CONTACT_MAP_*`: dominio `www.google.com/maps`, `output=embed`, consulta
   URL-encoded en embed y link, literal de enlace y título.
   Hecho cuando: `python -m pytest tests/test_contact_content.py -v` → todos PASS (los 4
   de v1 + el nuevo), 0 FAIL.
 
-- [ ] **T8 — Servicio: `ContactMap` + `map` en `ContactView` (plan §3, D3/D15/D17)** `[RF-7][CL-1][CL-5]`
+- [x] **T8 — Servicio: `ContactMap` + `map` en `ContactView` (plan §3, D3/D15/D17)** `[RF-7][CL-1][CL-5]`
   Dataclass `ContactMap`, campo `map` en `ContactView`, `_resolve_map()` (vivo →
   default → omisión; `None` si no hay dirección ni consulta) y `fallback` ampliado; el
   resto de `validate_contact()` queda intacto.
   Hecho cuando: `python -c "from consultorio.services.contact_service import get_contact_view as g; v = g(); assert v.map and v.map.title and v.fallback_active is False and len(v.channels) == 3"` → exit 0
   y `python -m pytest -q` → **0 FAIL** (los tests de servicio de v1 siguen verdes).
 
-- [ ] **T9 — Tests de servicio: TC-015-018 (plan §6.1)** `[RF-7][CL-1][CL-5]`
+- [x] **T9 — Tests de servicio: TC-015-018 (plan §6.1)** `[RF-7][CL-1][CL-5]`
   `map` completo sin fallback; CL-1 dirección+default vacíos → `map is None`; CL-5
   `MAP_QUERY` vacío → `map is None` con dirección intacta y `fallback_active=True`.
   Hecho cuando: `python -m pytest tests/test_contact_service.py -v` → todos PASS (los 5
   de v1 + el nuevo), 0 FAIL.
 
-- [ ] **T10 — Plantilla: refactor a cajón + iconos + mapa (plan §8.7, D4/D5/D8/D19)** `[RF-1..RF-7][RNF-2]`
+- [x] **T10 — Plantilla: refactor a cajón + iconos + mapa (plan §8.7, D4/D5/D8/D19)** `[RF-1..RF-7][RNF-2]`
   `templates/contact/index.html`: h1 intacto, cajón `.contact__panel` con `<ul>` de
   filas `<li class="contact__row">` (icono SVG inline `aria-hidden` + etiqueta de
   `titles` + valor/enlaces **con el mismo marcado de enlaces de v1**), bloque
@@ -81,7 +81,7 @@
   negocio.
   Hecho cuando: `python -c "from consultorio import create_app; h = create_app().test_client().get('/contacto').get_data(as_text=True); assert 'contact__panel' in h and 'contact__row' in h and 'aria-hidden=\"true\"' in h and 'www.google.com/maps' in h and 'Abrir en Google Maps' in h and '>Teléfono<' not in h"` → exit 0.
 
-- [ ] **T11 — CSS: refactor `.contact-*` (plan §8.8, D10)** `[RNF-1][RNF-2]`
+- [x] **T11 — CSS: refactor `.contact-*` (plan §8.8, D10)** `[RNF-1][RNF-2]`
   `.contact` en grid: 1 columna por defecto y `@media (min-width: 900px)` con
   `grid-template-columns` de 2 columnas (cajón ‖ mapa, misma altura); `.contact__panel`
   (fondo `--color-secondary`, radio 12 px, hairlines `--color-primary`), filas con
@@ -90,20 +90,20 @@
   Hecho cuando: `python -m pytest tests/test_hu_001.py tests/test_hu_002.py tests/test_hu_003.py tests/test_hu_016.py -q` → **0 FAIL**
   (paleta/tipografía intactas).
 
-- [ ] **T12 — Tests de ruta: TC-015-009/012 adaptados + TC-015-019 nuevo (plan §6.1, D7)** `[RF-1][RF-6][RF-7]`
+- [x] **T12 — Tests de ruta: TC-015-009/012 adaptados + TC-015-019 nuevo (plan §6.1, D7)** `[RF-1][RF-6][RF-7]`
   TC-009 ⇒ cajón `.contact__panel` con ≥1 fila; TC-012 ⇒ ≥5 `.contact__row` con
   `<svg aria-hidden="true">` y etiqueta, sin datos mezclados; TC-019 ⇒ iframe
   `www.google.com/maps` con `title` y `loading="lazy"` + enlace de respaldo + dirección
   fuera del iframe. TC-010/011/013/014 de v1 **sin cambios** y en verde.
   Hecho cuando: `python -m pytest tests/test_contact_routes.py -v` → todos PASS, 0 FAIL.
 
-- [ ] **T13 — Tests de HU: TC-015-015 adaptado (plan §6.1)** `[RNF-1][RNF-2]`
+- [x] **T13 — Tests de HU: TC-015-015 adaptado (plan §6.1)** `[RNF-1][RNF-2]`
   Añadir la aserción de grid de 2 columnas en `@media (min-width: 900px)` y ajustar los
   selectores de justificación a `.contact__row`/enlaces del mapa; paleta ⊆ 6 hex y
   viewport intactos; TC-015-016 sin cambios.
   Hecho cuando: `python -m pytest tests/test_hu_015.py -v` → todos PASS, 0 FAIL.
 
-- [ ] **T14 — Suite completa y regresión (plan §6.2)** `[todos]`
+- [x] **T14 — Suite completa y regresión (plan §6.2)** `[todos]`
   Ejecutar la suite completa sin relajar aserciones previas.
   Hecho cuando: `python -m pytest -q` → **0 FAIL** con los **179** actuales (v1 con 3
   adaptados) más los **3** nuevos (**182 en total**).

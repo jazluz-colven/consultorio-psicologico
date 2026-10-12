@@ -22,11 +22,16 @@ def test_tc_015_015_contacto_es_responsive_con_medida_y_justificacion(client) ->
     assert re.search(r"@media\s*\(max-width", css)
     assert re.search(r"\.contact\s*\{[^}]*max-width:\s*\d+ch", css)
     assert re.search(
-        r"\.contact__text\s*\{[^}]*text-align:\s*justify;[^}]*hyphens:\s*none", css
+        r"\.contact__value\s*\{[^}]*text-align:\s*justify;[^}]*hyphens:\s*none", css
     )
     assert re.search(
-        r"\.contact__list-item\s*\{[^}]*text-align:\s*justify;[^}]*hyphens:\s*none",
+        r"\.contact__row\s*\{[^}]*\}", css
+    )
+    assert re.search(
+        r"@media\s*\(min-width:\s*900px\)[^{]*\{[^}]*\.contact\s*\{[^}]*"
+        r"grid-template-columns:[^}]*\}",
         css,
+        re.S,
     )
 
     used = set(re.findall(r"#[0-9a-fA-F]{6}", css))

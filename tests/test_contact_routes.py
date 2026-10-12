@@ -15,11 +15,12 @@ def _main_html(html: str) -> str:
     return match.group(1)
 
 
-def test_tc_015_009_get_contacto_muestra_titulo_y_bloques(client) -> None:
+def test_tc_015_009_get_contacto_muestra_titulo_y_el_cajon_con_filas(client) -> None:
     main = _main_html(_contact_html(client))
 
     assert '<h1 class="contact__title">Contacto</h1>' in main
-    assert main.count('<section class="contact__block">') >= 4
+    assert '<div class="contact__panel">' in main
+    assert main.count('<li class="contact__row">') >= 5
 
 
 def test_tc_015_010_muestra_direccion_whatsapp_y_correo_sin_bloque_telefono(client) -> None:
@@ -54,22 +55,40 @@ def test_tc_015_011_muestra_horarios_y_redes_sociales(client) -> None:
         )
 
 
-def test_tc_015_012_cada_canal_esta_en_su_propia_seccion_con_h2(client) -> None:
+def test_tc_015_012_cada_fila_tiene_icono_etiqueta_y_datos_separados(client) -> None:
     main = _main_html(_contact_html(client))
 
-    sections = re.findall(
-        r'<section class="contact__block">(.*?)</section>', main, re.S
+    rows = re.findall(r'<li class="contact__row">(.*?)</li>', main, re.S)
+    assert len(rows) == 5
+    for row in rows:
+        assert re.search(r'<svg[^>]*aria-hidden="true"', row)
+        assert re.search(r'<span class="contact__label">[^<]+</span>', row)
+        assert '<span class="contact__value">' in row
+
+    whatsapp_row = next(r for r in rows if "wa.me" in r)
+    assert "mailto:" not in whatsapp_row
+    assert "Calle 34" not in whatsapp_row
+
+    email_row = next(r for r in rows if "mailto:" in r)
+    assert "wa.me" not in email_row
+
+
+def test_tc_015_019_mapa_embebido_con_titulo_lazy_y_enlace_de_respaldo(client) -> None:
+    main = _main_html(_contact_html(client))
+
+    assert '<div class="contact__map">' in main
+    assert re.search(
+        r'<iframe[^>]*src="https://www\.google\.com/maps\?[^"]*output=embed"', main
     )
-    assert len(sections) == 5
-    for section in sections:
-        assert re.search(r'<h2 class="contact__block-title">[^<]+</h2>', section)
-
-    whatsapp_section = next(s for s in sections if "wa.me" in s)
-    assert "mailto:" not in whatsapp_section
-    assert "Calle 34" not in whatsapp_section
-
-    email_section = next(s for s in sections if "mailto:" in s)
-    assert "wa.me" not in email_section
+    assert f'title="{expected.CONTACT_MAP_FRAME_TITLE}"' in main
+    assert "loading=\"lazy\"" in main
+    escaped_link_url = expected.CONTACT_MAP_LINK_URL.replace("&", "&amp;")
+    assert (
+        f'<a href="{escaped_link_url}" target="_blank" rel="noopener">'
+        f"{expected.CONTACT_MAP_LINK_LABEL}</a>" in main
+    )
+    for line in expected.CONTACT_ADDRESS_LINES:
+        assert line in main
 
 
 def test_tc_015_013_metodos_escritores_405_y_subrecurso_404(client) -> None:
