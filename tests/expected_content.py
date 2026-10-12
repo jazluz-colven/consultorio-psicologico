@@ -85,7 +85,7 @@ NAV_LINKS = [
     {"label": "Agendar cita", "url": "/citas"},
 ]
 
-PLACEHOLDER_SECTIONS = ["/articulos", "/contacto"]
+PLACEHOLDER_SECTIONS = ["/articulos"]
 
 ABOUT_CONTENT = {
     "mission": (
@@ -272,3 +272,41 @@ DETAIL_EMAIL_NOT_CONFIGURED = "Envío de correo no configurado."
 DETAIL_INVALID_RECIPIENT = (
     "Dirección de correo del paciente ausente o no válida."
 )
+
+# --- HU-015: Consultar información de contacto (espejo único de la spec 015) ---
+
+CONTACT_PAGE_TITLE = "Contacto"
+
+CONTACT_ADDRESS_LINES = [
+    "Calle 34 #29-18",
+    "Mejoras Públicas",
+    "Bucaramanga, Colombia",
+]
+
+CONTACT_PHONE = ""
+
+CONTACT_WHATSAPP = "+573168756020"
+
+CONTACT_EMAIL = "caritogomez26@gmail.com"
+
+CONTACT_OFFICE_HOURS = [
+    {"label": "Mañana", "days": "Lunes a viernes", "hours": "8:00 a. m. – 11:30 a. m."},
+    {"label": "Tarde", "days": "Lunes a viernes", "hours": "2:00 p. m. – 4:30 p. m."},
+]
+
+CONTACT_SOCIAL_LINKS = [
+    {
+        "platform": "instagram",
+        "label": "Instagram",
+        "url": "https://www.instagram.com/psi.carolinagomez/",
+    },
+]
+
+CONTACT_BLOCK_LABELS = {
+    "address": "Dirección",
+    "phone": "Teléfono",
+    "whatsapp": "WhatsApp",
+    "email": "Correo electrónico",
+    "hours": "Horarios de atención",
+    "social": "Redes sociales",
+}
