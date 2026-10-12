@@ -44,7 +44,7 @@ bloque «Teléfono» simplemente no se muestra mientras el dato no exista (D16).
 | RF-4 | Mostrar los horarios de atención | §2 `OFFICE_HOURS` + `DEFAULT_OFFICE_HOURS`; §3 fallback; §4 contrato semántico; §5 D3/D13; §6 TC-015-007/011 |
 | RF-5 | Mostrar enlaces a redes sociales oficiales aprobadas | §2 `SOCIAL_LINKS`; §3 filtro de URLs; §4 `<a href="https://…" target="_blank" rel="noopener">`; §5 D3/D14; §6 TC-015-003/008/011 |
 | RF-6 | Diferenciar los canales de contacto y sus datos | §1 bloques independientes en la plantilla; §4 «un `<section>` por canal»; §5 D4; §6 TC-015-012 + evidencia visual |
-| RNF-1 | Legible en escritorio y móvil | §1 `contact/index.html` + `.contact-page-*` mobile-first en `main.css`; §5 D10; §6 TC-015-015 y evidencia |
+| RNF-1 | Legible en escritorio y móvil | §1 `contact/index.html` + `.contact-*` mobile-first en `main.css`; §5 D10; §6 TC-015-015 y evidencia |
 | RNF-2 | Presentación clara y fácil de localizar | §1 estructura semántica (`<h2>` por canal, `<ul>` de horarios) + medida CSS; §5 D4/D10; §6 TC-015-012/015 |
 | CL-1 | Dirección no aplicable | §3 omisión del bloque Dirección + `fallback_active`; §5 D3; §6 TC-015-005 |
 | CL-2 | Algún canal de contacto no disponible | §3 omisión por campo (nunca bloque vacío); §5 D3; §6 TC-015-006 |
@@ -82,7 +82,7 @@ Consultorio_Carolina/
 │                                 # + «Volver al inicio»
 │                                 #   [RF-1..RF-6][RNF-1][RNF-2]
 ├── static/
-│   └── css/main.css                # .contact-page-* mobile-first; paleta intacta
+│   └── css/main.css                # .contact-* mobile-first; paleta intacta
 │                                 # [RNF-1][RNF-2]
 └── tests/
     ├── expected_content.py         # + CONTACT_* (espejo único) y
@@ -224,7 +224,7 @@ FUNCTION validate_contact():
     # RF-3 / CL-2: teléfono, WhatsApp, correo (uno por canal)
     FOR (key, live, default, clean, href_fmt) IN [
         ("phone",    PHONE,    DEFAULT_PHONE,    _clean_phone, "tel:+{v}"),
-        ("whatsapp", WHATSAPP, DEFAULT_WHATSAPP, _clean_phone, "https://wa.me/{v}"),
+        ("whatsapp", WHATSAPP, DEFAULT_WHATSAPP, _clean_phone, "https://wa.me/<sin +>"),
         ("email",    EMAIL,    DEFAULT_EMAIL,    _clean_email, "mailto:{v}"),
     ]:
         val, used = _resolve(clean(live), clean(default))
@@ -331,7 +331,7 @@ queda registrado para los tests. El estado normal del sitio es
 | D7 | **Ajuste mínimo de regresión: `PLACEHOLDER_SECTIONS` pierde `/contacto`** | Patrón D6/D11 del plan 003: la CL-3 de la spec 001 es genérica («aún no implementada»); los tests que iteran el espejo se ajustan solos | *Tocar la spec 001*: contradicción innecesaria. *Mantener `/contacto` en la lista*: test roto deliberadamente | regresión HU-001..008 |
 | D8 | **Nav y base desde `get_home_view()`** | Misma navegación en todas las páginas; sin duplicar lógica de presentación (patrón D7/D8) | *Construir la nav propia*: doble mantenimiento | RF-1, regresión |
 | D9 | **Identificadores en inglés, textos y mensajes en español** | Constitución #6 (`contact_content`, `CONTACT_PAGE_TITLE`, `address` en inglés; «Teléfono», «Horarios de atención» en español) | *Todo en español* / *todo en inglés*: ambos rompen la regla | RF-1..6 |
-| D10 | **Extender `main.css` con `.contact-page-*` mobile-first**, reutilizando el patrón `.about-*`/`.services-page-*`, con la paleta Serenidad Natural y Open Sans (base 18 px, párrafos `justify` + `hyphens: none` — `docs/design-typography.md`) | RNF-1/RNF-2; sin archivos CSS nuevos que fragmenten la hoja | *CSS nuevo por HU*: fragmenta (descartado en specs 002/003). *Bootstrap/Tailwind*: dependencia sin aprobación. *Nuevos colores*: prohíbe AGENTS.md | RNF-1, RNF-2 |
+| D10 | **Extender `main.css` con `.contact-*` mobile-first**, reutilizando el patrón `.about-*`/`.services-page-*`, con la paleta Serenidad Natural y Open Sans (base 18 px, párrafos `justify` + `hyphens: none` — `docs/design-typography.md`) | RNF-1/RNF-2; sin archivos CSS nuevos que fragmenten la hoja | *CSS nuevo por HU*: fragmenta (descartado en specs 002/003). *Bootstrap/Tailwind*: dependencia sin aprobación. *Nuevos colores*: prohíbe AGENTS.md | RNF-1, RNF-2 |
 | D11 | **Sin formulario de contacto ni chat** | La spec pone «gestión de mensajes recibidos» y «chat en línea» fuera de alcance; un formulario sin gestión sería un botón muerto (constitución #1) | *Form con `mailto:`*: obsoleto y sin gestión. *Form + endpoint*: crearía mensajes fuera de alcance | fuera de alcance |
 | D12 | **«Volver al inicio» al pie de la página** | Coherencia con `/nosotros` y `/servicios` (D13 del plan 003) y E2E estable | *Sin enlace de retorno*: la sección queda como callejón sin salida | RF-1, finalización |
 | D13 | **Horarios en bloques Mañana/Tarde (`label` + `days` + `hours`) coherentes con la agenda de la spec 004** (propuesta Q3) | Mismo vocabulario que la reserva (bloques Mañana/Tarde) y misma franja (08:00–11:30 / 14:00–16:30, lun–vie): una sola verdad operativa para el visitante | *Texto libre de una línea*: imposible de validar ni de reutilizar. *Horarios distintos a la agenda*: contradicción entre lo que se promete y lo que se puede reservar | RF-4, CL-3 |
@@ -430,13 +430,16 @@ Evidencia visual: docs/evidencias/hu-015/escritorio-1280.png, movil-375.png
 - [x] Aprobación de este `plan.md` por la usuaria (2026-10-12, con Q1/Q2/Q3).
 - [x] Fijar Q1/Q2/Q3 en la spec 015 (literales contractuales) y actualizar este plan
       con los valores reales.
-- [ ] Crear `feature/hu-015` desde `main` (verificar antes `git status` y la
+- [x] Crear `feature/hu-015` desde `main` (verificar antes `git status` y la
       relación con `origin/main` — incidente 2026-10-12 de MEMORY).
-- [ ] Implementar módulos, plantilla y CSS (§1–§4).
-- [ ] Tests (§6) y `python -m pytest -q` en verde (163 actuales + nuevos).
-- [ ] Evidencia QA (`qa-hu-015.md`) y evidencia visual (1280/375) con demo sobre el
+- [x] Implementar módulos, plantilla y CSS (§1–§4).
+- [x] Tests (§6) y `python -m pytest -q` en verde (**179 PASS / 0 FAIL**:
+      163 previos + 16 nuevos).
+- [x] Evidencia QA (`qa-hu-015.md`, veredicto PASS) y evidencia visual
+      (`escritorio-1280.png` 1280×1335, `movil-375.png` 375×1552) con demo sobre el
       servidor (`GET /contacto` → 200).
-- [ ] Commit/Push trazable, actualización de `MEMORY.md` y aceptación de la HU.
+- [x] Commit/Push trazable, actualización de `MEMORY.md`.
+- [ ] Aceptación de la HU (checkbox de `qa-hu-015.md`) y merge a `main`.
 
 ---
 
@@ -457,7 +460,7 @@ Evidencia visual: docs/evidencias/hu-015/escritorio-1280.png, movil-375.png
    `placeholders.py` + registrar `contact_bp` en `create_app()` +
    `PLACEHOLDER_SECTIONS` sin `/contacto` (D7).
 8. Plantilla: `templates/contact/index.html` (extiende `base.html`).
-9. CSS: sección `.contact-page-*` en `static/css/main.css` (mobile-first, paleta
+9. CSS: sección `.contact-*` en `static/css/main.css` (mobile-first, paleta
    intacta, párrafos justificados sin guiones).
 10. Tests de ruta y HU: `test_contact_routes.py` → `test_hu_015.py` → ajuste de
     regresión en los tests que iteran `PLACEHOLDER_SECTIONS`.

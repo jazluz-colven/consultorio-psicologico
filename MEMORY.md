@@ -140,8 +140,25 @@ aporte.
   `7a3d9df`   docs, `e2040fa` contenido, `da18850` servicio+disparo, `62f06cd`
   tests. **Live E2E 2026-10-11**: workflow de la usuaria (correo + **Google
   Calendar**) activo en producción → cita 46, ambos eventos `sent` y correo
-  recibido («Sí, llegó»). La cita queda `pending` por diseño (spec 004; sin
-  transiciones de estado aún — cancelación = Spec 010).
+   recibido («Sí, llegó»). La cita queda `pending` por diseño (spec 004; sin
+   transiciones de estado aún — cancelación = Spec 010).
+- **HU-015 (Spec 015, consultar contacto) IMPLEMENTADA — QA PASS, PENDIENTE DE
+  ACEPTACIÓN** (2026-10-12, rama `feature/hu-015` desde `main`): página
+  **`/contacto`** con bloques por canal (Dirección, WhatsApp, Correo electrónico,
+  Horarios de atención, Redes sociales) — **sin bloque Teléfono** (opcional, no
+  disponible; D16; RF-3 condicional). Spec 015 **enmendada** («Contenido de
+  contacto»: dirección Calle 34 #29-18 / Mejoras Públicas / Bucaramanga;
+  WhatsApp `+573168756020` → `wa.me/573168756020`; `caritogomez26@gmail.com`;
+  horarios D13 lun–vie; solo Instagram `psi.carolinagomez`). Sin SQLite:
+  `content/contact_content.py` + `services/contact_service.py` (resolución
+  vivo→default→omisión, `fallback_active`; horarios con
+  `DEFAULT_OFFICE_HOURS`), blueprint `contact`, `PLACEHOLDER_SECTIONS` =
+  `["/articulos"]`, CSS `.contact-*`. 16 tests nuevos (TC-015-001…016); suite
+  **179 PASS / 0 FAIL**. Veredicto **PASS** en
+  `docs/evidencias/hu-015/qa-hu-015.md` (capturas CDP 1280×1335 y 375×1552, sin
+  desbordes). Commits: `04640c7` docs, `942cf77` contenido+espejo, `7c14cfc`
+  servicio, `1f60bda` web+plantilla, `6eb32eb` CSS, `9670a9c` tests,
+  evidencia+MEMORY en el commit de cierre.
 
 ## Decisiones (y por qué)
 - **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
@@ -290,6 +307,8 @@ aporte.
   plan), o aceptar la BD efímera (válida para demo).
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
+- **HU-015 QA PASS, pendiente de aceptación y merge a `main`** (2026-10-12);
+  servidor de revisión en http://127.0.0.1:5000/contacto.
 - Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
 - Posible HU futura (si la usuaria lo pide): transición de estados de la cita
   (p. ej. cancelación — Spec 010) — requiere spec.
