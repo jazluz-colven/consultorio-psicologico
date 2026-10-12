@@ -49,7 +49,7 @@ def test_tc_006_001_horario_libre_registra_una_fila(database_path: Path) -> None
     appointment = service.create_booking(
         _booking_data(SERVICE_A, booking_date, SLOT), database_path
     )
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
     assert appointment.service == SERVICE_A
     assert appointment.date == booking_date
     assert appointment.time == SLOT

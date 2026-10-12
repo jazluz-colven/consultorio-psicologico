@@ -213,7 +213,7 @@ BOOKING_BLOCK_AFTERNOON = "Tarde"
 BOOKING_PATIENT_SECTION_TITLE = "Datos del paciente"
 BOOKING_SCHEDULE_SECTION_TITLE = "Fecha y hora"
 CONFIRMATION_TITLE = "Cita registrada"
-STATUS_PENDING_LABEL = "Pendiente"
+STATUS_CONFIRMED_LABEL = "Confirmada"
 BOOKING_HELPER = (
     "Si el paciente es menor de edad, registra los datos del "
     "representante con su documento; si es extranjero, puede usar "

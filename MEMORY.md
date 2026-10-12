@@ -144,6 +144,16 @@ aporte.
   transiciones de estado aún — cancelación = Spec 010).
 
 ## Decisiones (y por qué)
+- **Enmienda 2026-10-11 — estado inicial de la cita `confirmed` («Confirmada»)**
+  (specs 004 y 008): la usuaria pidió que, registrada la cita, el estado sea
+  Confirmada («una vez se registra la cita pasa a la confirmación»). Renombrado
+  `STATUS_PENDING→STATUS_CONFIRMED` (+ label «Confirmada»), INSERT y
+  `DEFAULT` de `appointments.status` = `'confirmed'`; payload de HU-007/008
+  `appointment.status='confirmed'` (misma forma, `event_version` 1); correo
+  con «Estado: Confirmada». El ciclo `pending→sent/skipped/failed` de
+  `automation_events` no se toca. BD de desarrollo **limpiada** (en pruebas, sin
+  migración). Rama `feature/estado-confirmada` (desde `feature/hu-008`, sin
+  merge aún).
 - **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
   stdlib en `consultorio/persistence/` (sin ORM, sin dependencias); BD en
   `data/consultorio.db` (fuera de git); unicidad en el punto de persistencia.

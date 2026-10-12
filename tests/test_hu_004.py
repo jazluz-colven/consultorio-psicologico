@@ -106,7 +106,7 @@ def test_tc_004_026_e2e_home_agendar_submit_confirmacion(client) -> None:
     assert confirmation.status_code == 200
     html = confirmation.get_data(as_text=True)
     assert expected.CONFIRMATION_TITLE in html
-    assert expected.STATUS_PENDING_LABEL in html
+    assert expected.STATUS_CONFIRMED_LABEL in html
     assert "María López" in html
     assert "10:00" in html
     assert "Psicología Integral" in html

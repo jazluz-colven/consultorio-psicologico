@@ -18,7 +18,7 @@ from consultorio.content.appointment_content import (
     MSG_REQUIRED_SERVICE,
     MSG_REQUIRED_TIME,
     MSG_SLOT_TAKEN,
-    STATUS_PENDING_LABEL,
+    STATUS_CONFIRMED_LABEL,
 )
 from consultorio.persistence import appointments_repository as repository
 from tests import expected_content as expected
@@ -97,7 +97,7 @@ def test_post_valido_redirige_a_confirmacion_y_crea_1_fila(app, client) -> None:
     assert confirmation.status_code == 200
     html = confirmation.get_data(as_text=True)
     assert expected.CONFIRMATION_TITLE in html
-    assert expected.STATUS_PENDING_LABEL in html
+    assert expected.STATUS_CONFIRMED_LABEL in html
     assert "08:00" in html
     assert data["date"] in html
     assert "Psiconutrición" in html

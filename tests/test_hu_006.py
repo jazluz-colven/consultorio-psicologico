@@ -173,7 +173,7 @@ def test_tc_006_015_diagnostico_detecta_duplicados_sin_indice(tmp_path) -> None:
                 service     TEXT NOT NULL,
                 date        TEXT NOT NULL,
                 time        TEXT NOT NULL,
-                status      TEXT NOT NULL DEFAULT 'pending',
+                status      TEXT NOT NULL DEFAULT 'confirmed',
                 created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
             )
             """

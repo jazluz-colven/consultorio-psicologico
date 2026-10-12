@@ -45,7 +45,7 @@ def insert_appointment(data: dict[str, str], database_path: str | Path) -> Appoi
             INSERT INTO appointments (
                 document_type, document_number, patient_name, email, phone,
                 service, date, time, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
             """,
             (
                 data["document_type"],

@@ -25,7 +25,7 @@ from consultorio.content.appointment_content import (
     MSG_SELECT_DATE_HINT,
     MSG_SLOT_TAKEN,
     MSG_SUBMITTING,
-    STATUS_PENDING_LABEL,
+    STATUS_CONFIRMED_LABEL,
 )
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.services.appointment_service import (
@@ -178,7 +178,7 @@ def confirm(cita_id: int):
         view=get_home_view(),
         appointment=appointment,
         service_name=service_name,
-        status_label=STATUS_PENDING_LABEL,
+        status_label=STATUS_CONFIRMED_LABEL,
         confirmation_title=CONFIRMATION_TITLE,
         page_title=CONFIRMATION_TITLE,
     )

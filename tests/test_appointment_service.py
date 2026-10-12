@@ -131,7 +131,7 @@ def test_create_booking_hora_desaparece_de_disponibilidad(
 ) -> None:
     data = _data()
     created = service.create_booking(data, database_path)
-    assert created.status == "pending"
+    assert created.status == "confirmed"
     hours = service.get_available_hours(
         data["service"], data["date"], database_path
     )

@@ -56,12 +56,12 @@ def test_init_db_crea_appointments_con_11_columnas_y_unique(database_path) -> No
         assert "UNIQUE (service, date, time)" in SCHEMA
 
 
-def test_insert_persiste_pending_y_get_recupera_todos_los_campos(
+def test_insert_persiste_confirmed_y_get_recupera_todos_los_campos(
     database_path,
 ) -> None:
     created = repo.insert_appointment(VALID_DATA, database_path)
     assert created.id >= 1
-    assert created.status == "pending"
+    assert created.status == "confirmed"
     assert created.created_at
     fetched = repo.get_appointment_by_id(created.id, database_path)
     assert fetched is not None
@@ -74,7 +74,7 @@ def test_insert_persiste_pending_y_get_recupera_todos_los_campos(
     assert fetched.service == "nutrition"
     assert fetched.date == "2026-10-12"
     assert fetched.time == "08:00"
-    assert fetched.status == "pending"
+    assert fetched.status == "confirmed"
 
 
 def test_segundo_insert_misma_terna_genera_integrityerror_y_queda_1_fila(

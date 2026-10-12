@@ -49,8 +49,8 @@ BOOKING_PATIENT_SECTION_TITLE: str = "Datos del paciente"
 BOOKING_SCHEDULE_SECTION_TITLE: str = "Fecha y hora"
 
 CONFIRMATION_TITLE: str = "Cita registrada"
-STATUS_PENDING: str = "pending"
-STATUS_PENDING_LABEL: str = "Pendiente"
+STATUS_CONFIRMED: str = "confirmed"
+STATUS_CONFIRMED_LABEL: str = "Confirmada"
 
 BOOKING_HELPER: str = (
     "Si el paciente es menor de edad, registra los datos del "

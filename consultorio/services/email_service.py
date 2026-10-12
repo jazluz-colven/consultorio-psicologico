@@ -10,7 +10,7 @@ import re
 import urllib.error
 from datetime import date, datetime
 
-from consultorio.content.appointment_content import STATUS_PENDING_LABEL
+from consultorio.content.appointment_content import STATUS_CONFIRMED_LABEL
 from consultorio.content.email_content import (
     DETAIL_EMAIL_NOT_CONFIGURED,
     DETAIL_INVALID_RECIPIENT,
@@ -56,7 +56,7 @@ def build_confirmation_message(appointment: Appointment) -> dict[str, str]:
     """Subject, plain text and HTML parts of the confirmation (RF-2)."""
     service_name = SERVICES_CATALOG[appointment.service]["name"]
     date_label = format_spanish_date(appointment.date)
-    status_label = STATUS_PENDING_LABEL
+    status_label = STATUS_CONFIRMED_LABEL
 
     subject = EMAIL_SUBJECT_TEMPLATE.format(
         service_name=service_name, date_label=date_label, time=appointment.time

@@ -99,3 +99,20 @@ cabecera `x-hu007-token` (token solo en entorno de la prueba, nunca en el repo).
 Estado de la cita: `pending` («Pendiente») **por diseño** (spec 004: la cita
 nace pendiente; ninguna HU aceptada transiciona el estado todavía; la
 cancelación queda para Spec 010).
+
+## Enmienda 2026-10-11 — estado inicial «Confirmada»
+
+Tras la prueba live, la usuaria pidió («Modifiquemos en spec 004 que el estado
+inicial será Confirmado…»): **specs 004 y 008 enmendadas** — estado inicial
+`pending` («Pendiente») → **`confirmed` («Confirmada»)**, con las decisiones de
+la usuaria: etiqueta «Confirmada» (femenino), valor `confirmed` en BD,
+saneamiento de la BD de desarrollo (en pruebas) y correo actualizado.
+
+| Validación | Resultado |
+|---|---|
+| Specs 004/008 + planes (sección de enmienda) | Actualizados (`269850b`) |
+| Renombrado `STATUS_CONFIRMED`/`STATUS_CONFIRMED_LABEL` + espejo + repo + esquema `DEFAULT 'confirmed'` | Sin restos de `STATUS_PENDING`/«Pendiente» en código |
+| Suite completa | **163 PASS / 0 FAIL** |
+| Manual: BD regenerada, `POST /citas` → 303, `/citas/confirmada/1` | **200** con «Confirmada» visible; fila `status='confirmed'` |
+| Payloads HU-007/008 (`appointment.status`) | `confirmed` (misma forma; `event_version` 1 intacta) |
+| Ciclo de eventos `automation_events` (`pending → sent/skipped/failed`) | Sin cambios |

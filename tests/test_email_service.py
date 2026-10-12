@@ -77,7 +77,7 @@ def test_tc_008_001_mensaje_completo_legible_y_paleta(
         assert booking_date not in part  # ISO date is not the readable label
         assert expected_date_label in part
         assert SLOT in part
-        assert "Pendiente" in part
+        assert "Confirmada" in part
         assert f"#{appointment.id}" in part
         assert "Guarda este correo como comprobante" in part
     # HTML: only the 6 palette hexes, no <img>, no external CSS, no remote URL
@@ -137,7 +137,7 @@ def test_tc_008_003_url_vacia_skipped_sin_post(database_path: Path) -> None:
     assert event is not None
     assert event.status == "skipped"
     assert event.detail == "Envío de correo no configurado."
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
 
 
 def test_tc_008_004_urlerror_failed_sin_excepcion(database_path: Path) -> None:
@@ -153,7 +153,7 @@ def test_tc_008_004_urlerror_failed_sin_excepcion(database_path: Path) -> None:
             WEBHOOK_URL,
             TIMEOUT,
         )
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
     event = email.events_repository.get_by_event_id(
         _event_id(appointment.id), database_path
     )
@@ -171,7 +171,7 @@ def test_tc_008_005_timeout_failed_cita_intacta(database_path: Path) -> None:
             WEBHOOK_URL,
             TIMEOUT,
         )
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
     event = email.events_repository.get_by_event_id(
         _event_id(appointment.id), database_path
     )
@@ -222,7 +222,7 @@ def test_tc_008_007_aislamiento_repositorio_caido_reserva_ok(
             TIMEOUT,
         )
     assert isinstance(appointment, Appointment)
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
 
 
 def test_tc_008_008_datos_incompletos_failed_sin_post(database_path: Path) -> None:
@@ -236,7 +236,7 @@ def test_tc_008_008_datos_incompletos_failed_sin_post(database_path: Path) -> No
         service="",
         date="",
         time="",
-        status="pending",
+        status="confirmed",
         created_at="2026-10-10 10:00:00",
     )
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
@@ -265,7 +265,7 @@ def test_tc_008_009_email_invalido_failed_sin_post(database_path: Path) -> None:
             service=SERVICE_KEY,
             date=booking_date,
             time=SLOT,
-            status="pending",
+        status="confirmed",
             created_at="2026-10-10 10:00:00",
         )
         with mock.patch.object(

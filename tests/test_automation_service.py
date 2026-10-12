@@ -45,7 +45,7 @@ def test_tc_007_001_payload_permitido_sin_datos_personales(database_path: Path) 
     appointment = booking.create_booking(
         _booking_data(booking_date), database_path
     )
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
     event = automation.build_event(appointment)
     assert set(event.keys()) == {
         "event_id",
@@ -143,7 +143,7 @@ def test_tc_007_004_urlerror_marca_failed_y_cita_intacta(database_path: Path) ->
             WEBHOOK_URL,
             TIMEOUT,
         )
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
     event = automation.events_repository.get_by_event_id(
         _event_id(appointment.id), database_path
     )
@@ -163,7 +163,7 @@ def test_tc_007_005_timeout_marca_failed_y_cita_intacta(database_path: Path) -> 
             WEBHOOK_URL,
             TIMEOUT,
         )
-    assert appointment.status == "pending"
+    assert appointment.status == "confirmed"
     event = automation.events_repository.get_by_event_id(
         _event_id(appointment.id), database_path
     )
@@ -231,7 +231,7 @@ def test_tc_007_008_fallo_de_registro_no_invalida_la_reserva(
             TIMEOUT,
         )
     assert result != "slot_taken"
-    assert result.status == "pending"
+    assert result.status == "confirmed"
 
 
 def test_tc_007_009_timeout_a_nivel_urllib(database_path: Path) -> None:
@@ -247,7 +247,7 @@ def test_tc_007_009_timeout_a_nivel_urllib(database_path: Path) -> None:
             WEBHOOK_URL,
             0.01,
         )
-    assert result.status == "pending"
+    assert result.status == "confirmed"
     event = automation.events_repository.get_by_event_id(
         _event_id(result.id), database_path
     )

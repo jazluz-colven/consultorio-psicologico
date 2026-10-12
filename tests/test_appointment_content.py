@@ -58,15 +58,15 @@ def test_espejo_de_literales_identico_al_modulo_de_contenido() -> None:
         "BOOKING_PATIENT_SECTION_TITLE": expected.BOOKING_PATIENT_SECTION_TITLE,
         "BOOKING_SCHEDULE_SECTION_TITLE": expected.BOOKING_SCHEDULE_SECTION_TITLE,
         "CONFIRMATION_TITLE": expected.CONFIRMATION_TITLE,
-        "STATUS_PENDING_LABEL": expected.STATUS_PENDING_LABEL,
+        "STATUS_CONFIRMED_LABEL": expected.STATUS_CONFIRMED_LABEL,
         "BOOKING_HELPER": expected.BOOKING_HELPER,
     }
     for name, literal in mirror.items():
         assert getattr(ac, name) == literal, name
-    assert ac.STATUS_PENDING == "pending"
+    assert ac.STATUS_CONFIRMED == "confirmed"
     assert ac.BOOKING_PAGE_TITLE == "Agendar cita"
     assert ac.CONFIRMATION_TITLE == "Cita registrada"
-    assert ac.STATUS_PENDING_LABEL == "Pendiente"
+    assert ac.STATUS_CONFIRMED_LABEL == "Confirmada"
     assert ac.MSG_SLOT_TAKEN == (
         "Ese horario ya no está disponible. Selecciona otro horario."
     )

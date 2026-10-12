@@ -128,9 +128,9 @@ def test_tc_008_013_espejo_de_literales() -> None:
     assert expected_content.DETAIL_INVALID_RECIPIENT == (
         email_content.DETAIL_INVALID_RECIPIENT
     )
-    from consultorio.content.appointment_content import STATUS_PENDING_LABEL
+    from consultorio.content.appointment_content import STATUS_CONFIRMED_LABEL
 
-    assert STATUS_PENDING_LABEL == "Pendiente"
+    assert STATUS_CONFIRMED_LABEL == "Confirmada"
 
 
 def test_tc_008_014_constitucion_1_stdlib_only() -> None:

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     service         TEXT NOT NULL,
     date            TEXT NOT NULL,
     time            TEXT NOT NULL,
-    status          TEXT NOT NULL DEFAULT 'pending',
+    status          TEXT NOT NULL DEFAULT 'confirmed',
     created_at      TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     UNIQUE (service, date, time)
 );
