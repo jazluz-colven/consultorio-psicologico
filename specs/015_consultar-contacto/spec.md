@@ -16,6 +16,7 @@ El visitante necesita encontrar rápidamente los canales oficiales para comunica
 - RF-4: CUANDO el visitante consulte la sección Contacto, EL SISTEMA mostrará los horarios de atención.
 - RF-5: CUANDO existan redes sociales oficiales aprobadas, EL SISTEMA mostrará enlaces hacia ellas.
 - RF-6: EL SISTEMA mantendrá diferenciados los canales de contacto y sus datos para facilitar su consulta.
+- RF-7: CUANDO el visitante consulte la sección Contacto y exista dirección, EL SISTEMA mostrará un mapa con la ubicación del consultorio. *(Añadido por enmienda 2026-10-12, autorizada por la usuaria; ampliación sobre HU-015 aceptada — rama `feature/hu-015-diseno`.)*
 
 ## Requisitos no funcionales
 - La información debe ser clara y legible en escritorio y móvil.
@@ -26,6 +27,9 @@ El visitante necesita encontrar rápidamente los canales oficiales para comunica
 - Algún canal de contacto no disponible.
 - Horarios de atención no definidos.
 - Enlace a una red social no disponible.
+- Mapa no disponible: si no hay dirección vigente o la consulta del mapa está vacía,
+  se omite el bloque del mapa y permanece visible la dirección escrita (RF-2).
+  *(Añadido por la enmienda del 2026-10-12.)*
 
 ## Fuera de alcance
 - Gestión de mensajes recibidos.
@@ -52,6 +56,12 @@ Todos los RF con test en verde y demo manual de la consulta de los canales de co
   - Tarde — Lunes a viernes — 2:00 p. m. – 4:30 p. m.
 - `SOCIAL_LINKS` (RF-5): Instagram — etiqueta «Instagram» —
   `https://www.instagram.com/psi.carolinagomez/` (única red oficial aprobada).
+- Literales del mapa (RF-7; añadidos por la enmienda del 2026-10-12):
+  - `MAP_QUERY`: «Calle 34 #29-18, Mejoras Públicas, Bucaramanga, Colombia».
+  - `MAP_EMBED_URL`: `https://www.google.com/maps?q=<consulta URL-encoded>&output=embed`.
+  - `MAP_LINK_URL`: `https://www.google.com/maps/search/?api=1&query=<consulta URL-encoded>`.
+  - `MAP_LINK_LABEL`: «Abrir en Google Maps».
+  - `MAP_FRAME_TITLE`: «Ubicación del consultorio en Google Maps».
 - Etiquetas de bloque (RF-6): «Dirección», «Teléfono», «WhatsApp»,
   «Correo electrónico», «Horarios de atención», «Redes sociales».
 

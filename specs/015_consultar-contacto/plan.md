@@ -1,274 +1,177 @@
-# Plan 015 — Consultar información de contacto
+# Plan 015 — Consultar información de contacto (ampliación: cajón + iconos + mapa)
 
-> Trazabilidad: **HU-015 → Spec 015 (`specs/015_consultar-contacto/spec.md`) → este plan → código → tests → evidencia → commit**
+> Trazabilidad: **HU-015 → Spec 015 (`specs/015_consultar-contacto/spec.md`, enmendada 2026-10-12 con RF-7) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs` (Q5).
-> Etapa actual: **HU-015 ACEPTADA Y CERRADA** (2026-10-12): plan aprobado por la
-> usuaria junto con los datos de contacto definitivos (**Q1**: dirección, WhatsApp y
-> correo; **teléfono opcional, no disponible** — bloque omitido), la red social
-> (**Q2**: solo Instagram) y los horarios (**Q3**: propuesta D13). Literales fijados
-> en la spec 015 (enmienda «Contenido de contacto», 2026-10-12). QA **PASS**
-> (`docs/evidencias/hu-015/qa-hu-015.md`) y aceptación el 2026-10-12.
-> Rama: **`feature/hu-015`** desde `main` (Q4). Baseline de tests: **163 PASS / 0 FAIL**.
+> Etapa actual: **PLAN DE AMPLIACIÓN APROBADO** (2026-10-12) por la usuaria (Q13).
+> **Estado real verificado tras sincronizar `main` con `origin/main` (fast-forward a
+> `f99490b`)**: HU-015 **v1 ya implementada, evidenciada y ACEPTADA/CERRADA** el
+> 2026-10-12 (rama `feature/hu-015`, mergeada a `main`) con el **diseño por
+> secciones/canales** (`templates/contact/index.html`, `test_contact_*`, QA PASS en
+> `docs/evidencias/hu-015/qa-hu-015.md`). El remoto añade además despliegue en **Render**
+> y `MEMORY.md` actualizado.
+> Esta HU se **amplía** (decisión de la usuaria 2026-10-12, Q13) con: **RF-7 mapa** y
+> **rediseño de presentación** — un **único cajón** con filas `icono + etiqueta + valor`
+> (Q8/Q9). HU-015 no se reabre como historia nueva: se refactorea sobre la base ya
+> mergeada, se enmienda la spec 015 y se regenera la evidencia.
+> Rama: **`feature/hu-015-diseno`** desde `main` (`f99490b`). Baseline: **179 PASS / 0
+> FAIL** (163 de HU-001..008/016 + 16 de HU-015 v1).
 
 ---
 
 ## 0. Alcance y cobertura
 
-Implementa únicamente lo autorizado por Spec 015: una **página única** `GET /contacto`
-que concentra los datos de contacto (dirección, teléfono, WhatsApp, correo), los
-horarios de atención y los enlaces a las redes sociales oficiales, cada dato en un
-bloque propio y consultable.
+Implementa la **ampliación aprobada** de Spec 015 sobre `/contacto`: conservar los datos
+de contacto ya funcionales (dirección, WhatsApp, correo, horarios, redes) y cambiar su
+**presentación** a un **único cajón** (una fila por canal: icono SVG + etiqueta +
+valor/enlaces), más el **mapa con la ubicación** (RF-7, enmienda §8.1) y el enlace de
+respaldo «Abrir en Google Maps».
 
-**Fuera de alcance** (spec 015 + decisión D11): gestión de mensajes recibidos,
-**formulario de contacto** (captura de mensajes → su gestión está fuera de alcance),
-chat en línea, administración de redes sociales, envío de correos/WhatsApp desde la
-página (specs 008/009), reservas desde contacto.
+**Fuera de alcance** (igual que en v1 + D20): formulario de contacto, chat, gestión de
+mensajes, administración de redes, envíos (specs 008/009), reservas desde contacto y
+entrada de `/contacto` en el índice del buscador (HU-016).
 
-**Sin modelo de datos SQLite**: contenido estático versionado en el repositorio
-(mismo criterio D2 del plan 001; la constitución #5 solo se activa con persistencia
-requerida — aquí no la hay). No se crea ni se toca `consultorio/persistence/`.
+**Sin modelo de datos SQLite**: el contenido estático de v1 (`content/contact_content.py`)
+se **amplía** con los literales del mapa; no se crea ni se toca
+`consultorio/persistence/` (constitución #5 no aplica).
 
-**Sin dependencias nuevas** (constitución #1): solo Flask + Jinja + CSS propio.
+**Sin dependencias nuevas** (constitución #1): Flask + Jinja + CSS propio + SVG inline
+de autor; el `<iframe>` de Google Maps es contenido incrustado, no una dependencia.
 
-**Dudas de la spec cerradas** (§7.1): Q1 y Q2 resueltas por la usuaria el 2026-10-12;
-los literales están fijados en la spec 015 (sección «Contenido de contacto», enmienda
-del mismo día). RF-3 es **condicional**: no haber teléfono fijo no lo incumple — el
-bloque «Teléfono» simplemente no se muestra mientras el dato no exista (D16).
+**Dudas de la spec cerradas** (§7.1): Q1–Q3 (datos, redes, horarios) ya fijados y
+vigentes en v1; Q8–Q12 (mapa, cajón, etiquetas, enmienda, descarte del plan previo) y
+Q13 (ruta de trazabilidad tras descubrir el remoto). RF-3/RF-5/RF-7 son condicionales:
+teléfono sin dato ⇒ sin fila (D16); sin dirección o sin consulta ⇒ sin mapa (CL-1/CL-5).
 
 ### Matriz de cobertura RF
 
 | RF | Enunciado (resumen) | Dónde se cubre |
 |----|---------------------|----------------|
-| RF-1 | Mostrar los datos de contacto disponibles | §1 `contact_content.py` + `contact_service` + `templates/contact/index.html`; §2 modelo; §3 `get_contact_view()`; §4 `GET /contacto`; §5 D1/D2/D3; §6 TC-015-004/009 |
-| RF-2 | Mostrar la dirección cuando exista | §2 `ADDRESS_LINES`; §3 resolución por campo; §4 contrato semántico; §5 D3/D4; §6 TC-015-005/010 |
-| RF-3 | Mostrar teléfono, WhatsApp y correo | §2 `PHONE`/`WHATSAPP`/`EMAIL`; §3 validación de formato; §4 bloques con `tel:`/`wa.me`/`mailto:`; §5 D3/D5; §6 TC-015-002/006/010 |
-| RF-4 | Mostrar los horarios de atención | §2 `OFFICE_HOURS` + `DEFAULT_OFFICE_HOURS`; §3 fallback; §4 contrato semántico; §5 D3/D13; §6 TC-015-007/011 |
-| RF-5 | Mostrar enlaces a redes sociales oficiales aprobadas | §2 `SOCIAL_LINKS`; §3 filtro de URLs; §4 `<a href="https://…" target="_blank" rel="noopener">`; §5 D3/D14; §6 TC-015-003/008/011 |
-| RF-6 | Diferenciar los canales de contacto y sus datos | §1 bloques independientes en la plantilla; §4 «un `<section>` por canal»; §5 D4; §6 TC-015-012 + evidencia visual |
-| RNF-1 | Legible en escritorio y móvil | §1 `contact/index.html` + `.contact-*` mobile-first en `main.css`; §5 D10; §6 TC-015-015 y evidencia |
-| RNF-2 | Presentación clara y fácil de localizar | §1 estructura semántica (`<h2>` por canal, `<ul>` de horarios) + medida CSS; §5 D4/D10; §6 TC-015-012/015 |
-| CL-1 | Dirección no aplicable | §3 omisión del bloque Dirección + `fallback_active`; §5 D3; §6 TC-015-005 |
-| CL-2 | Algún canal de contacto no disponible | §3 omisión por campo (nunca bloque vacío); §5 D3; §6 TC-015-006 |
-| CL-3 | Horarios no definidos | §3 `DEFAULT_OFFICE_HOURS`; §5 D3/D13; §6 TC-015-007 |
-| CL-4 | Enlace a una red social no disponible | §3 descarte de URL no válida; §5 D3/D14; §6 TC-015-008 |
+| RF-1 | Mostrar los datos de contacto disponibles | v1 intacta: §1 `contact_content`/`contact_service`/plantilla; §4 `GET /contacto`; §6 TC-015-009 (adaptado) |
+| RF-2 | Mostrar la dirección cuando exista | v1 intacta + fila «Dirección» en el cajón; §5 D4; §6 TC-015-010 |
+| RF-3 | Mostrar teléfono, WhatsApp y correo | v1 intacta: filas WhatsApp/Correo con `wa.me`/`mailto:`; sin «Teléfono» (D16); §6 TC-015-010 |
+| RF-4 | Mostrar los horarios de atención | v1 intacta: fila «Horarios de atención»; §6 TC-015-011 |
+| RF-5 | Mostrar enlaces a redes sociales oficiales | v1 intacta: fila «Redes sociales» con `target="_blank" rel="noopener"`; §6 TC-015-011 |
+| RF-6 | Diferenciar los canales de contacto y sus datos | §3 filas diferenciadas; §4 «una `<li class="contact__row">` por canal con icono + etiqueta»; §5 D4/D18; §6 TC-015-012 (adaptado) + evidencia |
+| RF-7 | Mostrar un mapa con la ubicación (enmienda §8.1) | §2 `MAP_*`; §3 `ContactMap`; §4 `<iframe>` + enlace; §5 D17/D19/D21; §6 TC-015-017/018/019 |
+| RNF-1 | Legible en escritorio y móvil | §1 CSS `.contact-*` rework; §5 D10/D19; §6 TC-015-015 (adaptado) y evidencia |
+| RNF-2 | Presentación clara y fácil de localizar | §4 orden fijo de filas + medida CSS; §5 D4/D10; §6 TC-015-012/015 |
+| CL-1 | Dirección no aplicable | v1 (omisión de fila) + §3 omisión del mapa; §6 TC-015-018 |
+| CL-2 | Algún canal de contacto no disponible | v1 intacta (omisión por campo); §6 TC-015-007 |
+| CL-3 | Horarios no definidos | v1 intacta (`DEFAULT_OFFICE_HOURS`); §6 TC-015-006 |
+| CL-4 | Enlace a una red social no disponible | v1 intacta (descarte de URL); §6 TC-015-008 |
+| CL-5 | Mapa no disponible | §3 omisión del mapa sin ocultar la dirección; §5 D17/D21; §6 TC-015-018/019 |
 | Finalización | Tests en verde + demo manual | §6 pirámide y evidencia + §8 secuencia |
 
 ---
 
 ## 1. Estructura de módulos
 
-`[RF-1..RF-6][CL-1..CL-4][RNF-1][RNF-2]` — Constitución #3: contenido, lógica y
-presentación separadas; la plantilla no contiene reglas de negocio. Se conserva la
-estructura por capas (D1/Q2 del plan 001) y el patrón de blueprint validado en
-HU-002/003.
+`[RF-1..RF-7][CL-1..CL-5][RNF-1][RNF-2]` — Constitución #3 intacta. **No se crean
+módulos nuevos**: se amplían los existentes de HU-015 v1 (constitución: no reescribas
+lo que ya funciona; el blueprint, la ruta, `placeholders.py` y `create_app()` no se
+tocan).
 
 ```text
 Consultorio_Carolina/
 ├── consultorio/
 │   ├── content/
-│   │   └── contact_content.py      # CONTACT_PAGE_TITLE, CONTACT_* y DEFAULT_*
-│   │                             #   [RF-1..RF-6][CL-1..CL-4]
+│   │   └── contact_content.py      # + MAP_QUERY, MAP_EMBED_URL, MAP_LINK_URL,
+│   │                               #   MAP_LINK_LABEL, MAP_FRAME_TITLE, DEFAULT_MAP_QUERY
+│   │                               #   [RF-7][CL-1][CL-5]
 │   ├── services/
-│   │   └── contact_service.py      # ContactView, get_contact_view(),
-│   │                             #   validate_contact()             [RF-1..RF-6][CL-1..CL-4]
+│   │   └── contact_service.py      # + ContactMap; ContactView.map;
+│   │                               #   resolución del mapa en validate_contact()   [RF-7][CL-1][CL-5]
 │   └── web/
-│       ├── contact.py              # blueprint "contact": GET /contacto
-│       │                         #   [RF-1..RF-6]
-│       └── placeholders.py         # retira /contacto; conserva /articulos
-│                                 #   [CL-*][regresión HU-001..008]
+│       └── contact.py              # SIN CAMBIOS (GET /contacto)         [RF-1..RF-7]
 ├── templates/
-│   └── contact/index.html          # h1 «Contacto» + un <section> por canal
-│                                 # (Dirección, Teléfono, WhatsApp, Correo,
-│                                 # Horarios de atención, Redes sociales)
-│                                 # + «Volver al inicio»
-│                                 #   [RF-1..RF-6][RNF-1][RNF-2]
+│   └── contact/
+│       └── index.html              # REFACTORIZA: cajón .contact__panel con <ul> de
+│                                   # filas (icono SVG + etiqueta + valor/enlaces) +
+│                                   # bloque .contact__map (iframe + enlace)         [RF-6][RF-7][RNF-*]
 ├── static/
-│   └── css/main.css                # .contact-* mobile-first; paleta intacta
-│                                 # [RNF-1][RNF-2]
+│   └── css/main.css                # REFACTORIZA .contact-*: grid 2 col ≥900 px,
+│                                   # panel, filas, iconos, mapa                     [RNF-1][RNF-2]
 └── tests/
-    ├── expected_content.py         # + CONTACT_* (espejo único) y
-    │                             # PLACEHOLDER_SECTIONS sin /contacto [RF-1..RF-6]
-    ├── test_contact_content.py     # integridad y formatos del contenido
-    │                             #   [RF-2][RF-3][RF-5][CL-1..CL-4]
-    ├── test_contact_service.py     # resolución por campo y omisiones
-    │                             #   [RF-1..RF-6][CL-1..CL-4]
-    ├── test_contact_routes.py      # contrato HTTP + 405/404 + regresión
-    │                             #   [RF-1..RF-6]
-    └── test_hu_015.py              # RNF + E2E + fuera de alcance  [todos]
+    ├── expected_content.py         # + CONTACT_MAP_* (espejo de los MAP_* de la spec)
+    │                               #   [RF-7]
+    ├── test_contact_content.py     # + TC-015-017 (literales del mapa)     [RF-7]
+    ├── test_contact_service.py     # + TC-015-018 (ContactMap y CL-1/CL-5)  [RF-7][CL-1][CL-5]
+    ├── test_contact_routes.py      # TC-015-009/012 adaptados + TC-015-019  [RF-1][RF-6][RF-7]
+    └── test_hu_015.py              # TC-015-015 adaptado (grid 2 col)       [RNF-1][RNF-2]
 ```
 
-Responsabilidades (sin solaparse):
-
-| Módulo | Responsabilidad | NO debe hacer |
-|---|---|---|
-| `content/contact_content.py` | Declarar los datos de contacto, horarios, redes y sus defaults + título de página | Contener lógica ni generar HTML |
-| `services/contact_service.py` | Validar formato, aplicar fallback/omisión por campo y devolver un view saneado | Escribir HTML, manejar request/response |
-| `web/contact.py` | Método/ruta, status code, `render_template` | Consultar contenido directamente ni decidir omisiones |
-| `templates/contact/index.html` | Marco semántico: un `<section>` por canal con su `<h2>` | Condicionales de negocio |
-| `placeholders.py` | Queda solo con `/articulos` | Ocultar la sección implementada |
-
-`create_app()` registra `contact_bp` junto a `about_bp`, `home_bp`, `sections_bp`,
-`services_bp` y `search_bp`. `base.html`, `nav.js` y `NAV_LINKS` no cambian: la
-navegación ya incluye «Contacto» → `/contacto`.
+Responsabilidades: **las mismas de v1** (§ del plan original de HU-015), con el único
+cambio de que la plantilla pasa de «un `<section>` por canal» a «un cajón con una fila
+por canal» (presentación; sin condicionales de negocio) y el servicio gana el campo
+`map`.
 
 ---
 
-## 2. Fuente de contenido de contacto
+## 2. Fuente de contenido (ampliación)
 
-`[RF-1..RF-6][CL-1..CL-4]` — Contenido **estático versionado en el repositorio**
-(mismo criterio D2/Q8 del plan 001). Identificadores en inglés, literales en español
-(constitución #6).
-
-> **Los valores concretos están pendientes de Q1 y Q2** (dudas abiertas de la spec 015):
-> no se inventan datos de contacto ni redes sociales. Bajo ese supuesto, el modelo y
-> las reglas quedan definidos aquí y los literales se fijan en la spec 015 **antes**
-> de codificar (§8.1).
-
-> **Texto aprobado (Q1/Q2/Q3, 2026-10-12)**: los literales de abajo están **fijados
-> en la spec 015** (sección «Contenido de contacto») y son contrato; `tests/expected_content.py`
-> es su espejo único (D6).
-
-### `consultorio/content/contact_content.py`
+`[RF-7][CL-1][CL-5]` — Se conservan **sin cambio** todos los literales vigentes de la
+spec 015 (`CONTACT_PAGE_TITLE`, `ADDRESS_LINES`, `PHONE`, `WHATSAPP`, `EMAIL`,
+`OFFICE_HOURS`, `SOCIAL_LINKS`, `CONTACT_BLOCK_LABELS` y sus `DEFAULT_*`). Se añade:
 
 ```python
-CONTACT_PAGE_TITLE: str = "Contacto"          # h1 literal (aprobado 2026-10-12)
-
-# --- RF-2 -------------------------------------------------------------------
-ADDRESS_LINES: list[str] = [                  # aprobado 2026-10-12
-    "Calle 34 #29-18",
-    "Mejoras Públicas",
-    "Bucaramanga, Colombia",
-]
-
-# --- RF-3 -------------------------------------------------------------------
-PHONE: str = ""                               # opcional, no disponible (D16)
-WHATSAPP: str = "+573168756020"               # aprobado 2026-10-12 → wa.me/573168756020
-EMAIL: str = "caritogomez26@gmail.com"        # aprobado 2026-10-12 → mailto:
-
-# --- RF-4 (propuesta D13 aprobada el 2026-10-12) ----------------------------
-OFFICE_HOURS: list[dict[str, str]] = [
-    {"label": "Mañana", "days": "Lunes a viernes", "hours": "8:00 a. m. – 11:30 a. m."},
-    {"label": "Tarde",  "days": "Lunes a viernes", "hours": "2:00 p. m. – 4:30 p. m."},
-]
-
-# --- RF-5 (aprobado 2026-10-12: solo Instagram) -----------------------------
-SOCIAL_LINKS: list[dict[str, str]] = [
-    {"platform": "instagram", "label": "Instagram",
-     "url": "https://www.instagram.com/psi.carolinagomez/"},
-]
-
-# --- respaldos = copia literal de la spec (patrón de about/services) --------
-DEFAULT_ADDRESS_LINES   = copy.deepcopy(ADDRESS_LINES)
-DEFAULT_PHONE           = PHONE
-DEFAULT_WHATSAPP        = WHATSAPP
-DEFAULT_EMAIL           = EMAIL
-DEFAULT_OFFICE_HOURS    = copy.deepcopy(OFFICE_HOURS)
-DEFAULT_SOCIAL_LINKS    = copy.deepcopy(SOCIAL_LINKS)
-
-# --- etiquetas de bloque (RF-6) --------------------------------------------
-CONTACT_BLOCK_LABELS: dict[str, str] = {
-    "address":  "Dirección",
-    "phone":    "Teléfono",
-    "whatsapp": "WhatsApp",
-    "email":    "Correo electrónico",
-    "hours":    "Horarios de atención",
-    "social":   "Redes sociales",
-}
-DEFAULT_CONTACT_BLOCK_LABELS = copy.deepcopy(CONTACT_BLOCK_LABELS)
+# --- RF-7 (enmienda §8.1; aprobado 2026-10-12) ------------------------------
+MAP_QUERY: str = "Calle 34 #29-18, Mejoras Públicas, Bucaramanga, Colombia"
+MAP_EMBED_URL: str = (
+    "https://www.google.com/maps?q=" + quote(MAP_QUERY, safe="") + "&output=embed"
+)
+MAP_LINK_URL: str = (
+    "https://www.google.com/maps/search/?api=1&query=" + quote(MAP_QUERY, safe="")
+)
+MAP_LINK_LABEL: str = "Abrir en Google Maps"
+MAP_FRAME_TITLE: str = "Ubicación del consultorio en Google Maps"
+DEFAULT_MAP_QUERY: str = MAP_QUERY
 ```
 
-**Reglas de contenido** `[RF-1..RF-6][CL-*]`:
-
-- Todo campo obligatorio está tras `.strip()`; vacío o solo espacios ⇒ **dato no
-  disponible** (no se inventa contenido).
-- `PHONE` y `WHATSAPP`: solo dígitos con `+` opcional al inicio (coherencia con la
-  regla de la spec 004 — Q9). Formato inválido ⇒ tratado como no disponible.
-- `EMAIL`: debe pasar una comprobación mínima `local@dominio.tld`.
-- `SOCIAL_LINKS`: cada `url` debe empezar por `https://`; `platform`/`label` no
-  vacíos y sin plataformas duplicadas. Una red **no aprobada o sin URL** no se
-  muestra (RF-5 es condicional: «cuando existan»).
-- Añadir un canal o una red futura exige actualizar primero la spec (spec primero).
+Reglas: `MAP_QUERY` sobre `.strip()`; vacío (vivo y default) ⇒ **sin mapa** (CL-5);
+`quote` de `urllib.parse` (stdlib). Los literales están fijados en la spec 015 (§8.1) y
+su espejo en `tests/expected_content.py` (prefijo `CONTACT_MAP_*`, para no romper los
+nombres ya usados por v1).
 
 ---
 
-## 3. Algoritmo en pseudocódigo
+## 3. Algoritmo en pseudocódigo (delta sobre v1)
 
-`[RF-1..RF-6][CL-1..CL-4]`
+`[RF-7][CL-1][CL-5]` — `validate_contact()` y helpers de v1 se conservan; se añade:
 
 ```text
-# --- capa de servicio -----------------------------------------------------
+@dataclass ContactMap: embed_url, link_url, link_label, title
+ContactView + map: ContactMap | None
+
+FUNCTION _resolve_map(address_lines) -> (ContactMap | None, used_default):
+    mq, used = _resolve(MAP_QUERY, DEFAULT_MAP_QUERY)      # patrón vivo → default
+    IF NOT address_lines OR NOT mq: RETURN None, used      # CL-1 / CL-5
+    RETURN ContactMap(embed_url=MAP_EMBED_URL, link_url=MAP_LINK_URL,
+                      link_label=MAP_LINK_LABEL, title=MAP_FRAME_TITLE), used
+
+FUNCTION validate_contact():                                # v1 + una línea
+    ...                                                     # v1 sin cambios
+    map_block, map_used = _resolve_map(addr)
+    fallback |= map_used
+    RETURN channels, hours, socials, map_block, fallback
+
 FUNCTION get_contact_view():
-    channels, hours, socials, fallback = validate_contact()
-    RETURN ContactView(title=CONTACT_PAGE_TITLE, channels=channels,
-                       hours=hours, socials=socials,
-                       titles=resolve_block_titles(), fallback_active=fallback)
+    channels, hours, socials, map_block, fallback = validate_contact()
+    RETURN ContactView(title, channels, hours, socials, titles,
+                       map=map_block, fallback_active=fallback)
 
-FUNCTION _resolve(live, default):
-    # patrón de about/services: valor vivo si no está vacío, si no el default
-    IF live NON-EMPTY: RETURN live, FALSE
-    RETURN default, (default NON-EMPTY)        # fallback solo si hay default
-
-FUNCTION _clean_phone(v): RETURN v IF v MATCHES "^\+?[0-9]{7,}$" ELSE ""
-FUNCTION _clean_email(v): RETURN v IF v MATCHES "^[^@\s]+@[^@\s]+\.[^@\s]+$" ELSE ""
-
-FUNCTION validate_contact():
-    fallback = FALSE
-    channels = []
-
-    # RF-2 / CL-1: dirección
-    addr, used = _resolve(NON_EMPTY_LINES(ADDRESS_LINES),
-                          NON_EMPTY_LINES(DEFAULT_ADDRESS_LINES))
-    fallback |= used
-    IF addr: channels.ADD({key:"address", lines:addr})
-    ELSE: fallback = TRUE                              # sin default ⇒ omisión
-
-    # RF-3 / CL-2: teléfono, WhatsApp, correo (uno por canal)
-    FOR (key, live, default, clean, href_fmt) IN [
-        ("phone",    PHONE,    DEFAULT_PHONE,    _clean_phone, "tel:+{v}"),
-        ("whatsapp", WHATSAPP, DEFAULT_WHATSAPP, _clean_phone, "https://wa.me/<sin +>"),
-        ("email",    EMAIL,    DEFAULT_EMAIL,    _clean_email, "mailto:{v}"),
-    ]:
-        val, used = _resolve(clean(live), clean(default))
-        fallback |= used
-        IF val: channels.ADD({key, value:val, href:href_fmt.format(v=val)})
-    # PHONE = "" por diseño (D16): sin canal Teléfono y SIN fallback
-
-    # RF-4 / CL-3: horarios (lista de entradas válidas: label+days+hours)
-    hours = [h FOR h IN OFFICE_HOURS IF ALL_FIELDS_NON_EMPTY(h)]
-    IF hours VACÍO:
-        hours = [h FOR h IN DEFAULT_OFFICE_HOURS IF ALL_FIELDS_NON_EMPTY(h)]
-        IF hours: fallback = TRUE                      # RF-4 es incondicional
-
-    # RF-5 / CL-4: redes (filtro por entrada: https:// + etiquetas no vacías
-    # + sin plataforma duplicada); la entrada descartada marca fallback
-    socials, seen = [], {}
-    FOR s IN SOCIAL_LINKS:
-        IF s.url STARTS_WITH "https://" AND s.label/platform NON_EMPTY
-           AND s.platform NOT IN seen:
-            socials.ADD(s); seen.ADD(s.platform)
-        ELSE: fallback = TRUE
-
-    RETURN channels, hours, socials, fallback
-    # Nunca se emite un bloque sin contenido (RF-6: bloques diferenciados).
-    # fallback_active = TRUE ⇔ algún campo cayó en su default no vacío,
-    # se descartó una entrada o un campo quedó sin default que lo respaldara.
-
-# --- capa web -------------------------------------------------------------
-FUNCTION handle_contact(request):
-    IF request.method != "GET": RETURN error_405()          # solo lectura
-    view    = get_home_view()                               # nav idéntica al resto
-    contact = get_contact_view()                            # RF-1..RF-6, CL-1..CL-4
-    RETURN render("contact/index.html", view=view, contact=contact)   # HTTP 200
-
-# Página única SIN subrutas: GET /contacto/<recurso> → 404 → errors/404.html
+# --- presentación (plantilla; sin lógica) ----------------------------------
+RENDER cajón .contact__panel:
+    FOR channel IN channels:  fila(icono(channel.key), titles[key],
+                                   lineas | enlace(value, href))
+    IF hours:                 fila(icono("hours"), titles["hours"], lista de horarios)
+    IF socials:               fila(icono("social"), titles["social"], enlaces externos)
+RENDER .contact__map SI contact.map:
+    iframe[src=embed_url, title=contact.map.title, loading="lazy"] +
+    a[href=link_url, target=_blank, rel=noopener] = link_label
 ```
 
-**CL-1/CL-2/CL-4** se resuelven **omitiendo el bloque** cuando ni el valor vivo ni el
-default aportan contenido (no se inventan datos); **CL-3** se resuelve con
-`DEFAULT_OFFICE_HOURS` porque RF-4 es incondicional («mostrará los horarios») y el
-respaldo está respaldado por la agenda de la spec 004 (Q3). `fallback_active=True`
-queda registrado para los tests. El estado normal del sitio es
-`fallback_active=False` con los literales de la spec.
+Orden fijo de filas (heredado de v1): address → phone(omitido) → whatsapp → email →
+hours → social. Nunca una fila sin contenido (RF-6).
 
 ---
 
@@ -278,43 +181,41 @@ queda registrado para los tests. El estado normal del sitio es
 
 | Comando | Descripción | Salida esperada | Exit code |
 |---|---|---|---|
-| `python app.py` | Arranca el servidor de revisión | `Running on http://127.0.0.1:5000` | `0` con Ctrl+C; `1` si falla |
-| `python -m pytest -q` | Suite completa (163 actuales + nuevos) | `N passed` | `0` / `1` |
+| `python app.py` | Servidor de revisión | `Running on http://127.0.0.1:5000` | `0` con Ctrl+C |
+| `python -m pytest -q` | Suite completa (179 actuales + 3 nuevos) | `N passed` | `0` / `1` |
 | `python -m pytest tests/test_hu_015.py -v` | Pruebas de la HU | listado PASS/FAIL | `0` / `1` |
 
-### 4.2 Contrato HTTP `[RF-1..RF-6]`
+### 4.2 Contrato HTTP `[RF-1..RF-7]`
 
-| Método | Ruta | Salida (cuerpo) | Códigos |
-|---|---|---|---|
-| `GET` | `/contacto` | `contact/index.html` con h1 «Contacto» y bloques de datos | **200**; **200** con omisiones si CL-1/CL-2/CL-4 |
-| `POST/PUT/DELETE` | `/contacto` | `errors/405.html` | **405** |
-| `GET` | `/contacto/<cualquier-recurso>` | `errors/404.html` | **404** (página única) |
-| `GET` | `/articulos` | sigue en `sections/under_construction.html` | **200** (regresión HU-001) |
-| `GET` | `/`, `/nosotros`, `/servicios`, `/buscar`, `/citas` | sin cambios | 200/303/404/405 como hasta ahora |
+Sin cambios respecto de v1: `GET /contacto` → **200**; métodos escritores → **405**;
+`GET /contacto/<recurso>` → **404**; `/articulos` sigue placeholder; resto intacto.
 
-**Contrato semántico de `GET /contacto` (lo que verifican los tests):**
+**Contrato semántico de `GET /contacto` (ampliado; lo que verifican los tests):**
 
 ```text
-[RF-1] <h1>Contacto</h1> y ≥1 bloque de datos dentro de <main>        → absent ⇒ FAIL
-[RF-2] bloque «Dirección» con <p>/<li> no vacío                      → ausente ⇒ FAIL
-[RF-3] bloques propios «WhatsApp» (a[href^="https://wa.me/"]) y «Correo
-       electrónico» (a[href^="mailto:"]); «Teléfono» (a[href^="tel:"])
-       solo si PHONE estuviera disponible (hoy no — D16)  → ausente ⇒ FAIL
-[RF-4] bloque «Horarios de atención» con ≥1 horario (label + hours)  → ausente ⇒ FAIL
-[RF-5] bloque «Redes sociales» con ≥1 <a href^="https://" target=
-       "_blank" rel="noopener"                                      → ausente ⇒ FAIL
-[RF-6] cada dato en su propio <section> con su <h2>; sin campos
-       mezclados entre canales                                      → ausente/mixto ⇒ FAIL
-[RNF-1] <meta viewport>, ≥1 @media (max-width…), paleta ⊆ 6 hex,
-        párrafos justify + hyphens:none                              → absent ⇒ FAIL
-[RNF-2] medida CSS (max-width ≈ 65ch), <ul> de horarios, orden
-        Dirección → Canales → Horarios → Redes                      → absent ⇒ FAIL
-[CL-1] dirección y default vacíos → sin bloque Dirección      → bloque vacío ⇒ FAIL
-[CL-2] canal sin dato válido ni default → sin su bloque; ningún
-       bloque vacío; «Teléfono» ausente por diseño (D16)     → vacío ⇒ FAIL
-[CL-3] horarios vacíos → DEFAULT_OFFICE_HOURS (nunca bloque vacío)   → vacío ⇒ FAIL
-[CL-4] red social sin URL https válida → sin su enlace               → enlace roto ⇒ FAIL
-[alcance] <main> sin <form>/<input> y sin chat                       → presente ⇒ FAIL
+[RF-1] <h1 class="contact__title">Contacto</h1> y el cajón .contact__panel
+       con ≥1 fila dentro de <main>                            → absent ⇒ FAIL
+[RF-2] fila «Dirección» con las 3 líneas de la spec            → ausente ⇒ FAIL
+[RF-3] fila WhatsApp (a[href="https://wa.me/573168756020"]) y
+       fila Correo (a[href^="mailto:"]); sin fila «Teléfono»
+       ni `tel:` (D16)                                          → ausente ⇒ FAIL
+[RF-4] fila «Horarios de atención» con Mañana y Tarde          → ausente ⇒ FAIL
+[RF-5] fila «Redes sociales» con <a target="_blank" rel="noopener"> → ausente ⇒ FAIL
+[RF-6] ≥5 <li class="contact__row">; cada una con su <svg
+       aria-hidden="true"> y su etiqueta; sin datos de una
+       fila dentro de otra                                      → ausente/mixto ⇒ FAIL
+[RF-7] <iframe src*="www.google.com/maps" title no vacío
+       loading="lazy"> + <a href*="www.google.com/maps"
+       target="_blank" rel="noopener">Abrir en Google Maps</a>;
+       la dirección escrita visible fuera del iframe           → ausente ⇒ FAIL
+[RNF-1] viewport, .contact con max-width, @media (min-width: 900px) con
+        grid-template-columns de 2 columnas, paleta ⊆ 6 hex,
+        justify + hyphens:none en filas y enlaces              → absent ⇒ FAIL
+[RNF-2] orden fijo Dirección → WhatsApp → Correo → Horarios → Redes → Mapa
+                                                                        ⇒ FAIL
+[CL-1] sin dirección y default → sin mapa                       → mapa sin datos ⇒ FAIL
+[CL-5] MAP_QUERY vacío → sin mapa y dirección visible           → dirección oculta ⇒ FAIL
+[alcance] <main> sin <form>/<input>, sin chat                   → presente ⇒ FAIL
 ```
 
 ---
@@ -323,85 +224,70 @@ queda registrado para los tests. El estado normal del sitio es
 
 | # | Decisión | Justificación | Alternativa descartada | RF |
 |---|---|---|---|---|
-| D1 | **Blueprint propio `contact`**; la ruta `/contacto` sale de `placeholders.py` | Frontera por HU (patrón D1 del plan 002 / D6 del plan 003); `placeholders.py` queda solo para secciones sin implementar | *Dejar la ruta en `placeholders.py`*: mezcla sección implementada con placeholders | RF-1..6 |
-| D2 | **Contenido estático en `content/contact_content.py` versionado en git** | Misma arquitectura aceptada en HU-001/002/003; los datos de contacto cambian por revisión de código; no hay requisito de persistencia (constitución #5 no aplica) | *Tabla SQLite + seed*: esquema sin requisito (AGENTS: nada por conveniencia) | RF-1..6 |
-| D3 | **`validate_contact()` con resolución por campo (vivo → default → omisión), patrón de about/services** | Cada campo se resuelve contra su `DEFAULT_*` (copia literal de la spec): valor vivo no vacío, si no default (marcando `fallback`), si no omisión del bloque. CL-1/CL-2/CL-4 degradan omitiendo (nunca bloques vacíos ni datos inventados); RF-4 exige horarios siempre ⇒ default | *HTTP 500 ante dato ausente*: convertir un caso límite en caída. *Bloque con «—»*: dato falso. *Inventar datos*: engaña al visitante | RF-2..5, CL-1..4 |
-| D4 | **Un `<section>` con `<h2>` por canal: Dirección, Teléfono, WhatsApp, Correo, Horarios, Redes** | RF-6 pide canales «diferenciados»: bloques independientes verificables y localizables (RNF) | *Párrafo único con todo mezclado*: impide verificar RF por canal. *Acordeón/JS*: complejidad sin requisito (constitución #1) | RF-6, RNF-2 |
-| D5 | **Cada canal es un enlace nativa**: `tel:+…`, `https://wa.me/…`, `mailto:…`; redes con `target="_blank" rel="noopener"` | Accesible y funcional en móvil (abre WhatsApp/teléfono), sin JS; Jinja escapa los valores (sin riesgo de inyección) | *Texto plano sin enlace*: fricciona el objetivo de la HU. *JS personalizado*: dependencia innecesaria | RF-3, RF-5, RNF-2 |
-| D6 | **Copy y datos fijados en la spec 015 antes de codificar** (Q1/Q2/Q3) | La spec es la fuente de verdad del contenido; traza spec → `expected_content.py` → HTML (Q8/D12 del plan 001) | *Redactar los datos en el plan o en el código*: el requisito viviría fuera de la spec (rompe SDD) | RF-1..5 |
-| D7 | **Ajuste mínimo de regresión: `PLACEHOLDER_SECTIONS` pierde `/contacto`** | Patrón D6/D11 del plan 003: la CL-3 de la spec 001 es genérica («aún no implementada»); los tests que iteran el espejo se ajustan solos | *Tocar la spec 001*: contradicción innecesaria. *Mantener `/contacto` en la lista*: test roto deliberadamente | regresión HU-001..008 |
-| D8 | **Nav y base desde `get_home_view()`** | Misma navegación en todas las páginas; sin duplicar lógica de presentación (patrón D7/D8) | *Construir la nav propia*: doble mantenimiento | RF-1, regresión |
-| D9 | **Identificadores en inglés, textos y mensajes en español** | Constitución #6 (`contact_content`, `CONTACT_PAGE_TITLE`, `address` en inglés; «Teléfono», «Horarios de atención» en español) | *Todo en español* / *todo en inglés*: ambos rompen la regla | RF-1..6 |
-| D10 | **Extender `main.css` con `.contact-*` mobile-first**, reutilizando el patrón `.about-*`/`.services-page-*`, con la paleta Serenidad Natural y Open Sans (base 18 px, párrafos `justify` + `hyphens: none` — `docs/design-typography.md`) | RNF-1/RNF-2; sin archivos CSS nuevos que fragmenten la hoja | *CSS nuevo por HU*: fragmenta (descartado en specs 002/003). *Bootstrap/Tailwind*: dependencia sin aprobación. *Nuevos colores*: prohíbe AGENTS.md | RNF-1, RNF-2 |
-| D11 | **Sin formulario de contacto ni chat** | La spec pone «gestión de mensajes recibidos» y «chat en línea» fuera de alcance; un formulario sin gestión sería un botón muerto (constitución #1) | *Form con `mailto:`*: obsoleto y sin gestión. *Form + endpoint*: crearía mensajes fuera de alcance | fuera de alcance |
-| D12 | **«Volver al inicio» al pie de la página** | Coherencia con `/nosotros` y `/servicios` (D13 del plan 003) y E2E estable | *Sin enlace de retorno*: la sección queda como callejón sin salida | RF-1, finalización |
-| D13 | **Horarios en bloques Mañana/Tarde (`label` + `days` + `hours`) coherentes con la agenda de la spec 004** (propuesta Q3) | Mismo vocabulario que la reserva (bloques Mañana/Tarde) y misma franja (08:00–11:30 / 14:00–16:30, lun–vie): una sola verdad operativa para el visitante | *Texto libre de una línea*: imposible de validar ni de reutilizar. *Horarios distintos a la agenda*: contradicción entre lo que se promete y lo que se puede reservar | RF-4, CL-3 |
-| D14 | **Redes sociales como lista `SOCIAL_LINKS` con `platform`/`label`/`url`, solo `https://` y sin duplicados** | RF-5 es condicional y pendiente de Q2: la lista permite mostrar solo las aprobadas y omitir el bloque completo si no hay ninguna | *Redes fijas en la plantilla*: mostraría enlaces no aprobados. *Iconos con JS*: dependencia innecesaria | RF-5, CL-4 |
-| D15 | **`fallback_active` en `ContactView`** | Hace observable la degradación (CL-1..CL-4) en tests unitarios sin inspeccionar HTML | *Ocultar la degradación*: los casos límite no serían verificables | CL-1..4 |
-| D16 | **Sin bloque «Teléfono»**: `PHONE = ""` por diseño (Q1, usuaria 2026-10-12) | RF-3 es **condicional** («CUANDO el consultorio disponga de teléfono, WhatsApp y correo»): WhatsApp + correo bastan; el estado normal no es una degradación ⇒ **no** marca `fallback` | *Pedir un teléfono inventado*: dato falso. *Bloque «Teléfono» vacío*: incumple RF-6 (nunca bloques sin contenido) | RF-3, CL-2 |
+| D1 | **Sin cambios de capa web**: `web/contact.py`, `placeholders.py` y `create_app()` quedan como en v1 | HU-015 v1 aceptada y mergeada; la ampliación es de presentación + contenido | *Rehacer el blueprint*: reescribir lo que ya funciona (regla de oro del AGENTS) | RF-1..7 |
+| D2 | **Se amplía `content/contact_content.py`** con `MAP_*` (no se crea módulo nuevo) | Mismo criterio de v1 (contenido estático versionado, D2 del plan original); los literales v1 se conservan idénticos | *Módulo `map_content.py`:* fragmenta el contenido de una misma spec | RF-7 |
+| D3 | **`validate_contact()` de v1 se conserva y gana `_resolve_map()`** (patrón vivo → default → omisión) | Mínimo churn sobre código aceptado y testeado; misma semántica de `fallback` (D15 de v1) | *Reescribir el servicio como `rows` uniformes*: cambio grande sin requisito, reescribiría 16 tests verdes sin necesidad | RF-7, CL-1, CL-5 |
+| D4 | **Un único cajón `.contact__panel` con una fila por canal (`<li class="contact__row">`: icono SVG + etiqueta + valor)**; sustituye al «un `<section class="contact__block">` por canal» de v1 | Decisión de la usuaria (Q9, 2026-10-12): «en un solo cajón los datos». RF-6 se satisface con filas **diferenciadas y localizables**; el cajón es más escaneable y libera el mapa como companion visual | *Mantener las secciones de v1*: contradice la decisión de diseño aprobada. *Párrafo único mezclado*: impide verificar RF por canal | RF-6, RNF-2 |
+| D5 | **Los enlaces de fila conservan el marcado exacto de v1** (`<a href="…">valor</a>`, redes con `target="_blank" rel="noopener"`) | Minimiza el churn de TC-015-010/011 (siguen pasando) y mantiene la accesibilidad ya validada | *Envolver todo en botones/JS*: dependencia innecesaria | RF-3, RF-5 |
+| D6 | **Los literales del mapa están fijados en la spec 015 (§8.1) antes de codificar** y su espejo usa el prefijo `CONTACT_MAP_*` | Spec primero (constitución #2); el prefijo evita romper los nombres `CONTACT_*` ya usados por los tests de v1 | *Espejo con los nombres `MAP_*` crudos*: colisión de semántica con el contenido de v1 y con el historial de la rama | RF-7 |
+| D7 | **Los TC de v1 que afirman el marcado por secciones se adaptan al nuevo contrato** (TC-015-009 y TC-015-012) | El contrato de marcado cambia por decisión de diseño aprobada; las aserciones se **ajustan, no se relajan**: siguen exigiendo datos por canal, etiquetas, ausencia de «Teléfono» y sin mezclas | *Borrar los tests*: pierde la cobertura de RF-2..RF-6. *Dejarlos rojos*: no se puede declarar la HU | RF-1, RF-6 |
+| D8 | **Iconos SVG inline propios** (pin, chat, sobre, reloj, Instagram) como markup en la plantilla, con `aria-hidden="true"` y `currentColor` | RF-6 y la imagen de referencia de la usuaria; nítidos en cualquier DPI, cero peticiones, paleta vigente | *Font Awesome/Lucide por CDN*: dependencia externa (constitución #1). *PNG por icono*: pesados y escalan mal | RF-6, RNF-1 |
+| D9 | **Mapa = `<iframe>` de Google Maps sin API key** (`…/maps?q=<consulta>&output=embed`) + enlace de respaldo `maps/search/?api=1&query=`; emisión condicionada a dirección | Decisión de la usuaria (Q8); sin API key no hay secreto ni cuota (lección HU-007) y los tests no hacen red | *API key*: secreto+cuota. *Imagen estática*: no navegable. *Librería JS de mapas*: dependencia | RF-7, CL-1, CL-5 |
+| D10 | **Layout en 2 columnas ≥900 px (cajón ‖ mapa) y una columna <900 px (cajón primero, mapa debajo)**; `.contact` pasa de `max-width: 65ch` a grid responsivo | Decisión de la usuaria (Q9); dato primero en móvil, mapa con igual altura en escritorio | *Mapa superior a todo el ancho*: roba el foco al dato. *Dos columnas en móvil*: ilegible | RF-7, RNF-1, RNF-2 |
+| D11 | **Sin formulario ni chat** (v1 intacta) | Fuera de alcance explícito de la spec | *Form con `mailto:`*: obsoleto y sin gestión | fuera de alcance |
+| D12 | **«Volver al inicio» se conserva** al pie | Coherencia con v1 y con el resto de páginas | *Quitarlo*: callejón sin salida | RF-1 |
+| D13 | **Horarios en bloques Mañana/Tarde coherentes con la agenda de la spec 004** (v1 intacta) | Una sola verdad operativa | *Texto libre*: imposible de validar | RF-4, CL-3 |
+| D14 | **`SOCIAL_LINKS` con `platform`/`label`/`url`, solo `https://` y sin duplicados** (v1 intacta) | RF-5 condicional | *Redes fijas en la plantilla*: mostraría no aprobadas | RF-5, CL-4 |
+| D15 | **`fallback_active` en `ContactView`** (v1 intacta) + `map_used` integrado | La degradación del mapa es observable en tests unitarios | *Ocultar la degradación*: CL-1/CL-5 no verificables | CL-1, CL-5 |
+| D16 | **Sin fila «Teléfono»** (`PHONE = ""`, v1 intacta) | RF-3 condicional; el estado normal no es degradación | *Teléfono inventado*: dato falso | RF-3, CL-2 |
+| D17 | **`ContactMap` dataclass congelada + campo `map: ContactMap | None` en `ContactView`** | Trazable y testeable sin inspeccionar HTML; `None` = CL-1/CL-5 | *URL suelta en el view*: no verificable ni estructurado | RF-7 |
+| D18 | **La fila de horarios y la de redes usan los mismos `titles` de v1** (`resolve_block_titles()`) | Etiquetas de contrato sin duplicar literales | *Nuevos literales de fila*: duplicaría contrato y espejo | RF-6 |
+| D19 | **El mapa es `loading="lazy"` con `title` accesible y la dirección escrita siempre visible fuera del iframe** | CL-5: iframe caído ⇒ el visitante sigue teniendo dirección y enlace (RF-2 independiente de RF-7) | *Mapa como única fuente de la dirección*: iframe caído deja la sección muda | RF-7, CL-5, RNF-2 |
+| D20 | **`/contacto` sigue fuera del índice del buscador** (v1 intacta) | La spec 015 no lo pide | *Añadirlo por conveniencia*: funcionalidad no especificada | fuera de alcance |
+| D21 | **Evidencia regenerada sobre la misma carpeta** `docs/evidencias/hu-015/` (capturas nuevas + sección «Ampliación 2026-10-12» en `qa-hu-015.md`) | La HU no se cierra dos veces: la ampliación deja constancia en el informe QA existente y con nuevas capturas | *Carpeta hu-015-diseno*: parte la evidencia de una misma HU en dos sitios | finalización |
 
 ---
 
 ## 6. Estrategia de tests
 
-Ejecución: `python -m pytest -q` (suite) · `python -m pytest tests/test_hu_015.py -v`
-(HU). Fixtures existentes en `conftest.py` (`app`, `client`) sin cambios.
-`tests/expected_content.py` concentra los literales de la spec 015 (espejo único,
-se actualiza junto con la spec — D6). Baseline previo: **163 PASS / 0 FAIL**.
+Ejecución: `python -m pytest -q` · `python -m pytest tests/test_hu_015.py -v`.
+Baseline: **179 PASS / 0 FAIL** (v1 intacta). Se **amplían 3 tests** y **se añaden 3**;
+total previsto **182**.
 
 ### 6.1 Casos de prueba
 
 | ID | Archivo | Objetivo y resultado esperado | RF |
 |---|---|---|---|
-| TC-015-001 | `test_contact_content.py` | El módulo define `CONTACT_PAGE_TITLE`, `ADDRESS_LINES`, `PHONE`, `WHATSAPP`, `EMAIL`, `OFFICE_HOURS` y `SOCIAL_LINKS`; el espejo de `expected_content.py` coincide con la spec | RF-1..RF-5 |
-| TC-015-002 | `test_contact_content.py` | Formatos: teléfono/WhatsApp solo dígitos con `+` opcional, `EMAIL` válida, todas las `url` de redes empiezan por `https://` | RF-3, RF-5 |
-| TC-015-003 | `test_contact_content.py` | `SOCIAL_LINKS` sin plataformas duplicadas y con `platform`/`label` no vacíos | RF-5, CL-4 |
-| TC-015-004 | `test_contact_service.py` | `get_contact_view()` devuelve título, canales completos, horarios y redes con `fallback_active=False` | RF-1..RF-6 |
-| TC-015-005 | `test_contact_service.py` | **CL-1:** `ADDRESS_LINES` vacío (monkeypatch) → default de la spec + `fallback_active=True`; `ADDRESS_LINES` y `DEFAULT_ADDRESS_LINES` vacíos → sin canal `address` | RF-2, CL-1 |
-| TC-015-006 | `test_contact_service.py` | **CL-2:** `PHONE=""` por diseño → sin canal `Teléfono` y `fallback_active=False` (D16); `WHATSAPP`/`EMAIL` con formato inválido (monkeypatch) → default u omisión; ningún canal emitido sin `href` | RF-3, CL-2 |
-| TC-015-007 | `test_contact_service.py` | **CL-3:** `OFFICE_HOURS` vacío → se aplican `DEFAULT_OFFICE_HOURS` (≥1 horario) y `fallback_active=True` | RF-4, CL-3 |
-| TC-015-008 | `test_contact_service.py` | **CL-4:** red social con `url` no `https` o etiqueta vacía → omitida; el resto de enlaces se conservan | RF-5, CL-4 |
-| TC-015-009 | `test_contact_routes.py` | `GET /contacto` → **200** con `<h1>Contacto</h1>` y ≥1 bloque dentro de `<main>` | RF-1 |
-| TC-015-010 | `test_contact_routes.py` | **RF-2/RF-3:** presencia de «Dirección», enlace `https://wa.me/573168756020` y `mailto:caritogomez26@gmail.com`; **ausencia** del bloque «Teléfono» (D16) | RF-2, RF-3 |
-| TC-015-011 | `test_contact_routes.py` | **RF-4/RF-5:** bloque «Horarios de atención» con ≥1 horario y «Redes sociales» con `<a>` `https://` + `target="_blank" rel="noopener"` | RF-4, RF-5 |
-| TC-015-012 | `test_contact_routes.py` | **RF-6:** ≥4 `<section>` propias con `<h2>`; sin datos de un canal dentro del bloque de otro | RF-6, RNF-2 |
-| TC-015-013 | `test_contact_routes.py` | `POST/PUT/DELETE /contacto` → **405**; `GET /contacto/<recurso>` → **404** con `errors/404.html` | fuera de alcance, página única |
-| TC-015-014 | `test_contact_routes.py` | Regresión: `PLACEHOLDER_SECTIONS == ["/articulos"]`; `/articulos` sigue «Sección en construcción.»; nav de 6 hrefs → 200; el buscador de `base.html` sigue presente en `/contacto` | regresión HU-001..008/016 |
-| TC-015-015 | `test_hu_015.py` | **RNF-1/RNF-2:** `<meta viewport>`, `main.css` con ≥1 `@media (max-width…)`, colores ⊆ paleta de 6 hex, medida `max-width` de la sección, párrafos `justify` + `hyphens: none` | RNF-1, RNF-2 |
-| TC-015-016 | `test_hu_015.py` | **E2E + fuera de alcance:** desde `GET /` seguir «Contacto» → **200** y «Contacto» visible; «Volver al inicio» → `/`; `<main>` sin `<form>`/`<input>` (sin formulario ni chat) | RF-1, fuera de alcance, finalización |
+| TC-015-001..008 | `test_contact_content.py` / `test_contact_service.py` | **V1 intacta** (números de la v1): contenido, formatos, socials y CL-1..CL-4 siguen en verde sin tocarlos | RF-1..RF-5, CL-1..CL-4 |
+| TC-015-009 *(adaptado)* | `test_contact_routes.py` | `<h1 class="contact__title">Contacto</h1>` + cajón `.contact__panel` con ≥1 `.contact__row` | RF-1 |
+| TC-015-010 | `test_contact_routes.py` | Dirección + `wa.me` + `mailto:`; sin «Teléfono» ni `tel:` (marcado de enlace idéntico a v1 ⇒ sin cambios) | RF-2, RF-3 |
+| TC-015-011 | `test_contact_routes.py` | Horarios (Mañana/Tarde) y redes con `target="_blank" rel="noopener"` | RF-4, RF-5 |
+| TC-015-012 *(adaptado)* | `test_contact_routes.py` | **RF-6:** ≥5 `<li class="contact__row">`, cada una con `<svg` `aria-hidden="true"` y etiqueta visible; sin datos de una fila dentro de otra (sustituye a las 5 `<section>` con `<h2>`) | RF-6, RNF-2 |
+| TC-015-013 | `test_contact_routes.py` | POST/PUT/DELETE → **405**; `GET /contacto/<recurso>` → **404** | página única |
+| TC-015-014 | `test_contact_routes.py` | Regresión: placeholders `["/articulos"]`, nav de 6 hrefs, buscador presente | regresión |
+| TC-015-015 *(adaptado)* | `test_hu_015.py` | RNF: viewport, `.contact` con `max-width`, **`@media (min-width: 900px)` con `grid-template-columns` de 2 columnas**, `@media (max-width…)`, paleta ⊆ 6 hex, `justify`+`hyphens: none` en `.contact__row` y enlaces del mapa | RNF-1, RNF-2 |
+| TC-015-016 | `test_hu_015.py` | E2E portada → Contacto → Volver; `<main>` sin `<form>`/`<input>` | fuera de alcance |
+| **TC-015-017** *(nuevo)* | `test_contact_content.py` | `CONTACT_MAP_EMBED_URL` empieza por `https://www.google.com/maps?q=` y termina en `&output=embed` con la consulta de `CONTACT_MAP_QUERY` URL-encoded; `CONTACT_MAP_LINK_URL` contiene `query=`; `CONTACT_MAP_LINK_LABEL` = «Abrir en Google Maps»; `CONTACT_MAP_FRAME_TITLE` no vacío | RF-7 |
+| **TC-015-018** *(nuevo)* | `test_contact_service.py` | `get_contact_view().map` con `embed_url`/`link_url`/`link_label`/`title` y `fallback_active=False`; **CL-1:** dirección y default vacíos (monkeypatch) → `map is None`; **CL-5:** `MAP_QUERY` vacío (monkeypatch) → `map is None` con dirección intacta y `fallback_active=True` | RF-7, CL-1, CL-5 |
+| **TC-015-019** *(nuevo)* | `test_contact_routes.py` | `<iframe src` con `www.google.com/maps`, `title` no vacío y `loading="lazy"` + `<a>` «Abrir en Google Maps» con `target="_blank" rel="noopener"`; la dirección escrita aparece **fuera** del iframe | RF-7, CL-5 |
 
 ### 6.2 Pirámide
 
-1. **Unitarias** — `contact_content` y `contact_service` sin HTTP.
-   `[RF-1..RF-6][CL-1..CL-4]`
-2. **Integración HTTP** — `test_client` sobre `/contacto`, subrutas y regresión.
-   `[RF-1..RF-6]`
-3. **Regresión** — `python -m pytest -q` completo: los 163 tests de
-   HU-001/002/003/016/004/005/006/007/008 deben seguir verdes con el ajuste D7.
-   `[todos]`
-4. **Visual/manual** — capturas 1280 y 375 + recorrido de navegación en navegador
-   (exigido por los criterios de finalización). `[RNF-1][RNF-2][RF-6]`
+1. **Unitarias** — `contact_content` y `contact_service` (v1 + mapa). `[RF-7][CL-1][CL-5]`
+2. **Integración HTTP** — `test_client` sobre `/contacto` y regresión. `[RF-1..RF-7]`
+3. **Regresión** — suite completa: los **179** tests actuales (incluidos los 16 de v1,
+   con 3 adaptados) + **3** nuevos = **182**. `[todos]`
+4. **Visual/manual** — capturas CDP 1280 (cajón ‖ mapa) y 375 (cajón sobre mapa) +
+   comprobación en vivo del embebido. `[RF-6][RF-7][RNF-1]`
 
 ### 6.3 Ejecución y evidencia
 
-- Prohibido eliminar/`skip`/relajar aserciones para pasar (skill `pytest-qa`).
-- Pruebas deterministas: sin fechas, sin estado compartido, sin orden accidental.
-
-```text
-HU: HU-015
-Caso: TC-015-009
-Comando: python -m pytest tests/test_contact_routes.py -v
-Resultado: PASS
-Rama: feature/hu-015
-Commit: <hash>
-Evidencia visual: docs/evidencias/hu-015/escritorio-1280.png, movil-375.png
-```
-
-- Informe QA: `docs/evidencias/hu-015/qa-hu-015.md` con PASS/FAIL por TC y checkbox
-  de los criterios de aceptación; veredicto `PASS` / `PARCIAL` / `FAIL` (skill
-  `pytest-qa`).
-- Capturas exactas con DevTools Protocol (`Emulation.setDeviceMetricsOverride`), no
-  con `--window-size` (AGENTS.md).
+- Las 3 adaptaciones (TC-009/012/015) **ajustan el selector al nuevo contrato**; no se
+  elimina ninguna aserción de dato, etiqueta, enlace o paleta (skill `pytest-qa`).
+- Sin red en los tests: el iframe se verifica por atributos del HTML.
+- Evidencia en `docs/evidencias/hu-015/`: capturas regeneradas
+  (`escritorio-1280.png`, `movil-375.png`) y sección «Ampliación 2026-10-12» en
+  `qa-hu-015.md` con PASS/FAIL por TC y checkbox (D21).
 
 ---
 
@@ -411,59 +297,53 @@ Evidencia visual: docs/evidencias/hu-015/escritorio-1280.png, movil-375.png
 
 | # | Pregunta | Decisión |
 |---|---|---|
-| Q1 | Datos de contacto definitivos y opcionales (duda de la spec) | **Aprobado 2026-10-12**: dirección «Calle 34 #29-18 / Mejoras Públicas / Bucaramanga, Colombia», WhatsApp `+573168756020`, correo `caritogomez26@gmail.com`; **el teléfono fijo es opcional y no disponible** (bloque omitido, D16). |
-| Q2 | Redes sociales oficiales (duda de la spec) | **Aprobado 2026-10-12**: solo **Instagram** `psi.carolinagomez` → `https://www.instagram.com/psi.carolinagomez/`. |
-| Q3 | Horarios de atención | **Propuesta D13 aprobada 2026-10-12**: Mañana 8:00 a. m.–11:30 a. m. y Tarde 2:00 p. m.–4:30 p. m., lunes a viernes. |
-| Q4 | Rama de trabajo | **`feature/hu-015` desde `main`** (patrón de las HU anteriores). |
-| Q5 | Persistencia | **Sin SQLite** en HU-015: contenido estático en `content/contact_content.py` (D2). |
-| Q6 | ¿Formulario de contacto? | **No** (D11): la spec lo deja fuera de alcance («gestión de mensajes», «chat»). |
-| Q7 | ¿Estructura de la página? | **Página única `/contacto`** sin subrutas (patrón de `/servicios`, D11 del plan 003). |
+| Q1–Q3 | Datos, redes y horarios | **Vigentes desde v1** (2026-10-12); no se tocan. |
+| Q4 | Rama | **`feature/hu-015-diseno` desde `main` (`f99490b`)** — nombre nuevo porque `feature/hu-015` ya existe con la v1 mergeada. |
+| Q5 | Persistencia | **Sin SQLite** (contenido estático, D2). |
+| Q6 | ¿Formulario? | **No** (fuera de alcance). |
+| Q7 | Estructura | **Página única `/contacto`** (v1 intacta). |
+| Q8 | Tipo de mapa (usuaria 2026-10-12) | **Iframe interactivo de Google Maps sin API key** + enlace de respaldo (D9). |
+| Q9 | Presentación (usuaria 2026-10-12) | **Un solo cajón** con filas `icono SVG + etiqueta + valor` (D4/D8); **2 columnas ≥900 px, apilado <900 px** (D10). |
+| Q10 | Etiquetas | Se **conserva «Dirección»**; el mapa usa `MAP_FRAME_TITLE`. |
+| Q11 | Enmienda de la spec | **Autorizada y ejecutada el 2026-10-12**: RF-7 + literales `MAP_*` + caso límite del mapa en la spec 015. |
+| Q12 | Plan/task de la primera sesión | **Descartados**: describían «desde cero» y el remoto ya tenía la v1. |
+| Q13 | Trazadera tras sincronizar (2026-10-12) | **Ampliar la HU-015 existente** (decisión de la usuaria): refactor sobre la base mergeada, enmienda de la spec 015 y regeneración de evidencia; no se crea una HU nueva. `main` sincronizado por fast-forward y `Campos_n8n.xlsx` queda sin versionar. |
 
 ### 7.2 Pendientes (bloquean declarar COMPLETADO)
 
-- [x] **Q1 — datos de contacto definitivos y opcionales** (2026-10-12): dirección,
-      WhatsApp y correo fijados; teléfono opcional no disponible (D16). Cerrada en la
-      spec 015 (enmienda «Contenido de contacto»).
-- [x] **Q2 — redes sociales oficiales aprobadas** (2026-10-12): solo Instagram.
-      Cerrada en la spec 015.
-- [x] **Q3 — horarios de atención** (2026-10-12): propuesta D13 aprobada. Cerrada en
-      la spec 015.
-- [x] Aprobación de este `plan.md` por la usuaria (2026-10-12, con Q1/Q2/Q3).
-- [x] Fijar Q1/Q2/Q3 en la spec 015 (literales contractuales) y actualizar este plan
-      con los valores reales.
-- [x] Crear `feature/hu-015` desde `main` (verificar antes `git status` y la
-      relación con `origin/main` — incidente 2026-10-12 de MEMORY).
-- [x] Implementar módulos, plantilla y CSS (§1–§4).
-- [x] Tests (§6) y `python -m pytest -q` en verde (**179 PASS / 0 FAIL**:
-      163 previos + 16 nuevos).
-- [x] Evidencia QA (`qa-hu-015.md`, veredicto PASS) y evidencia visual
-      (`escritorio-1280.png` 1280×1335, `movil-375.png` 375×1552) con demo sobre el
-      servidor (`GET /contacto` → 200).
-- [x] Commit/Push trazable, actualización de `MEMORY.md`.
-- [x] Aceptación de la HU (checkbox de `qa-hu-015.md`, 2026-10-12) y merge a `main`.
+- [x] Aprobación de este plan de ampliación por la usuaria (2026-10-12, Q13).
+- [x] Sincronizar `main` con `origin/main` (fast-forward `f99490b`) y crear
+      `feature/hu-015-diseno`.
+- [x] Enmienda de la spec 015 con §8.1 (RF-7 + `MAP_*` + caso límite) sobre la rama.
+- [ ] Reescribir `task.md` alineado con este plan (ampliación).
+- [ ] Commit inicial de spec + plan + task en la rama.
+- [ ] Confirmar baseline `python -m pytest -q` → **179 PASS / 0 FAIL**.
+- [ ] Ampliar contenido, servicio, plantilla y CSS (§1–§4).
+- [ ] Tests: TC-015-009/012/015 adaptados + TC-015-017/018/019 nuevos → suite
+      **182 PASS / 0 FAIL**.
+- [ ] Evidencia: capturas regeneradas 1280/375 + sección de ampliación en
+      `qa-hu-015.md` (veredicto) con demo sobre el servidor.
+- [ ] Commits por fase, push, actualización de `MEMORY.md`.
+- [ ] Aceptación de la ampliación por la usuaria (checkbox en `qa-hu-015.md`).
+- [ ] Dejar el servidor de revisión en marcha y comunicar la URL (AGENTS.md).
 
 ---
 
 ## 8. Secuencia de implementación
 
-0. **Git**: verificar `git status`/`git log main..origin/main`; crear
-   `feature/hu-015` desde `main` (Q4).
-1. **Spec primero (requiere petición explícita)**: enmienda de la spec 015 — cerrar
-   Q1 y Q2 y añadir la sección «Contenido de contacto» con los literales aprobados
-   (Q3 incluido). *Mientras sigan abiertas, no se codifica.*
+0. ~~Sincronización~~ (hecha): `main` → `f99490b`; rama `feature/hu-015-diseno`.
+1. ~~Spec primero~~ (hecha): enmienda RF-7 + `MAP_*` en la spec 015.
 2. **Plan**: este `plan.md` (aprobado por la usuaria).
-3. **task.md**: desglose de tareas < 30 min con `Hecho cuando:` verificable.
-4. Capa de contenido: `consultorio/content/contact_content.py`.
-5. Tests de contenido: espejo en `expected_content.py` → `test_contact_content.py`.
-6. Capa de servicio: `consultorio/services/contact_service.py` →
-   `test_contact_service.py`.
-7. Capa web: `consultorio/web/contact.py` + retirar `/contacto` de
-   `placeholders.py` + registrar `contact_bp` en `create_app()` +
-   `PLACEHOLDER_SECTIONS` sin `/contacto` (D7).
-8. Plantilla: `templates/contact/index.html` (extiende `base.html`).
-9. CSS: sección `.contact-*` en `static/css/main.css` (mobile-first, paleta
-   intacta, párrafos justificados sin guiones).
-10. Tests de ruta y HU: `test_contact_routes.py` → `test_hu_015.py` → ajuste de
-    regresión en los tests que iteran `PLACEHOLDER_SECTIONS`.
-11. `python -m pytest -q` → evidencia → demo manual (1280 y 375) → `MEMORY.md`
-    → commits separados por fase → push.
+3. **task.md**: desglose de la ampliación (< 30 min por tarea).
+4. Espejo: `CONTACT_MAP_*` en `tests/expected_content.py`.
+5. Contenido: `MAP_*` en `consultorio/content/contact_content.py`.
+6. Servicio: `ContactMap` + campo `map` + `_resolve_map()` en
+   `consultorio/services/contact_service.py`.
+7. Plantilla: refactor de `templates/contact/index.html` a cajón + filas con iconos +
+   bloque mapa (D4/D8/D19).
+8. CSS: refactor de `.contact-*` en `static/css/main.css` (grid 2 col, panel, filas,
+   iconos, mapa; paleta intacta; párrafos justificados sin guiones).
+9. Tests: adaptar TC-015-009/012/015 → añadir TC-015-017/018/019 → `python -m pytest -q`
+   en verde (182).
+10. Evidencia: demo manual + capturas CDP 1280/375 + sección de ampliación en
+    `qa-hu-015.md` → `MEMORY.md` → commits por fase → push.
