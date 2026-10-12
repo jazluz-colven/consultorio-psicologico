@@ -156,6 +156,10 @@ aporte.
   push a `main` despliega solo; la clave de sync
   (`GET api.render.com/sync/<blueprint>?key=...`) es solo un respaldo manual y
   es **secreta: nunca publicarla**.
+- **Flujo de despliegue acordado con la usuaria (2026-10-12)**: `push` a `main`
+  ⇒ GitHub actualizado **y** Render despliega solo (~42 s); `push` a rama
+  `feature/*` ⇒ solo GitHub, Render espera al merge en `main`. Cada deploy
+  vacía la BD (plan Free sin disco).
 - **Enmienda 2026-10-11 — estado inicial de la cita `confirmed` («Confirmada»)**
   (specs 004 y 008): la usuaria pidió que, registrada la cita, el estado sea
   Confirmada («una vez se registra la cita pasa a la confirmación»). Renombrado
