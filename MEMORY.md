@@ -144,6 +144,13 @@ aporte.
   transiciones de estado aún — cancelación = Spec 010).
 
 ## Decisiones (y por qué)
+- **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
+  `gunicorn app:app`, `healthCheckPath: /`) + `requirements.txt` (Flask, gunicorn) +
+  **`DATABASE_PATH` configurable por env** en `consultorio/config.py` (default
+  intacto: `data/consultorio.db`; rutas relativas se resuelven contra `cwd`).
+  **Pendiente**: crear el servicio en el dashboard de Render (Blueprint → repo) —
+  el despliegue no corre solo. La BD es efímera: sin disco persistente se borra en
+  cada redeploy.
 - **Enmienda 2026-10-11 — estado inicial de la cita `confirmed` («Confirmada»)**
   (specs 004 y 008): la usuaria pidió que, registrada la cita, el estado sea
   Confirmada («una vez se registra la cita pasa a la confirmación»). Renombrado
@@ -191,6 +198,12 @@ aporte.
   (solo los 6 hex aprobados).
 
 ## Aprendizajes y errores a evitar
+- **Local desfasado del remoto (incidente 2026-10-12)**: la copia local de `main`
+  (`abc70e2`) no era ancestro de `origin/main` (el remoto se reescribió con ~130
+  commits). Antes de cualquier trabajo comparar `git status` con `git log
+  main..origin/main`; la sincronización fue `git branch backup/local-main-20261012`
+  + `git reset --hard origin/main` (acordado con la usuaria). **Nunca `push
+  --force`** sobre el remoto.
 - `pip` está **bloqueado por AppLocker**: usar `python -m pip install ...` (así se
   instaló Pillow 12.3.0 para convertir imágenes; es herramienta del entorno, no
   dependencia del proyecto).
@@ -252,6 +265,9 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
+- **Crear el servicio en Render** (usuaria): render.com → New → Blueprint →
+  repo `jazluz-colven/consultorio-psicologico`; verificar `/` y `/citas` en la
+  URL pública. **PENDIENTE**.
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
 - Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
