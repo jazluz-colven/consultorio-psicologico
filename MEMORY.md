@@ -148,9 +148,13 @@ aporte.
   `gunicorn app:app`, `healthCheckPath: /`) + `requirements.txt` (Flask, gunicorn) +
   **`DATABASE_PATH` configurable por env** en `consultorio/config.py` (default
   intacto: `data/consultorio.db`; rutas relativas se resuelven contra `cwd`).
-  **Pendiente**: crear el servicio en el dashboard de Render (Blueprint → repo) —
-  el despliegue no corre solo. La BD es efímera: sin disco persistente se borra en
-  cada redeploy.
+  **En vivo 2026-10-12**: Blueprint `exs-db6f05gn74is73aq3070` → servicio
+  **https://consultorio-psicologico-c6g6.onrender.com** (verificado: 6 páginas
+  200, `/citas/horarios` y `/citas/disponibilidad` 200, reserva E2E → 303
+  `/citas/confirmada/3` → horario pasa a `occupied`). La BD es efímera: sin
+  disco persistente se borra en cada redeploy. Re-sincronizar tras un push:
+  `GET https://api.render.com/sync/exs-db6f05gn74is73aq3070?key=...` (clave
+  secreta, solo dispara sync).
 - **Enmienda 2026-10-11 — estado inicial de la cita `confirmed` («Confirmada»)**
   (specs 004 y 008): la usuaria pidió que, registrada la cita, el estado sea
   Confirmada («una vez se registra la cita pasa a la confirmación»). Renombrado
@@ -265,9 +269,10 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **Crear el servicio en Render** (usuaria): render.com → New → Blueprint →
-  repo `jazluz-colven/consultorio-psicologico`; verificar `/` y `/citas` en la
-  URL pública. **PENDIENTE**.
+- **Despliegue Render COMPLETADO** (2026-10-12): https://consultorio-psicologico-c6g6.onrender.com
+  — si un push a `main` no despliega solo, re-sincronizar con la clave del
+  Blueprint o desde el dashboard. **PENDIENTE**: disco persistente si se quieren
+  conservar las citas entre deploys.
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
 - Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
