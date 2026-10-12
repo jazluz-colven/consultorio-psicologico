@@ -12,12 +12,23 @@ def _parse_timeout_seconds(raw: str) -> float:
     return parsed if parsed > 0 else _DEFAULT_AUTOMATION_TIMEOUT_SECONDS
 
 
+def _parse_database_path(raw: str, default: Path) -> Path:
+    if not raw:
+        return default
+    path = Path(raw)
+    return path if path.is_absolute() else Path.cwd() / path
+
+
 class Config:
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
     STATIC_DIR: Path = BASE_DIR / "static"
     TEMPLATES_DIR: Path = BASE_DIR / "templates"
     DATA_DIR: Path = BASE_DIR / "data"
-    DATABASE_PATH: Path = DATA_DIR / "consultorio.db"
+    # DATABASE_PATH se puede sobrescribir por variable de entorno (despliegue)
+    DATABASE_PATH: Path = _parse_database_path(
+        os.environ.get("DATABASE_PATH", ""),
+        DATA_DIR / "consultorio.db",
+    )
     SITE_NAME: str = "Carolina Gómez"
     TESTING: bool = False
     DEBUG: bool = False
