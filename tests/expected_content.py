@@ -310,3 +310,22 @@ CONTACT_BLOCK_LABELS = {
     "hours": "Horarios de atención",
     "social": "Redes sociales",
 }
+
+# --- Ampliación 2026-10-12 (RF-7): mapa de ubicación ---
+
+CONTACT_MAP_QUERY = "Calle 34 #29-18, Mejoras Públicas, Bucaramanga, Colombia"
+
+CONTACT_MAP_EMBED_URL = (
+    "https://www.google.com/maps?q="
+    "Calle%2034%20%2329-18%2C%20Mejoras%20P%C3%BAblicas%2C%20Bucaramanga%2C%20Colombia"
+    "&output=embed"
+)
+
+CONTACT_MAP_LINK_URL = (
+    "https://www.google.com/maps/search/?api=1&query="
+    "Calle%2034%20%2329-18%2C%20Mejoras%20P%C3%BAblicas%2C%20Bucaramanga%2C%20Colombia"
+)
+
+CONTACT_MAP_LINK_LABEL = "Abrir en Google Maps"
+
+CONTACT_MAP_FRAME_TITLE = "Ubicación del consultorio en Google Maps"

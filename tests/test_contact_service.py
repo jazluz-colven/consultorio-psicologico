@@ -158,3 +158,35 @@ def test_tc_015_008_cl4_red_invalida_se_omite_y_las_validas_se_conservan(
     assert [s.platform for s in view.socials] == ["instagram"]
     assert view.socials[0].label == "Instagram"
     assert view.socials[0].url == expected.CONTACT_SOCIAL_LINKS[0]["url"]
+
+
+def test_tc_015_018_rf7_mapa_emitido_con_direccion_y_omitido_en_cl1_y_cl5(
+    monkeypatch,
+) -> None:
+    base = contact_service.get_contact_view()
+    assert base.map is not None
+    assert base.map.embed_url == expected.CONTACT_MAP_EMBED_URL
+    assert base.map.link_url == expected.CONTACT_MAP_LINK_URL
+    assert base.map.link_label == expected.CONTACT_MAP_LINK_LABEL
+    assert base.map.title == expected.CONTACT_MAP_FRAME_TITLE
+    assert base.fallback_active is False
+
+    monkeypatch.setattr(contact_service, "MAP_QUERY", "")
+    view = contact_service.get_contact_view()
+    assert view.map is not None
+    assert view.map.embed_url == expected.CONTACT_MAP_EMBED_URL
+    assert view.fallback_active is True
+
+    monkeypatch.setattr(contact_service, "DEFAULT_MAP_QUERY", "")
+    view = contact_service.get_contact_view()
+    assert view.map is None
+    assert _channel(view, "address") is not None
+    assert view.fallback_active is False
+
+    monkeypatch.undo()
+
+    monkeypatch.setattr(contact_service, "ADDRESS_LINES", [])
+    monkeypatch.setattr(contact_service, "DEFAULT_ADDRESS_LINES", [])
+    view = contact_service.get_contact_view()
+    assert view.map is None
+    assert view.fallback_active is True

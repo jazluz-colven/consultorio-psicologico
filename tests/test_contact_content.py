@@ -1,4 +1,5 @@
 import re
+from urllib.parse import quote
 
 from consultorio.content import contact_content
 
@@ -45,3 +46,22 @@ def test_tc_015_003_las_redes_sociales_no_tienen_duplicados_ni_etiquetas_vacias(
         assert str(item["platform"]).strip()
         assert str(item["label"]).strip()
         assert str(item["url"]).strip()
+
+
+def test_tc_015_017_los_literales_del_mapa_coinciden_con_el_espejo_y_son_validos() -> None:
+    assert contact_content.MAP_QUERY == expected.CONTACT_MAP_QUERY
+    assert contact_content.MAP_EMBED_URL == expected.CONTACT_MAP_EMBED_URL
+    assert contact_content.MAP_LINK_URL == expected.CONTACT_MAP_LINK_URL
+    assert contact_content.MAP_LINK_LABEL == expected.CONTACT_MAP_LINK_LABEL
+    assert contact_content.MAP_FRAME_TITLE == expected.CONTACT_MAP_FRAME_TITLE
+    assert contact_content.DEFAULT_MAP_QUERY == contact_content.MAP_QUERY
+
+    query = quote(contact_content.MAP_QUERY, safe="")
+    assert contact_content.MAP_EMBED_URL == (
+        f"https://www.google.com/maps?q={query}&output=embed"
+    )
+    assert contact_content.MAP_LINK_URL == (
+        f"https://www.google.com/maps/search/?api=1&query={query}"
+    )
+    assert contact_content.MAP_LINK_LABEL == "Abrir en Google Maps"
+    assert contact_content.MAP_FRAME_TITLE == "Ubicación del consultorio en Google Maps"

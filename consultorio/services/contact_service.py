@@ -8,10 +8,16 @@ from consultorio.content.contact_content import (
     DEFAULT_ADDRESS_LINES,
     DEFAULT_CONTACT_BLOCK_LABELS,
     DEFAULT_EMAIL,
+    DEFAULT_MAP_QUERY,
     DEFAULT_OFFICE_HOURS,
     DEFAULT_PHONE,
     DEFAULT_WHATSAPP,
     EMAIL,
+    MAP_EMBED_URL,
+    MAP_FRAME_TITLE,
+    MAP_LINK_LABEL,
+    MAP_LINK_URL,
+    MAP_QUERY,
     OFFICE_HOURS,
     PHONE,
     SOCIAL_LINKS,
@@ -54,12 +60,21 @@ class SocialLink:
 
 
 @dataclass(frozen=True)
+class ContactMap:
+    embed_url: str
+    link_url: str
+    link_label: str
+    title: str
+
+
+@dataclass(frozen=True)
 class ContactView:
     title: str
     channels: tuple[ContactChannel, ...]
     hours: tuple[OfficeHour, ...]
     socials: tuple[SocialLink, ...]
     titles: dict[str, str]
+    map: ContactMap | None
     fallback_active: bool
 
 
@@ -141,6 +156,21 @@ def _resolve(live: str, default: str) -> tuple[str, bool]:
     return default, bool(default)
 
 
+def _resolve_map(address_lines: tuple[str, ...]) -> tuple[ContactMap | None, bool]:
+    query, used_default = _resolve(MAP_QUERY.strip(), DEFAULT_MAP_QUERY.strip())
+    if not address_lines or not query:
+        return None, used_default
+    return (
+        ContactMap(
+            embed_url=MAP_EMBED_URL,
+            link_url=MAP_LINK_URL,
+            link_label=MAP_LINK_LABEL.strip(),
+            title=MAP_FRAME_TITLE.strip(),
+        ),
+        used_default,
+    )
+
+
 def resolve_block_titles() -> dict[str, str]:
     titles: dict[str, str] = {}
     for key in CONTACT_BLOCK_KEYS:
@@ -154,7 +184,13 @@ def resolve_block_titles() -> dict[str, str]:
 
 
 def validate_contact() -> (
-    tuple[tuple[ContactChannel, ...], tuple[OfficeHour, ...], tuple[SocialLink, ...], bool]
+    tuple[
+        tuple[ContactChannel, ...],
+        tuple[OfficeHour, ...],
+        tuple[SocialLink, ...],
+        ContactMap | None,
+        bool,
+    ]
 ):
     fallback = False
     channels: list[ContactChannel] = []
@@ -193,16 +229,20 @@ def validate_contact() -> (
     socials, dropped = _valid_socials(SOCIAL_LINKS)
     fallback = fallback or dropped
 
-    return tuple(channels), hours, socials, fallback
+    map_block, map_used_default = _resolve_map(addr)
+    fallback = fallback or map_used_default
+
+    return tuple(channels), hours, socials, map_block, fallback
 
 
 def get_contact_view() -> ContactView:
-    channels, hours, socials, fallback = validate_contact()
+    channels, hours, socials, map_block, fallback = validate_contact()
     return ContactView(
         title=CONTACT_PAGE_TITLE,
         channels=channels,
         hours=hours,
         socials=socials,
         titles=resolve_block_titles(),
+        map=map_block,
         fallback_active=fallback,
     )
