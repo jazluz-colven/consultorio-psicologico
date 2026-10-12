@@ -152,9 +152,10 @@ aporte.
   `appointment.status='confirmed'` (misma forma, `event_version` 1); correo
   con «Estado: Confirmada». El ciclo `pending→sent/skipped/failed` de
   `automation_events` no se toca. BD de desarrollo **limpiada** (en pruebas, sin
-  migración). Rama `feature/estado-confirmada` (desde `feature/hu-008`, sin
-  merge aún). **Validada en vivo 2026-10-11**: cita 2 → 2 eventos `sent` +
-  correo recibido con «Estado: Confirmada».
+  migración). Rama `feature/estado-confirmada` **mergeada a `main`**
+  (2026-10-11, junto con `feature/hu-008`; suite 163/163 en `main`).
+  **Validada en vivo 2026-10-11**: cita 2 → 2 eventos `sent` + correo recibido
+  con «Estado: Confirmada».
 - **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
   stdlib en `consultorio/persistence/` (sin ORM, sin dependencias); BD en
   `data/consultorio.db` (fuera de git); unicidad en el punto de persistencia.
@@ -251,10 +252,8 @@ aporte.
   y comunicar la URL (regla en `AGENTS.md`).
 
 ## Próximos pasos
-- **HU-008 CERRADA** (aceptada 2026-10-11); pendiente merge a `main`
-  (`git checkout main && git merge feature/hu-008`) y borrado de la rama.
-- Servidor de revisión en marcha: http://127.0.0.1:5000/citas
-- HU-008 se apoya en el `UNIQUE(event_id)` de HU-007 y no toca el modelo de
-  `appointments` ni `config.py`.
-- Posible HU futura (si la usuaria lo pide): transición de estado de la cita
-  (p. ej. «Confirmada» cuando n8n agende en Google Calendar) — requiere spec.
+- **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
+  `main` (fast-forward). Sin pendientes abiertos.
+- Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
+- Posible HU futura (si la usuaria lo pide): transición de estados de la cita
+  (p. ej. cancelación — Spec 010) — requiere spec.
