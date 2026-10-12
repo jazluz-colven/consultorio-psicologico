@@ -116,3 +116,4 @@ saneamiento de la BD de desarrollo (en pruebas) y correo actualizado.
 | Manual: BD regenerada, `POST /citas` → 303, `/citas/confirmada/1` | **200** con «Confirmada» visible; fila `status='confirmed'` |
 | Payloads HU-007/008 (`appointment.status`) | `confirmed` (misma forma; `event_version` 1 intacta) |
 | Ciclo de eventos `automation_events` (`pending → sent/skipped/failed`) | Sin cambios |
+| **Live n8n** (producción activa): reserva de la usuaria (cita 2, 2026-10-12 08:30) | Ambos eventos **`sent`**; **correo recibido con «Estado: Confirmada»** (usuaria: «Sí», 2026-10-11) |

@@ -153,7 +153,8 @@ aporte.
   con «Estado: Confirmada». El ciclo `pending→sent/skipped/failed` de
   `automation_events` no se toca. BD de desarrollo **limpiada** (en pruebas, sin
   migración). Rama `feature/estado-confirmada` (desde `feature/hu-008`, sin
-  merge aún).
+  merge aún). **Validada en vivo 2026-10-11**: cita 2 → 2 eventos `sent` +
+  correo recibido con «Estado: Confirmada».
 - **Sin SQLite hasta que una HU lo pida** → **resuelto en HU-004**: SQLite
   stdlib en `consultorio/persistence/` (sin ORM, sin dependencias); BD en
   `data/consultorio.db` (fuera de git); unicidad en el punto de persistencia.
