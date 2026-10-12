@@ -4,7 +4,7 @@
 **Rama:** `feature/hu-015`
 **Commits:** `04640c7` (spec enmendada + plan + task), `942cf77` (contenido + espejo),
 `7c14cfc` (servicio), `1f60bda` (web + plantilla + placeholders), `6eb32eb` (CSS),
-`9670a9c` (tests), `<evidencia>` (esta carpeta + MEMORY)
+`9670a9c` (tests), `1dd0498` (esta evidencia + MEMORY)
 **Fecha:** 2026-10-12
 
 ## Resumen
