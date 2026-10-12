@@ -151,10 +151,11 @@ aporte.
   **En vivo 2026-10-12**: Blueprint `exs-db6f05gn74is73aq3070` → servicio
   **https://consultorio-psicologico-c6g6.onrender.com** (verificado: 6 páginas
   200, `/citas/horarios` y `/citas/disponibilidad` 200, reserva E2E → 303
-  `/citas/confirmada/3` → horario pasa a `occupied`). La BD es efímera: sin
-  disco persistente se borra en cada redeploy. Re-sincronizar tras un push:
-  `GET https://api.render.com/sync/exs-db6f05gn74is73aq3070?key=...` (clave
-  secreta, solo dispara sync).
+  `/citas/confirmada/3` → horario pasa a `occupied`). La BD es efímera (se
+  pierde en cada redeploy **y** en cada spin-down de 15 min sin tráfico). El
+  push a `main` despliega solo; la clave de sync
+  (`GET api.render.com/sync/<blueprint>?key=...`) es solo un respaldo manual y
+  es **secreta: nunca publicarla**.
 - **Enmienda 2026-10-11 — estado inicial de la cita `confirmed` («Confirmada»)**
   (specs 004 y 008): la usuaria pidió que, registrada la cita, el estado sea
   Confirmada («una vez se registra la cita pasa a la confirmación»). Renombrado
@@ -274,10 +275,15 @@ aporte.
 
 ## Próximos pasos
 - **Despliegue Render COMPLETADO** (2026-10-12): https://consultorio-psicologico-c6g6.onrender.com
-  — la BD se vació el 2026-10-12 tras el push `b18f969` + sync manual (no se
-  pudo distinguir cuál disparó el deploy; se asume que el push a `main` basta).
-  Re-sincronizar a mano con la clave del Blueprint si hace falta. **PENDIENTE**:
-  disco persistente si se quieren conservar las citas entre deploys.
+  — **auto-deploy verificado 2026-10-12**: el push a `main` (`17a1416`)
+  redeployó el servicio en **42 s** y vació la BD (cita de prueba desapareció);
+  el sync manual solo hace falta si el push no despliega. **Disco persistente
+  IMPOSIBLE en plan Free** (docs de Render: "Free web services don't support…
+  Persistent disks"); además el sistema de archivos es efímero **también al
+  apagarse por 15 min sin tráfico**, así que `data/consultorio.db` se pierde en
+  cada redeploy *y* en cada spin-down. Opciones: plan de pago ($7/mes), Render
+  Postgres Free (caduca a los 30 días, exige migrar SQLite → Postgres con spec y
+  plan), o aceptar la BD efímera (válida para demo).
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
 - Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
