@@ -116,6 +116,7 @@
   `git rev-parse origin/feature/hu-015` y `MEMORY.md` registra HU-015 (página
   `/contacto`, bloques por canal, PLACEHOLDER_SECTIONS solo `/articulos`).
 
-- [ ] **T16 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T16 — Aceptación de la HU (usuaria)** `[cierre]`
+  Aceptada por la usuaria el **2026-10-12**.
   Hecho cuando: el checkbox de aceptación de `qa-hu-015.md` está marcado con fecha y
   la §7.2 del plan queda íntegramente en `[x]`.

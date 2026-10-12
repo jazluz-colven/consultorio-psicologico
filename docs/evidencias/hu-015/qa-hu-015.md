@@ -95,4 +95,4 @@ medidas con `Runtime.evaluate` antes de capturar; emulación fijada por sesión.
 - [x] Regresión revisada (163 previos intactos).
 - [x] Evidencia visual PASS (1280 y 375, sin desbordes).
 - [x] Demo manual realizada.
-- [ ] **Aceptación de la HU por la usuaria**: _______________ (fecha: ______)
+- [x] **Aceptación de la HU por la usuaria**: 2026-10-12.

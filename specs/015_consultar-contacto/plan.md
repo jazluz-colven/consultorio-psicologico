@@ -2,11 +2,12 @@
 
 > Trazabilidad: **HU-015 → Spec 015 (`specs/015_consultar-contacto/spec.md`) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs` (Q5).
-> Etapa actual: **PLAN APROBADO** (2026-10-12): aprobado por la usuaria junto con los
-> datos de contacto definitivos (**Q1**: dirección, WhatsApp y correo; **teléfono
-> opcional, no disponible** — bloque omitido), la red social (**Q2**: solo Instagram)
-> y los horarios (**Q3**: propuesta D13). Literales fijados en la spec 015
-> (enmienda «Contenido de contacto», 2026-10-12).
+> Etapa actual: **HU-015 ACEPTADA Y CERRADA** (2026-10-12): plan aprobado por la
+> usuaria junto con los datos de contacto definitivos (**Q1**: dirección, WhatsApp y
+> correo; **teléfono opcional, no disponible** — bloque omitido), la red social
+> (**Q2**: solo Instagram) y los horarios (**Q3**: propuesta D13). Literales fijados
+> en la spec 015 (enmienda «Contenido de contacto», 2026-10-12). QA **PASS**
+> (`docs/evidencias/hu-015/qa-hu-015.md`) y aceptación el 2026-10-12.
 > Rama: **`feature/hu-015`** desde `main` (Q4). Baseline de tests: **163 PASS / 0 FAIL**.
 
 ---
@@ -439,7 +440,7 @@ Evidencia visual: docs/evidencias/hu-015/escritorio-1280.png, movil-375.png
       (`escritorio-1280.png` 1280×1335, `movil-375.png` 375×1552) con demo sobre el
       servidor (`GET /contacto` → 200).
 - [x] Commit/Push trazable, actualización de `MEMORY.md`.
-- [ ] Aceptación de la HU (checkbox de `qa-hu-015.md`) y merge a `main`.
+- [x] Aceptación de la HU (checkbox de `qa-hu-015.md`, 2026-10-12) y merge a `main`.
 
 ---
 

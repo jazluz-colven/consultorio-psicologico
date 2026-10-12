@@ -142,8 +142,8 @@ aporte.
   Calendar**) activo en producción → cita 46, ambos eventos `sent` y correo
    recibido («Sí, llegó»). La cita queda `pending` por diseño (spec 004; sin
    transiciones de estado aún — cancelación = Spec 010).
-- **HU-015 (Spec 015, consultar contacto) IMPLEMENTADA — QA PASS, PENDIENTE DE
-  ACEPTACIÓN** (2026-10-12, rama `feature/hu-015` desde `main`): página
+- **HU-015 (Spec 015, consultar contacto) ACEPTADA Y CERRADA** (2026-10-12, rama
+  `feature/hu-015`, mergeada a `main`): página
   **`/contacto`** con bloques por canal (Dirección, WhatsApp, Correo electrónico,
   Horarios de atención, Redes sociales) — **sin bloque Teléfono** (opcional, no
   disponible; D16; RF-3 condicional). Spec 015 **enmendada** («Contenido de
@@ -307,8 +307,8 @@ aporte.
   plan), o aceptar la BD efímera (válida para demo).
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
-- **HU-015 QA PASS, pendiente de aceptación y merge a `main`** (2026-10-12);
-  servidor de revisión en http://127.0.0.1:5000/contacto.
+- **HU-015 ACEPTADA Y CERRADA** (2026-10-12, aceptación en `qa-hu-015.md`);
+  mergeada a `main`. Sin pendientes abiertos.
 - Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
 - Posible HU futura (si la usuaria lo pide): transición de estados de la cita
   (p. ej. cancelación — Spec 010) — requiere spec.
