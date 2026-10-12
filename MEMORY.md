@@ -270,9 +270,10 @@ aporte.
 
 ## Próximos pasos
 - **Despliegue Render COMPLETADO** (2026-10-12): https://consultorio-psicologico-c6g6.onrender.com
-  — si un push a `main` no despliega solo, re-sincronizar con la clave del
-  Blueprint o desde el dashboard. **PENDIENTE**: disco persistente si se quieren
-  conservar las citas entre deploys.
+  — la BD se vació el 2026-10-12 tras el push `b18f969` + sync manual (no se
+  pudo distinguir cuál disparó el deploy; se asume que el push a `main` basta).
+  Re-sincronizar a mano con la clave del Blueprint si hace falta. **PENDIENTE**:
+  disco persistente si se quieren conservar las citas entre deploys.
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
 - Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
