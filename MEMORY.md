@@ -202,6 +202,10 @@ aporte.
   (solo los 6 hex aprobados).
 
 ## Aprendizajes y errores a evitar
+- **`instance/` (BD de la versión plana antigua, esquema `citas`) eliminada del
+  workspace** el 2026-10-12, con respaldo en
+  `C:\Users\Jaz\AppData\Local\Temp\opencode\instance-backup\`; la app vigente usa
+  `data/consultorio.db` (esquema `appointments`) y ni siquiera la lee.
 - **Local desfasado del remoto (incidente 2026-10-12)**: la copia local de `main`
   (`abc70e2`) no era ancestro de `origin/main` (el remoto se reescribió con ~130
   commits). Antes de cualquier trabajo comparar `git status` con `git log
