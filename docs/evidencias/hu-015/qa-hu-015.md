@@ -178,4 +178,4 @@ evidencia visual regenerada sin desbordes.
 - [x] Regresión revisada (163 previos intactos).
 - [x] Evidencia visual PASS (1280 y 375, sin desbordes; capturas regeneradas).
 - [x] Demo manual realizada.
-- [ ] **Aceptación de la ampliación por la usuaria** (pendiente, T17).
+- [x] **Aceptación de la ampliación por la usuaria**: 2026-10-12.

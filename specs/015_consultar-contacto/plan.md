@@ -2,7 +2,7 @@
 
 > Trazabilidad: **HU-015 → Spec 015 (`specs/015_consultar-contacto/spec.md`, enmendada 2026-10-12 con RF-7) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs` (Q5).
-> Etapa actual: **PLAN DE AMPLIACIÓN APROBADO** (2026-10-12) por la usuaria (Q13).
+> Etapa actual: **AMPLIACIÓN ACEPTADA Y CERRADA** (2026-10-12) por la usuaria (T17).
 > **Estado real verificado tras sincronizar `main` con `origin/main` (fast-forward a
 > `f99490b`)**: HU-015 **v1 ya implementada, evidenciada y ACEPTADA/CERRADA** el
 > 2026-10-12 (rama `feature/hu-015`, mergeada a `main`) con el **diseño por
@@ -315,17 +315,18 @@ total previsto **182**.
 - [x] Sincronizar `main` con `origin/main` (fast-forward `f99490b`) y crear
       `feature/hu-015-diseno`.
 - [x] Enmienda de la spec 015 con §8.1 (RF-7 + `MAP_*` + caso límite) sobre la rama.
-- [ ] Reescribir `task.md` alineado con este plan (ampliación).
-- [ ] Commit inicial de spec + plan + task en la rama.
-- [ ] Confirmar baseline `python -m pytest -q` → **179 PASS / 0 FAIL**.
-- [ ] Ampliar contenido, servicio, plantilla y CSS (§1–§4).
-- [ ] Tests: TC-015-009/012/015 adaptados + TC-015-017/018/019 nuevos → suite
+- [x] Reescribir `task.md` alineado con este plan (ampliación).
+- [x] Commit inicial de spec + plan + task en la rama.
+- [x] Confirmar baseline `python -m pytest -q` → **179 PASS / 0 FAIL**.
+- [x] Ampliar contenido, servicio, plantilla y CSS (§1–§4).
+- [x] Tests: TC-015-009/012/015 adaptados + TC-015-017/018/019 nuevos → suite
       **182 PASS / 0 FAIL**.
-- [ ] Evidencia: capturas regeneradas 1280/375 + sección de ampliación en
+- [x] Evidencia: capturas regeneradas 1280/375 + sección de ampliación en
       `qa-hu-015.md` (veredicto) con demo sobre el servidor.
-- [ ] Commits por fase, push, actualización de `MEMORY.md`.
-- [ ] Aceptación de la ampliación por la usuaria (checkbox en `qa-hu-015.md`).
-- [ ] Dejar el servidor de revisión en marcha y comunicar la URL (AGENTS.md).
+- [x] Commits por fase, push, actualización de `MEMORY.md`.
+- [x] Aceptación de la ampliación por la usuaria (2026-10-12, checkbox en
+      `qa-hu-015.md`).
+- [x] Dejar el servidor de revisión en marcha y comunicar la URL (AGENTS.md).
 
 ---
 

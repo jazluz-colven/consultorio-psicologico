@@ -159,7 +159,7 @@ aporte.
    desbordes). Commits: `04640c7` docs, `942cf77` contenido+espejo, `7c14cfc`
    servicio, `1f60bda` web+plantilla, `6eb32eb` CSS, `9670a9c` tests,
    evidencia+MEMORY en el commit de cierre.
-- **HU-015 ampliación (cajón + iconos + mapa) PASS, pendiente de aceptación**
+- **HU-015 ampliación (cajón + iconos + mapa) ACEPTADA Y CERRADA**
   (2026-10-12, rama `feature/hu-015-diseno`): spec 015 enmendada con **RF-7**
   (mapa condicionado a dirección) + literales `MAP_QUERY`/`MAP_EMBED_URL`/
   `MAP_LINK_URL`/`MAP_LINK_LABEL`/`MAP_FRAME_TITLE` (iframe de Google Maps sin
@@ -174,7 +174,7 @@ aporte.
   desbordaba el valor con tokens largos (email) → `flex-wrap: wrap` en
   `.contact__row` + `min-width: 0`. Commits: `2bd6f53` docs, `923f9b6`
   contenido+servicio, `33bee8f` plantilla+CSS+tests, evidencia+fix en el
-  cierre. **Solo falta T17 (aceptación de la usuaria)**.
+  cierre. **Aceptada por la usuaria 2026-10-12 (T17)**.
 
 ## Decisiones (y por qué)
 - **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
@@ -324,8 +324,8 @@ aporte.
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
 - **HU-015 ACEPTADA Y CERRADA** (2026-10-12, aceptación en `qa-hu-015.md`);
-  mergeada a `main`. **Ampliación** (cajón+iconos+mapa RF-7) en
-  `feature/hu-015-diseno`: PASS, **pendiente T17 (aceptación)**.
+  v1 mergeada a `main`. **Ampliación** (cajón+iconos+mapa RF-7) también
+  **ACEPTADA y CERRADA** (2026-10-12) en `feature/hu-015-diseno`.
 - Servidor de revisión: http://127.0.0.1:5000/contacto (ampliación HU-015).
 - Posible HU futura (si la usuaria lo pide): transición de estados de la cita
   (p. ej. cancelación — Spec 010) — requiere spec.

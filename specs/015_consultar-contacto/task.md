@@ -118,7 +118,7 @@
   `scrollHeight`, el iframe aparece en la de escritorio y `qa-hu-015.md` deja constancia
   de la ampliación con veredicto; servidor en marcha con la URL comunicada.
 
-- [ ] **T16 — Commits por fase, Push y `MEMORY.md` (plan §8.10)** `[trazabilidad]`
+- [x] **T16 — Commits por fase, Push y `MEMORY.md` (plan §8.10)** `[trazabilidad]`
   Commits por fase (spec+plan+task+espejo → contenido+servicio → plantilla+CSS →
   tests → evidencia+MEMORY) citando HU-015/Spec 015 (ampliación); nunca datos sensibles
   en repo o memoria.
@@ -126,6 +126,7 @@
   `git rev-parse origin/feature/hu-015-diseno` y `MEMORY.md` registra la ampliación
   (cajón + iconos + mapa RF-7, rama `feature/hu-015-diseno`).
 
-- [ ] **T17 — Aceptación de la ampliación (usuaria)** `[cierre]`
+- [x] **T17 — Aceptación de la ampliación (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de la ampliación en `qa-hu-015.md` está marcado con fecha y
   la §7.2 del plan queda íntegramente en `[x]`.
+  **Aceptada por la usuaria: 2026-10-12.**
