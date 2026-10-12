@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Contacto — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="contact">
+    <h1 class="contact__title">{{ contact.title }}</h1>
+
+    {% for channel in contact.channels %}
+    <section class="contact__block">
+        <h2 class="contact__block-title">{{ contact.titles[channel.key] }}</h2>
+        {% if channel.lines %}
+        {% for line in channel.lines %}
+        <p class="contact__text">{{ line }}</p>
+        {% endfor %}
+        {% else %}
+        <p class="contact__text"><a href="{{ channel.href }}">{{ channel.value }}</a></p>
+        {% endif %}
+    </section>
+    {% endfor %}
+
+    {% if contact.hours %}
+    <section class="contact__block">
+        <h2 class="contact__block-title">{{ contact.titles["hours"] }}</h2>
+        <ul class="contact__list">
+            {% for hour in contact.hours %}
+            <li class="contact__list-item">
+                <strong class="contact__list-label">{{ hour.label }}</strong>:
+                {{ hour.days }}, {{ hour.hours }}
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if contact.socials %}
+    <section class="contact__block">
+        <h2 class="contact__block-title">{{ contact.titles["social"] }}</h2>
+        <ul class="contact__list">
+            {% for social in contact.socials %}
+            <li class="contact__list-item">
+                <a href="{{ social.url }}" target="_blank" rel="noopener">{{ social.label }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <p class="contact__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
+</article>
+{% endblock %}

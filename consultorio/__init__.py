@@ -19,6 +19,7 @@ def create_app(settings: Any = None) -> Flask:
     from consultorio.persistence.database import init_db
     from consultorio.web.about import bp as about_bp
     from consultorio.web.appointments import bp as appointments_bp
+    from consultorio.web.contact import bp as contact_bp
     from consultorio.web.home import bp as home_bp
     from consultorio.web.placeholders import bp as sections_bp
     from consultorio.web.search import bp as search_bp
@@ -26,6 +27,7 @@ def create_app(settings: Any = None) -> Flask:
 
     app.register_blueprint(about_bp)
     app.register_blueprint(appointments_bp)
+    app.register_blueprint(contact_bp)
     app.register_blueprint(home_bp)
     app.register_blueprint(sections_bp)
     app.register_blueprint(search_bp)

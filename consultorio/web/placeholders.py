@@ -18,8 +18,3 @@ def _render_section(section_url: str) -> str:
 @bp.get("/articulos")
 def articulos() -> str:
     return _render_section("/articulos")
-
-
-@bp.get("/contacto")
-def contacto() -> str:
-    return _render_section("/contacto")
