@@ -153,12 +153,28 @@ aporte.
   `content/contact_content.py` + `services/contact_service.py` (resolución
   vivo→default→omisión, `fallback_active`; horarios con
   `DEFAULT_OFFICE_HOURS`), blueprint `contact`, `PLACEHOLDER_SECTIONS` =
-  `["/articulos"]`, CSS `.contact-*`. 16 tests nuevos (TC-015-001…016); suite
-  **179 PASS / 0 FAIL**. Veredicto **PASS** en
-  `docs/evidencias/hu-015/qa-hu-015.md` (capturas CDP 1280×1335 y 375×1552, sin
-  desbordes). Commits: `04640c7` docs, `942cf77` contenido+espejo, `7c14cfc`
-  servicio, `1f60bda` web+plantilla, `6eb32eb` CSS, `9670a9c` tests,
-  evidencia+MEMORY en el commit de cierre.
+   `["/articulos"]`, CSS `.contact-*`. 16 tests nuevos (TC-015-001…016); suite
+   **179 PASS / 0 FAIL**. Veredicto **PASS** en
+   `docs/evidencias/hu-015/qa-hu-015.md` (capturas CDP 1280×1335 y 375×1552, sin
+   desbordes). Commits: `04640c7` docs, `942cf77` contenido+espejo, `7c14cfc`
+   servicio, `1f60bda` web+plantilla, `6eb32eb` CSS, `9670a9c` tests,
+   evidencia+MEMORY en el commit de cierre.
+- **HU-015 ampliación (cajón + iconos + mapa) PASS, pendiente de aceptación**
+  (2026-10-12, rama `feature/hu-015-diseno`): spec 015 enmendada con **RF-7**
+  (mapa condicionado a dirección) + literales `MAP_QUERY`/`MAP_EMBED_URL`/
+  `MAP_LINK_URL`/`MAP_LINK_LABEL`/`MAP_FRAME_TITLE` (iframe de Google Maps sin
+  API key + enlace «Abrir en Google Maps»). Plantilla refactorizada: un **cajón
+  `.contact__panel`** con 5 `<li class="contact__row">` (SVG inline `aria-hidden`
+  + etiqueta + valor; marcado de enlaces idéntico a v1) y bloque
+  `.contact__map`; CSS con **grid 2 columnas ≥900 px** (cajón ‖ mapa) y
+  apilado <900 px. Servicio con `ContactMap` + `ContactView.map` (vivo→
+  default→omisión, CL-1/CL-5). 3 TC adaptados (009/012/015) + 3 nuevos
+  (017/018/019); suite **182 PASS / 0 FAIL**; capturas regeneradas
+  (1280×1156 / 375×1574). **Lección**: a 375 px `.contact__label` (10,5 rem)
+  desbordaba el valor con tokens largos (email) → `flex-wrap: wrap` en
+  `.contact__row` + `min-width: 0`. Commits: `2bd6f53` docs, `923f9b6`
+  contenido+servicio, `33bee8f` plantilla+CSS+tests, evidencia+fix en el
+  cierre. **Solo falta T17 (aceptación de la usuaria)**.
 
 ## Decisiones (y por qué)
 - **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
@@ -308,7 +324,8 @@ aporte.
 - **HU-008 + enmienda de estado CERRADAS** (2026-10-11); ambas mergeadas a
   `main` (fast-forward). Sin pendientes abiertos.
 - **HU-015 ACEPTADA Y CERRADA** (2026-10-12, aceptación en `qa-hu-015.md`);
-  mergeada a `main`. Sin pendientes abiertos.
-- Servidor de revisión: http://127.0.0.1:5000/citas (sin webhook configurado).
+  mergeada a `main`. **Ampliación** (cajón+iconos+mapa RF-7) en
+  `feature/hu-015-diseno`: PASS, **pendiente T17 (aceptación)**.
+- Servidor de revisión: http://127.0.0.1:5000/contacto (ampliación HU-015).
 - Posible HU futura (si la usuaria lo pide): transición de estados de la cita
   (p. ej. cancelación — Spec 010) — requiere spec.

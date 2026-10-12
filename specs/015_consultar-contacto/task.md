@@ -108,7 +108,7 @@
   Hecho cuando: `python -m pytest -q` → **0 FAIL** con los **179** actuales (v1 con 3
   adaptados) más los **3** nuevos (**182 en total**).
 
-- [ ] **T15 — Evidencia QA y visual de la ampliación (plan §6.3, D21)** `[RF-6][RF-7][RNF-1][finalización]`
+- [x] **T15 — Evidencia QA y visual de la ampliación (plan §6.3, D21)** `[RF-6][RF-7][RNF-1][finalización]`
   Servidor, recorrido manual (cajón con iconos, enlaces `wa.me`/`mailto:`/Instagram,
   mapa embebido visible y «Abrir en Google Maps») y capturas CDP regeneradas →
   `docs/evidencias/hu-015/escritorio-1280.png` (cajón ‖ mapa) y

@@ -1,10 +1,12 @@
 # Evidencia QA — HU-015 (Spec 015 · Consultar información de contacto)
 
 **HU:** HU-015
-**Rama:** `feature/hu-015`
-**Commits:** `04640c7` (spec enmendada + plan + task), `942cf77` (contenido + espejo),
+**Rama (v1):** `feature/hu-015` — **Rama (ampliación 2026-10-12):** `feature/hu-015-diseno`
+**Commits (v1):** `04640c7` (spec enmendada + plan + task), `942cf77` (contenido + espejo),
 `7c14cfc` (servicio), `1f60bda` (web + plantilla + placeholders), `6eb32eb` (CSS),
 `9670a9c` (tests), `1dd0498` (esta evidencia + MEMORY)
+**Commits (ampliación):** `2bd6f53` (spec RF-7 + plan + task), `923f9b6` (`MAP_*` +
+`ContactMap` + TC-017/018), `33bee8f` (cajón + iconos + mapa + TC-009/012/015/019)
 **Fecha:** 2026-10-12
 
 ## Resumen
@@ -87,7 +89,7 @@ medidas con `Runtime.evaluate` antes de capturar; emulación fijada por sesión.
 - `POST /contacto` → 405; `GET /contacto/noexiste` → 404.
 - Servidor de revisión en marcha: **http://127.0.0.1:5000/contacto**
 
-## Veredicto
+## Veredicto (v1)
 
 **PASS** — 16/16 TC en verde, suite 179/179, regresión intacta y evidencia visual verificada.
 
@@ -96,3 +98,84 @@ medidas con `Runtime.evaluate` antes de capturar; emulación fijada por sesión.
 - [x] Evidencia visual PASS (1280 y 375, sin desbordes).
 - [x] Demo manual realizada.
 - [x] **Aceptación de la HU por la usuaria**: 2026-10-12.
+
+---
+
+## Ampliación 2026-10-12 — cajón con iconos + mapa (RF-7)
+
+**Rama:** `feature/hu-015-diseno` (spec 015 enmendada con RF-7 + literales `MAP_*` + caso
+límite «Mapa no disponible»; plan/task de ampliación aprobados por la usuaria).
+
+| Verificación | Comando | Resultado |
+|---|---|---|
+| Suite automatizada | `python -m pytest -q` | **182 PASS / 0 FAIL** |
+| Tests de la HU | `python -m pytest tests/test_contact_content.py tests/test_contact_service.py tests/test_contact_routes.py tests/test_hu_015.py -v` | **19 PASS / 0 FAIL** |
+| Regresión resto de HUs | mismos 163 tests previos dentro de la suite | **163 PASS** |
+| Servidor de desarrollo | `GET http://127.0.0.1:5000/contacto` | **200** con cajón de 5 filas + mapa |
+| Evidencia visual | `docs/evidencias/hu-015/*.png` (regeneradas) | **2 archivos, PASS** |
+
+### Casos de prueba de la ampliación
+
+| Caso | Archivo | Resultado |
+|---|---|---|
+| TC-015-017 literales `MAP_*` = espejo; embed `output=embed` y link con la consulta URL-encoded; «Abrir en Google Maps» y título | `test_contact_content.py` | PASS |
+| TC-015-018 RF-7 servicio: `map` completo sin fallback; CL-5 `MAP_QUERY` vacío → default y `fallback_active=True`; ambos vacíos → `map is None`; CL-1 sin dirección → `map is None` | `test_contact_service.py` | PASS |
+| TC-015-019 iframe `www.google.com/maps` con `title` + `loading="lazy"` y enlace de respaldo `target="_blank" rel="noopener"`; dirección visible fuera del iframe | `test_contact_routes.py` | PASS |
+| TC-015-009 (adaptado) h1 + `.contact__panel` con ≥5 `<li class="contact__row">` | `test_contact_routes.py` | PASS |
+| TC-015-012 (adaptado) 5 filas con `<svg aria-hidden="true">`, etiqueta y valor; sin mezcla de datos entre canales | `test_contact_routes.py` | PASS |
+| TC-015-015 (adaptado) RNF: viewport, `@media`, `.contact` 65ch, `.contact__value` justify/none, grid 2 columnas `@media (min-width: 900px)`, paleta ⊆ 6 hex | `test_hu_015.py` | PASS |
+
+TC-015-001…008/010/011/013/014/016 de v1: **sin cambios y en verde** (marcado de
+enlaces idéntico a v1, D5). Ninguna aserción relajada.
+
+### Cobertura RF-7 y casos límite
+
+| Elemento | Verificación | Resultado |
+|---|---|---|
+| RF-7 mapa con dirección | iframe embed de Google Maps + enlace de respaldo en `/contacto` (TC-018/019 + CDP) | PASS |
+| CL-1 dirección no aplicable | `map is None` con dirección y default vacíos (TC-018) | PASS |
+| CL-5 consulta de mapa vacía | default aplicado (`fallback_active=True`); ambos vacíos → bloque omitido (TC-018) | PASS |
+| «Mapa no disponible» (spec) | dirección escrita permanece visible fuera del iframe (TC-019 + CDP) | PASS |
+| RNF-1 legible escritorio/móvil | grid 2 columnas ≥900 px, apilado <900 px, sin desbordes (TC-015 + CDP) | PASS |
+
+### Evidencia visual (capturas regeneradas)
+
+| Archivo | Dimensiones | Contenido comprobado | Resultado |
+|---|---|---|---|
+| `escritorio-1280.png` | 1280×1156 | h1 «Contacto»; cajón salvia con 5 filas (icono SVG + etiqueta + valor): Dirección, WhatsApp, Correo electrónico, Horarios de atención, Redes sociales; mapa de Google a la derecha (grid 2 columnas); enlace «Abrir en Google Maps»; «Volver al inicio»; sin formularios | PASS |
+| `movil-375.png` | 375×1574 | filas apiladas (valor en línea propia cuando no cabe), mapa debajo, **sin desbordes** (`scrollWidth` = `clientWidth` = 375) | PASS |
+
+**Verificación CDP en vivo** (`Emulation.setDeviceMetricsOverride` +
+`Runtime.evaluate`, puerto 9444, Chrome headless):
+
+| Viewport | Resultado |
+|---|---|
+| 1280 | `contactDisplay=grid`; 5 filas con 5 iconos `aria-hidden`; labels Dirección/WhatsApp/Correo electrónico/Horarios de atención/Redes sociales; iframe `google.com/maps…output=embed` con title y `loading=lazy`; enlace «Abrir en Google Maps» `rel=noopener`; `wa.me/573168756020`; `mailto:caritogomez26@gmail.com`; Instagram `rel=noopener`; `justify/none` en `.contact__value`; form/input en `<main>` = 0; `scrollWidth` = `clientWidth` = 1265 (sin desborde) |
+| 375 | `contactDisplay=block` (sin grid); mismo contenido; `scrollWidth` = `clientWidth` = 375 (sin desborde), `scrollHeight` = 1574; captura completa |
+
+**Corrección durante la ampliación:** la primera pasada a 375 px desbordaba
+(`scrollWidth` 512) porque `.contact__label` (10,5 rem) empujaba el valor con tokens
+largos (`caritogomez26@gmail.com`); se añadió `flex-wrap: wrap` a `.contact__row` y
+`flex: 1 1 12rem; min-width: 0` a `.contact__value`, y la verificación CDP quedó en
+`scrollWidth` = 375.
+
+**Método**: DevTools Protocol (no `--window-size`, regla de AGENTS.md); alturas
+medidas con `Runtime.evaluate` antes de capturar; emulación fijada por sesión.
+
+### Demo manual (ampliación)
+
+- `GET /contacto` → 200; cajón con iconos + mapa de Google y «Abrir en Google Maps».
+- Clic en WhatsApp/correo/Instagram → mismos comportamientos de v1.
+- Mapa visible a 1280 px (columna derecha) y debajo del cajón a 375 px.
+- Servidor de revisión en marcha: **http://127.0.0.1:5000/contacto**
+
+### Veredicto de la ampliación
+
+**PASS** — 19/19 TC de HU-015 en verde, suite **182/182**, regresión intacta y
+evidencia visual regenerada sin desbordes.
+
+- [x] Tests automatizados PASS (182/182).
+- [x] Regresión revisada (163 previos intactos).
+- [x] Evidencia visual PASS (1280 y 375, sin desbordes; capturas regeneradas).
+- [x] Demo manual realizada.
+- [ ] **Aceptación de la ampliación por la usuaria** (pendiente, T17).
