@@ -5,6 +5,7 @@
 **Alcance:** A3 (back-links), A1 (tonos oscuros AA), A2 (foco visible)
 **Decisión de diseño:** `docs/design-contrast.md`
 **Veredicto:** **PASS** (187/187 tests, sin desbordes, pares verificados)
+**Aceptación de la usuaria:** 2026-10-12 — «Me gusta. Acepto.»
 
 ## Requisito y trazabilidad
 
