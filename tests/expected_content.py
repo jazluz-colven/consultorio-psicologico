@@ -166,6 +166,10 @@ PALETTE = {
     "#D99A7A",
     "#E8D5B5",
     "#30454B",
+    # Tonos funcionales derivados (docs/design-contrast.md, 2026-10-12):
+    # accesibilidad WCAG AA, no son colores de marca nuevos.
+    "#3D5A4E",
+    "#7F4527",
 }
 
 # --- HU-004: Agendar cita (espejo único de la spec 004) ---

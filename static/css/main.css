@@ -7,6 +7,8 @@
     --color-accent: #D99A7A;
     --color-support: #E8D5B5;
     --color-text: #30454B;
+    --color-primary-dark: #3D5A4E;
+    --color-accent-dark: #7F4527;
 }
 
 * {
@@ -26,14 +28,24 @@ body {
 }
 
 a {
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     text-decoration: none;
 }
 
 a:hover,
 a:focus {
-    color: var(--color-accent);
+    color: var(--color-accent-dark);
     text-decoration: underline;
+}
+
+a:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
+}
+
+button:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
 }
 
 .site-header {
@@ -72,7 +84,7 @@ a:focus {
 .nav-toggle {
     align-self: flex-start;
     padding: 0.5rem 1rem;
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     color: var(--color-background);
     border: none;
     border-radius: 4px;
@@ -98,7 +110,7 @@ a:focus {
 
 .site-nav a:hover,
 .site-nav a:focus {
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
 }
 
 .site-search {
@@ -124,7 +136,7 @@ a:focus {
     flex: 1 1 12rem;
     min-width: 0;
     padding: 0.45rem 0.75rem;
-    border: 1px solid var(--color-support);
+    border: 1px solid var(--color-primary-dark);
     border-radius: 6px;
     background-color: var(--color-background);
     color: var(--color-text);
@@ -132,14 +144,14 @@ a:focus {
 }
 
 .site-search__input:focus {
-    border-color: var(--color-primary);
-    outline: 2px solid var(--color-primary);
+    border-color: var(--color-primary-dark);
+    outline: 2px solid var(--color-primary-dark);
     outline-offset: 1px;
 }
 
 .site-search__button {
     padding: 0.5rem 1.25rem;
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     color: var(--color-background);
     border: none;
     border-radius: 6px;
@@ -150,7 +162,7 @@ a:focus {
 
 .site-search__button:hover,
 .site-search__button:focus {
-    background-color: var(--color-accent);
+    background-color: var(--color-accent-dark);
 }
 
 .site-main {
@@ -168,7 +180,7 @@ a:focus {
 
 .hero__brand {
     margin: 0;
-    color: var(--color-accent);
+    color: var(--color-accent-dark);
     font-size: 1.1rem;
     letter-spacing: 0.2rem;
     text-transform: uppercase;
@@ -183,7 +195,7 @@ a:focus {
 
 .hero__tagline {
     margin: 0.75rem 0 0;
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     font-size: 1.15rem;
     font-weight: bold;
 }
@@ -248,7 +260,7 @@ a:focus {
 .services__link {
     display: inline-block;
     padding: 0.7rem 1.4rem;
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     color: var(--color-background);
     border-radius: 6px;
     font-weight: bold;
@@ -256,7 +268,7 @@ a:focus {
 
 .services__link:hover,
 .services__link:focus {
-    background-color: var(--color-accent);
+    background-color: var(--color-accent-dark);
     color: var(--color-background);
     text-decoration: none;
 }
@@ -299,7 +311,7 @@ a:focus {
 
 .about__block-title {
     margin: 0 0 0.5rem;
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     font-size: 1.3rem;
 }
 
@@ -348,7 +360,7 @@ a:focus {
 
 .services-page__block-title {
     margin: 0 0 0.5rem;
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     font-size: 1.3rem;
 }
 
@@ -511,7 +523,7 @@ a:focus {
 
 .search-page__status {
     margin: 0 0 1.5rem;
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     font-size: 1.1rem;
     text-align: justify;
     hyphens: none;
@@ -539,13 +551,21 @@ a:focus {
 }
 
 .search-result__title a {
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
 }
 
 .search-result__snippet {
     margin: 0;
     text-align: justify;
     hyphens: none;
+}
+
+.search-page__back {
+    margin: 2rem 0 0;
+}
+
+.search-page__back a {
+    font-weight: bold;
 }
 
 .appointment {
@@ -561,7 +581,7 @@ a:focus {
 }
 
 .appointment--confirmation .appointment__title {
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
 }
 
 .appointment__form {
@@ -598,7 +618,7 @@ a:focus {
 
 .appointment__panel-title {
     margin: 0;
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     font-size: 1.2rem;
 }
 
@@ -622,7 +642,7 @@ a:focus {
     font-family: inherit;
     font-size: 1.2rem;
     color: var(--color-background);
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -650,7 +670,7 @@ a:focus {
     margin-bottom: 0.35rem;
     font-size: 0.8rem;
     font-weight: bold;
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     text-align: center;
 }
 
@@ -674,16 +694,21 @@ a:focus {
 
 .appointment__calendar-day.is-bookable {
     background-color: var(--color-secondary);
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-dark);
     font-weight: bold;
     cursor: pointer;
 }
 
-.appointment__calendar-day.is-bookable:hover,
+.appointment__calendar-day.is-bookable:hover {
+    background-color: var(--color-accent-dark);
+    color: var(--color-background);
+}
+
 .appointment__calendar-day.is-bookable:focus-visible {
-    background-color: var(--color-accent);
-    color: var(--color-text);
-    outline: none;
+    background-color: var(--color-accent-dark);
+    color: var(--color-background);
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
 }
 
 .appointment__calendar-day.is-disabled {
@@ -702,9 +727,9 @@ a:focus {
 }
 
 .appointment__calendar-day.is-selected {
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     color: var(--color-background);
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-dark);
 }
 
 .appointment__calendar-legend {
@@ -728,7 +753,7 @@ a:focus {
     width: 0.9rem;
     height: 0.9rem;
     border-radius: 4px;
-    border: 1px solid var(--color-primary);
+    border: 1px solid var(--color-primary-dark);
 }
 
 .appointment__legend-item--free::before {
@@ -744,14 +769,14 @@ a:focus {
 .appointment__hours-block {
     margin: 0;
     padding: 0.75rem;
-    border: 1px solid var(--color-primary);
+    border: 1px solid var(--color-primary-dark);
     border-radius: 12px;
 }
 
 .appointment__hours-legend {
     padding: 0 0.4rem;
     font-weight: bold;
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
 }
 
 .appointment__hours-list {
@@ -768,19 +793,19 @@ a:focus {
     font-size: 0.95rem;
     color: var(--color-text);
     background-color: var(--color-secondary);
-    border: 1px solid var(--color-primary);
+    border: 1px solid var(--color-primary-dark);
     border-radius: 999px;
     cursor: pointer;
 }
 
 .appointment__hour:has(.appointment__hour-input:checked) {
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     color: var(--color-background);
 }
 
 .appointment__hour-input {
     margin: 0;
-    accent-color: var(--color-accent);
+    accent-color: var(--color-accent-dark);
 }
 
 .appointment__hour--taken {
@@ -797,7 +822,7 @@ a:focus {
     font-size: 0.75rem;
     font-weight: bold;
     color: var(--color-background);
-    background-color: var(--color-accent);
+    background-color: var(--color-accent-dark);
     border-radius: 999px;
     text-decoration: none;
     line-height: 1.4;
@@ -814,28 +839,28 @@ a:focus {
     font-size: 1rem;
     color: var(--color-text);
     background-color: var(--color-background);
-    border: 1px solid var(--color-primary);
+    border: 1px solid var(--color-primary-dark);
     border-radius: 8px;
 }
 
 .appointment__input:focus {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-primary-dark);
     outline-offset: 1px;
 }
 
 .appointment__field--error .appointment__input {
-    border-color: var(--color-accent);
+    border-color: var(--color-accent-dark);
 }
 
 .appointment__error {
-    color: var(--color-accent);
+    color: var(--color-accent-dark);
     font-size: 0.9rem;
     text-align: justify;
     hyphens: none;
 }
 
 .appointment__hint {
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     font-size: 0.95rem;
     text-align: justify;
     hyphens: none;
@@ -859,7 +884,7 @@ a:focus {
     font-size: 1rem;
     font-weight: bold;
     color: var(--color-background);
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -928,8 +953,12 @@ a:focus {
 }
 
 .placeholder__message {
-    color: var(--color-primary);
+    color: var(--color-primary-dark);
     font-size: 1.1rem;
+}
+
+.placeholder__back {
+    margin: 2rem 0 0;
 }
 
 .placeholder__back a {
