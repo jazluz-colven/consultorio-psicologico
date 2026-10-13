@@ -176,7 +176,8 @@ aporte.
   contenido+servicio, `33bee8f` plantilla+CSS+tests, evidencia+fix en el
   cierre. **Aceptada por la usuaria 2026-10-12 (T17)**.
 - **Pulido contraste AA + back-links + foco (2026-10-12, rama
-  `feature/contraste-aa` pusheada, PENDIENTE de aceptación/merge)**: revisión frontend
+  `feature/contraste-aa` **ACEPTADA POR LA USUARIA Y MERGEADA A `main`**
+  (ff → `5c3847d`))**: revisión frontend
   encontró contraste <WCAG AA (botones/enlaces 2.77, hover 2.14, hero 1.55,
   errores 2.14) y `outline: none` en el calendario. Solución: **2 tonos
   funcionales derivados** `--color-primary-dark: #3D5A4E` y
@@ -342,9 +343,8 @@ aporte.
   v1 y **ampliación** (cajón+iconos+mapa RF-7, `feature/hu-015-diseno`)
   **mergeadas a `main`** (`e034c34`, fast-forward).
 - Servidor de revisión: http://127.0.0.1:5000/contacto (ampliación HU-015).
-- **`feature/contraste-aa` PUSHEADA 2026-10-12** (3 commits, sincronizada con
-  `origin`): **PENDIENTE aceptación** de la usuaria y merge a `main`
-  (contraste AA, back-links, foco; QA PASS en `qa-pulido-contraste-aa.md`;
-  PR: `github.com/jazluz-colven/consultorio-psicologico/pull/new/feature/contraste-aa`).
+- **Pulido contraste AA CERRADO** (2026-10-12): aceptado por la usuaria
+  («Me gusta. Acepto.») y mergeado a `main` (ff → `5c3847d`); QA PASS en
+  `qa-pulido-contraste-aa.md`. Sin pendientes abiertos de esta tarea.
 - Posible HU futura (si la usuaria lo pide): transición de estados de la cita
   (p. ej. cancelación — Spec 010) — requiere spec.
