@@ -175,6 +175,21 @@ aporte.
   `.contact__row` + `min-width: 0`. Commits: `2bd6f53` docs, `923f9b6`
   contenido+servicio, `33bee8f` plantilla+CSS+tests, evidencia+fix en el
   cierre. **Aceptada por la usuaria 2026-10-12 (T17)**.
+- **Pulido contraste AA + back-links + foco (2026-10-12, rama
+  `feature/contraste-aa`, PENDIENTE de push/aceptación)**: revisión frontend
+  encontró contraste <WCAG AA (botones/enlaces 2.77, hover 2.14, hero 1.55,
+  errores 2.14) y `outline: none` en el calendario. Solución: **2 tonos
+  funcionales derivados** `--color-primary-dark: #3D5A4E` y
+  `--color-accent-dark: #7F4527` (≥4.5:1 sobre marfil Y verde agua; decisión
+  en `docs/design-contrast.md`, tabla de paleta actualizada en `AGENTS.md`).
+  A3: `.search-page__back` + `.placeholder__back` (margen/negrita). A2:
+  foco `2px solid #30454B` en calendario/inputs/enlaces/botones. Nuevos
+  `tests/test_contraste.py` (5 TC) y `expected_content.PALETTE` con 8 hex.
+  **Suite 187 PASS / 0 FAIL**; 12 capturas CDP sin desbordes en
+  `docs/evidencias/pulido-contraste-aa/` (+ qa PASS). Specs no tocados
+  (los textos «6 hex» de planes 001-006/015/016 quedan superados por la
+  decisión). **Lección**: `:focus-visible` no matchea con `element.focus()`
+  de script; verificar con `Input.dispatchKeyEvent` (Tab) por CDP.
 
 ## Decisiones (y por qué)
 - **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
@@ -327,5 +342,7 @@ aporte.
   v1 y **ampliación** (cajón+iconos+mapa RF-7, `feature/hu-015-diseno`)
   **mergeadas a `main`** (`e034c34`, fast-forward).
 - Servidor de revisión: http://127.0.0.1:5000/contacto (ampliación HU-015).
+- **`feature/contraste-aa` PENDIENTE**: push + aceptación de la usuaria
+  (contraste AA, back-links, foco; QA PASS en `qa-pulido-contraste-aa.md`).
 - Posible HU futura (si la usuaria lo pide): transición de estados de la cita
   (p. ej. cancelación — Spec 010) — requiere spec.
