@@ -149,13 +149,20 @@ Fondo — Marfil	Marfil	#F7F3EA	Fondo principal
 Acento — Terracota	Terracota	#D99A7A	Énfasis, llamadas de atención y elementos destacados
 Apoyo — Arena	Arena	#E8D5B5	Fondos complementarios y elementos decorativos
 Texto — Azul grisáceo	Azul grisáceo oscuro	#30454B	Texto principal, títulos y elementos de alta legibilidad
+Funcional — Salvia oscura	Salvia oscura	#3D5A4E	Texto de enlaces/títulos de color, fondos de botones, bordes y focos (derivado de #789B8A; ver docs/design-contrast.md)
+Funcional — Terracota oscura	Terracota oscura	#7F4527	Hover de enlaces/botones, errores, badge «Ocupado», foco del calendario (derivado de #D99A7A; ver docs/design-contrast.md)
 
 Reglas de aplicación
-#789B8A debe ser el color principal de acciones y navegación.
+#789B8A debe ser el color principal de acciones y navegación (superficies; el
+texto y los rellenos que llevan texto usan la variante funcional #3D5A4E para
+cumplir contraste AA).
 #F7F3EA debe utilizarse como fondo principal cuando corresponda.
 #30454B debe utilizarse como color base para textos y títulos.
 #B8D8CE y #E8D5B5 deben utilizarse como colores secundarios de apoyo.
 #D99A7A debe reservarse para acentos y elementos que necesiten énfasis.
+#3D5A4E y #7F4527 son tonos funcionales derivados (accesibilidad AA, 2026-10-12):
+no son colores de marca nuevos; su rol y ratios están fijados en
+docs/design-contrast.md y verificados por tests/test_contraste.py.
 
 No introducir nuevos colores de marca sin una decisión de diseño documentada.
 Los colores nuevos necesarios para estados funcionales deben mantener
