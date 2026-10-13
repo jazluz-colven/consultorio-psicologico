@@ -176,7 +176,7 @@ aporte.
   contenido+servicio, `33bee8f` plantilla+CSS+tests, evidencia+fix en el
   cierre. **Aceptada por la usuaria 2026-10-12 (T17)**.
 - **Pulido contraste AA + back-links + foco (2026-10-12, rama
-  `feature/contraste-aa`, PENDIENTE de push/aceptación)**: revisión frontend
+  `feature/contraste-aa` pusheada, PENDIENTE de aceptación/merge)**: revisión frontend
   encontró contraste <WCAG AA (botones/enlaces 2.77, hover 2.14, hero 1.55,
   errores 2.14) y `outline: none` en el calendario. Solución: **2 tonos
   funcionales derivados** `--color-primary-dark: #3D5A4E` y
@@ -342,7 +342,9 @@ aporte.
   v1 y **ampliación** (cajón+iconos+mapa RF-7, `feature/hu-015-diseno`)
   **mergeadas a `main`** (`e034c34`, fast-forward).
 - Servidor de revisión: http://127.0.0.1:5000/contacto (ampliación HU-015).
-- **`feature/contraste-aa` PENDIENTE**: push + aceptación de la usuaria
-  (contraste AA, back-links, foco; QA PASS en `qa-pulido-contraste-aa.md`).
+- **`feature/contraste-aa` PUSHEADA 2026-10-12** (3 commits, sincronizada con
+  `origin`): **PENDIENTE aceptación** de la usuaria y merge a `main`
+  (contraste AA, back-links, foco; QA PASS en `qa-pulido-contraste-aa.md`;
+  PR: `github.com/jazluz-colven/consultorio-psicologico/pull/new/feature/contraste-aa`).
 - Posible HU futura (si la usuaria lo pide): transición de estados de la cita
   (p. ej. cancelación — Spec 010) — requiere spec.
