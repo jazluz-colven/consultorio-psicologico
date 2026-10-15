@@ -144,7 +144,7 @@
   demo pasos a–e con receptor stdlib local; servidor en
   http://127.0.0.1:5000).
 
-- [ ] **T14 — Commits por fase, Push y `MEMORY.md` (plan §8.11)** `[trazabilidad]`
+- [x] **T14 — Commits por fase, Push y `MEMORY.md` (plan §8.11)** `[trazabilidad]`
   Commits por fase (spec+plan+task+espejo → contenido → persistencia+migración
   → servicio+disparo → tests → evidencia+MEMORY) citando HU-010/Spec 010;
   nunca claves, tokens ni PII en repo o memoria.
@@ -152,6 +152,9 @@
   `git rev-parse origin/feature/hu-010` y `MEMORY.md` registra HU-010
   (estado `cancelled`, liberación de horario con índice parcial, evento
   `appointment.cancellation_email`, WhatsApp pendiente de Spec 009).
+  **Cumplido 2026-10-13**: `6eac5c6` contenido, `8926931` persistencia,
+  `d419d1e` servicio, `b2b31ee` tests, `9010825` evidencia; push con upstream
+  (`origin/feature/hu-010`); MEMORY actualizada con el estado de HU-010.
 
 - [ ] **T15 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `qa-hu-010.md` está marcado con

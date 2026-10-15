@@ -189,8 +189,27 @@ aporte.
   **Suite 187 PASS / 0 FAIL**; 12 capturas CDP sin desbordes en
   `docs/evidencias/pulido-contraste-aa/` (+ qa PASS). Specs no tocados
   (los textos «6 hex» de planes 001-006/015/016 quedan superados por la
-  decisión). **Lección**: `:focus-visible` no matchea con `element.focus()`
-  de script; verificar con `Input.dispatchKeyEvent` (Tab) por CDP.
+   decisión). **Lección**: `:focus-visible` no matchea con `element.focus()`
+   de script; verificar con `Input.dispatchKeyEvent` (Tab) por CDP.
+- **HU-010 (Spec 010 enmendada, notificar cancelación) IMPLEMENTADA — QA PASS,
+  PENDIENTE DE ACEPTACIÓN** (2026-10-13, rama `feature/hu-010`, push 2026-10-13):
+  transición `confirmed → cancelled` vía `cancel_appointment()` (servicio
+  interno **sin UI**, Q1); notificación por correo vía webhook n8n (evento
+  **`appointment.cancellation_email` v1**, `event_id` determinista +
+  `UNIQUE(event_id)` + UPDATE condicional — dedup D6; PII mínima
+  `recipient`+`message` D9; best-effort nunca revierte D7; **sin env vars
+  nuevas** D8). **Q4: el horario cancelado se libera** — el `UNIQUE (service,
+  date, time)` inline migró a **índice único parcial**
+  `ux_appointments_slot_open … WHERE status <> 'cancelled'` (backup
+  `.bak-<timestamp>`, aborto ante duplicados activos, idempotente — D4/D5);
+  disponibilidad excluye `cancelled`. Literales contractuales («Cita cancelada
+  —», «Cancelada», pie de reagendado) + espejo. 17 TC nuevos (TC-010-001…017;
+  018 = corrida de suite); suite **204 PASS / 0 FAIL**. QA PASS en
+  `docs/evidencias/hu-010/qa-hu-010.md` (demo pasos a–e con receptor stdlib
+  local). Commits: `9b6a850` docs, `6eac5c6` contenido, `8926931` persistencia,
+  `d419d1e` servicio, `b2b31ee` tests, `9010825` evidencia. **TC-004-004 y
+  TC-006-013 adaptados** al índice parcial (spec-backed, sin relajar garantías).
+  WhatsApp pendiente de Spec 009. Pendiente: aceptación (T15) + merge a `main`.
 
 ## Decisiones (y por qué)
 - **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
@@ -346,5 +365,15 @@ aporte.
 - **Pulido contraste AA CERRADO** (2026-10-12): aceptado por la usuaria
   («Me gusta. Acepto.») y mergeado a `main` (ff → `5c3847d`); QA PASS en
   `qa-pulido-contraste-aa.md`. Sin pendientes abiertos de esta tarea.
-- Posible HU futura (si la usuaria lo pide): transición de estados de la cita
-  (p. ej. cancelación — Spec 010) — requiere spec.
+- **HU-010 QA PASS, pendiente de aceptación** (2026-10-13): rama
+  `feature/hu-010` **empujada** (`9010825`); falta aceptación de la usuaria
+  (T15, checkbox en `qa-hu-010.md`) y merge a `main`.
+- **Spec 017 APROBADA por la usuaria** (2026-10-13, `specs/017_cancelar-cita-paciente/`):
+  el **paciente cancela su propia cita**; dudas cerradas — Q1 identificación
+  `#id` + número de documento; Q2 mínimo **3 horas** de antelación; Q3 pantalla
+  de confirmación con resumen previa; Q4 pantalla de éxito propia; Q5 botón
+  «Cancelar cita» en `/citas/confirmada/<id>`; Q6 la cita cancelada muestra
+  estado «Cancelada»; Q7 el correo de confirmación llevará **enlace directo** a
+  la cancelación (**enmienda coordinada de la Spec 008** registrada). Pendiente:
+  `plan.md` + `task.md` + rama `feature/hu-017` **tras el merge de HU-010**
+  (reutiliza `cancel_appointment()`).
