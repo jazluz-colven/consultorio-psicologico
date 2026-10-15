@@ -3,7 +3,7 @@ import sqlite3
 import pytest
 
 from consultorio.persistence import appointments_repository as repo
-from consultorio.persistence.database import SCHEMA, get_connection, init_db
+from consultorio.persistence.database import get_connection, init_db
 
 VALID_DATA = {
     "document_type": "CC",
@@ -53,7 +53,18 @@ def test_init_db_crea_appointments_con_11_columnas_y_unique(database_path) -> No
                 break
         else:
             pytest.fail("No existe UNIQUE (service, date, time)")
-        assert "UNIQUE (service, date, time)" in SCHEMA
+        # HU-010 (spec 010 amended): uniqueness lives in a PARTIAL unique index
+        # that ignores cancelled appointments, not in an inline constraint.
+        index_sql = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = ?",
+            ("ux_appointments_slot_open",),
+        ).fetchone()["sql"]
+        assert "status <> 'cancelled'" in index_sql
+        table_sql = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table'"
+            " AND name = 'appointments'"
+        ).fetchone()["sql"]
+        assert "UNIQUE" not in table_sql.upper()
 
 
 def test_insert_persiste_confirmed_y_get_recupera_todos_los_campos(

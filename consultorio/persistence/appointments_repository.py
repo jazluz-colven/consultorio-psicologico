@@ -83,6 +83,7 @@ def is_slot_taken(
             """
             SELECT 1 FROM appointments
             WHERE service = ? AND date = ? AND time = ?
+              AND status <> 'cancelled'
             """,
             (service, date, time),
         ).fetchone()
@@ -96,7 +97,7 @@ def list_booked_times(
         rows = connection.execute(
             """
             SELECT time FROM appointments
-            WHERE service = ? AND date = ?
+            WHERE service = ? AND date = ? AND status <> 'cancelled'
             ORDER BY time
             """,
             (service, date),
@@ -112,6 +113,7 @@ def list_booked_times_by_date(
             """
             SELECT date, time FROM appointments
             WHERE service = ? AND date >= ? AND date <= ?
+              AND status <> 'cancelled'
             ORDER BY date, time
             """,
             (service, date_from, date_to),
@@ -120,3 +122,24 @@ def list_booked_times_by_date(
     for row in rows:
         booked.setdefault(row["date"], []).append(row["time"])
     return booked
+
+
+def update_appointment_status(
+    appointment_id: int, new_status: str, database_path: str | Path
+) -> Appointment | None:
+    """Atomically move an appointment out of 'confirmed' (HU-010).
+
+    Returns the updated appointment, or None when the row does not exist or is
+    not 'confirmed' (already cancelled or unknown id) — RF-4/CL-1/CL-4.
+    """
+    with get_connection(database_path) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE appointments SET status = ?
+            WHERE id = ? AND status = 'confirmed'
+            """,
+            (new_status, appointment_id),
+        )
+        if cursor.rowcount == 0:
+            return None
+    return get_appointment_by_id(appointment_id, database_path)

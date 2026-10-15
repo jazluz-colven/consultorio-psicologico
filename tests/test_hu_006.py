@@ -125,7 +125,14 @@ def test_tc_006_013_esquema_unico_y_diagnostico_sin_duplicados(app, client) -> N
         schema = connection.execute(
             "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'appointments'"
         ).fetchone()[0]
-        assert "UNIQUE (service, date, time)" in schema
+        assert "UNIQUE" not in schema.upper()
+        index = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'index'"
+            " AND name = 'ux_appointments_slot_open'"
+        ).fetchone()
+        # HU-010 (spec 010 amended): the uniqueness moved from the table
+        # constraint to a partial unique index that ignores cancelled rows.
+        assert index is not None and "status <> 'cancelled'" in index[0]
         duplicates = connection.execute(DIAGNOSTIC).fetchall()
     finally:
         connection.close()
