@@ -1,0 +1,92 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "event_id": "appointment.confirmed:1:v1",
+      "event_type": "appointment.confirmed",
+      "event_version": 1,
+      "appointment_id": 1,
+      "status": "sent",
+      "detail": null,
+      "created_at": "2026-10-15 00:33:44",
+      "sent_at": "2026-10-15 00:33:44"
+    },
+    {
+      "id": 2,
+      "event_id": "appointment.confirmation_email:1:v1",
+      "event_type": "appointment.confirmation_email",
+      "event_version": 1,
+      "appointment_id": 1,
+      "status": "sent",
+      "detail": null,
+      "created_at": "2026-10-15 00:33:44",
+      "sent_at": "2026-10-15 00:33:44"
+    },
+    {
+      "id": 3,
+      "event_id": "appointment.cancellation_email:1:v1",
+      "event_type": "appointment.cancellation_email",
+      "event_version": 1,
+      "appointment_id": 1,
+      "status": "sent",
+      "detail": null,
+      "created_at": "2026-10-15 00:33:44",
+      "sent_at": "2026-10-15 00:33:44"
+    },
+    {
+      "id": 4,
+      "event_id": "appointment.confirmed:2:v1",
+      "event_type": "appointment.confirmed",
+      "event_version": 1,
+      "appointment_id": 2,
+      "status": "sent",
+      "detail": null,
+      "created_at": "2026-10-15 00:33:44",
+      "sent_at": "2026-10-15 00:33:44"
+    },
+    {
+      "id": 5,
+      "event_id": "appointment.confirmation_email:2:v1",
+      "event_type": "appointment.confirmation_email",
+      "event_version": 1,
+      "appointment_id": 2,
+      "status": "sent",
+      "detail": null,
+      "created_at": "2026-10-15 00:33:44",
+      "sent_at": "2026-10-15 00:33:44"
+    },
+    {
+      "id": 6,
+      "event_id": "appointment.confirmed:3:v1",
+      "event_type": "appointment.confirmed",
+      "event_version": 1,
+      "appointment_id": 3,
+      "status": "failed",
+      "detail": "Servicio de automatización no disponible.",
+      "created_at": "2026-10-15 00:33:44",
+      "sent_at": null
+    },
+    {
+      "id": 7,
+      "event_id": "appointment.confirmation_email:3:v1",
+      "event_type": "appointment.confirmation_email",
+      "event_version": 1,
+      "appointment_id": 3,
+      "status": "failed",
+      "detail": "Servicio de automatización no disponible.",
+      "created_at": "2026-10-15 00:33:46",
+      "sent_at": null
+    },
+    {
+      "id": 8,
+      "event_id": "appointment.cancellation_email:3:v1",
+      "event_type": "appointment.cancellation_email",
+      "event_version": 1,
+      "appointment_id": 3,
+      "status": "failed",
+      "detail": "Servicio de automatización no disponible.",
+      "created_at": "2026-10-15 00:33:49",
+      "sent_at": null
+    }
+  ]
+}

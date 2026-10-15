@@ -599,10 +599,12 @@ Evidencia: payload del evento cancellation_email capturado + dump de automation_
       y su migración (Q4) y el contenido literal del aviso — **cumplida
       2026-10-13** («Contratos fijados (enmienda 2026-10-13)»; suite verificada
       en 187 PASS / 0 FAIL).
-- [ ] Creación de `feature/hu-010` desde `main` (Q5) y verificación del baseline
-      **187 PASS / 0 FAIL**.
-- [ ] Espejo + `appointment_content`/`email_content` + persistencia (estado,
-      índice parcial, migración con respaldo) con commits por fase.
+- [x] Creación de `feature/hu-010` desde `main` (Q5) y verificación del baseline
+      **187 PASS / 0 FAIL** — **cumplida 2026-10-13** (commit `9b6a850`).
+- [x] Espejo + `appointment_content`/`email_content` + persistencia (estado,
+      índice parcial, migración con respaldo) — **cumplida 2026-10-13** (suite
+      187/187; dos aserciones de esquema de HU-004/006 adaptadas al índice
+      parcial según la enmienda; los commits por fase quedan en T14).
 - [ ] Servicio `cancel_appointment()` + `send_cancellation()` con commits por
       fase.
 - [ ] Tests §6 en verde: **204 PASS / 0 FAIL** con los 187 previos intactos.
