@@ -85,3 +85,13 @@ Todos los RF con test en verde y demo manual de una reserva con confirmación po
 ## Dudas abiertas
 - [RESUELTA — Q1] Contenido completo y formato del mensaje → fijado en «Contratos fijados» (multipart texto + HTML con paleta).
 - [RESUELTA — Q2] Comportamiento ante un fallo de entrega → fijado en «Contratos fijados» (best-effort, sin reintentos).
+
+## Enmienda 2026-10-13 — enlace de cancelación en el correo (Spec 017)
+
+Por decisión de la usuaria (Q7 de la Spec 017, 2026-10-13), el correo de
+confirmación incluirá un **enlace directo a la cancelación de la cita**. El
+formato literal del enlace (ruta y copy) se fija en el `plan.md` de la Spec
+017 junto con el resto de literales del flujo de cancelación. Esta enmienda
+no altera los literales ya contractuales de esta spec (asunto, cabecera, pie,
+estado); se implementará junto con la HU-017 y los tests de HU-008 siguen
+vigentes tal como están.
