@@ -333,3 +333,24 @@ CONTACT_MAP_LINK_URL = (
 CONTACT_MAP_LINK_LABEL = "Abrir en Google Maps"
 
 CONTACT_MAP_FRAME_TITLE = "Ubicación del consultorio en Google Maps"
+
+# --- HU-010: Notificar la cancelación de una cita (espejo único de la spec 010) ---
+
+STATUS_CANCELLED = "cancelled"
+
+STATUS_CANCELLED_LABEL = "Cancelada"
+
+CANCELLATION_EMAIL_SUBJECT_TEMPLATE = (
+    "Cita cancelada — {service_name} · {date_label} · {time}"
+)
+
+CANCELLATION_EMAIL_BODY_HEADER = (
+    "Tu cita ha sido cancelada. Estos son los datos de la cita cancelada:"
+)
+
+CANCELLATION_EMAIL_FOOTER = (
+    "Si deseas agendar una nueva cita, puedes hacerlo desde la página "
+    "del consultorio o contactándote con nosotros."
+)
+
+DETAIL_CANCELLATION_NOT_CONFIGURED = "Envío de correo no configurado."

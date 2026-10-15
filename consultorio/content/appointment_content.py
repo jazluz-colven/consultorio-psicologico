@@ -52,6 +52,10 @@ CONFIRMATION_TITLE: str = "Cita registrada"
 STATUS_CONFIRMED: str = "confirmed"
 STATUS_CONFIRMED_LABEL: str = "Confirmada"
 
+# HU-010: cancellation state (spec 010, amended 2026-10-13)
+STATUS_CANCELLED: str = "cancelled"
+STATUS_CANCELLED_LABEL: str = "Cancelada"
+
 BOOKING_HELPER: str = (
     "Si el paciente es menor de edad, registra los datos del "
     "representante con su documento; si es extranjero, puede usar "

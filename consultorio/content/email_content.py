@@ -64,6 +64,22 @@ DETAIL_INVALID_RECIPIENT: str = (
     "Dirección de correo del paciente ausente o no válida."
 )
 
+# --- Cancellation e-mail (HU-010, spec 010 amended 2026-10-13) ---
+# Contractual copy: «Cita cancelada» clearly states the cancellation (RF-2);
+# labels, greeting, sender and the HTML template are reused from HU-008.
+
+CANCELLATION_EMAIL_SUBJECT_TEMPLATE: str = (
+    "Cita cancelada — {service_name} · {date_label} · {time}"
+)
+CANCELLATION_EMAIL_BODY_HEADER: str = (
+    "Tu cita ha sido cancelada. Estos son los datos de la cita cancelada:"
+)
+CANCELLATION_EMAIL_FOOTER: str = (
+    "Si deseas agendar una nueva cita, puedes hacerlo desde la página "
+    "del consultorio o contactándote con nosotros."
+)
+DETAIL_CANCELLATION_NOT_CONFIGURED: str = "Envío de correo no configurado."
+
 # HTML template (Q1: Serenity Natural palette, inline styles, no remote assets)
 EMAIL_HTML_TEMPLATE: str = """<!DOCTYPE html>
 <html lang="es">
