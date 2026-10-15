@@ -1,4 +1,5 @@
-"""Booking rules: validate, check availability and register appointments."""
+"""Booking rules: validate, check availability, register and cancel
+appointments (HU-004…HU-008, HU-010)."""
 
 import re
 import sqlite3
@@ -23,6 +24,7 @@ from consultorio.content.appointment_content import (
     MSG_REQUIRED_PHONE,
     MSG_REQUIRED_SERVICE,
     MSG_REQUIRED_TIME,
+    STATUS_CANCELLED,
 )
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import appointments_repository as repository
@@ -30,6 +32,8 @@ from consultorio.persistence.appointments_repository import Appointment
 from consultorio.services import automation_service, email_service
 
 SLOT_TAKEN: str = "slot_taken"
+APPOINTMENT_NOT_FOUND: str = "appointment_not_found"
+ALREADY_CANCELLED: str = "already_cancelled"
 
 _DOCUMENT_NUMBER_RE = re.compile(r"^[0-9]{4,20}$")
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -149,7 +153,8 @@ def create_booking(
     try:
         appointment = repository.insert_appointment(data, database_path)
     except sqlite3.IntegrityError:
-        # UNIQUE (service, date, time) enforced at the persistence point
+        # UNIQUE (service, date, time) on live rows enforced by the partial
+        # index at the persistence point (spec 010)
         return SLOT_TAKEN
     except sqlite3.OperationalError:
         # lock/busy under concurrency: user-facing rejection, never a raw 500
@@ -172,6 +177,38 @@ def create_booking(
         automation_auth_header,
     )
     return appointment
+
+
+def cancel_appointment(
+    appointment_id: int,
+    database_path: str | Path,
+    automation_url: str = "",
+    automation_timeout: float = 3.0,
+    automation_auth_header: str = "",
+) -> Appointment | str:
+    """Atomically move a confirmed appointment to cancelled (spec 010 RF-1).
+
+    Returns the updated appointment, or the APPOINTMENT_NOT_FOUND /
+    ALREADY_CANCELLED sentinel. The cancellation e-mail is best-effort and is
+    only attempted on the first successful transition (RF-4, D6/D7).
+    """
+    appointment = repository.get_appointment_by_id(appointment_id, database_path)
+    if appointment is None:
+        return APPOINTMENT_NOT_FOUND
+    updated = repository.update_appointment_status(
+        appointment_id, STATUS_CANCELLED, database_path
+    )
+    if updated is None:
+        # already cancelled / concurrent cancellation: no second notification
+        return ALREADY_CANCELLED
+    email_service.send_cancellation(
+        updated,
+        database_path,
+        automation_url,
+        automation_timeout,
+        automation_auth_header,
+    )
+    return updated
 
 
 def is_valid_iso_date(raw_date: str) -> bool:
