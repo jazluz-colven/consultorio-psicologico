@@ -605,14 +605,20 @@ Evidencia: payload del evento cancellation_email capturado + dump de automation_
       índice parcial, migración con respaldo) — **cumplida 2026-10-13** (suite
       187/187; dos aserciones de esquema de HU-004/006 adaptadas al índice
       parcial según la enmienda; los commits por fase quedan en T14).
-- [ ] Servicio `cancel_appointment()` + `send_cancellation()` con commits por
-      fase.
-- [ ] Tests §6 en verde: **204 PASS / 0 FAIL** con los 187 previos intactos.
-- [ ] Demo manual §6.2 (+ live n8n si la usuaria lo indica) + evidencia en
-      `docs/evidencias/hu-010/`.
-- [ ] Informe QA `qa-hu-010.md` con PASS/FAIL por TC y checkbox de aceptación.
-- [ ] Commit/Push por fases, `MEMORY.md` y aceptación de la HU.
-- [ ] Servidor de revisión en marcha (AGENTS.md) y URL comunicada.
+- [x] Servicio `cancel_appointment()` + `send_cancellation()` con commits por
+      fase — **cumplido 2026-10-13** (`d419d1e`).
+- [x] Tests §6 en verde: **204 PASS / 0 FAIL** con los 187 previos intactos —
+      **cumplido 2026-10-13** (commit `b2b31ee`).
+- [x] Demo manual §6.2 (+ live n8n si la usuaria lo indica) + evidencia en
+      `docs/evidencias/hu-010/` — **cumplida 2026-10-13** (demo pasos a–e con
+      receptor stdlib local; live n8n pendiente si la usuaria lo pide).
+- [x] Informe QA `qa-hu-010.md` con PASS/FAIL por TC y checkbox de aceptación
+      — **cumplido 2026-10-13** (PASS 18/18; aceptación de la usuaria el
+      2026-10-13).
+- [x] Commit/Push por fases, `MEMORY.md` y aceptación de la HU — **cumplido
+      2026-10-13** (commits `6eac5c6`…`d968ae7`, push sincronizado).
+- [x] Servidor de revisión en marcha (AGENTS.md) y URL comunicada — **cumplido
+      2026-10-13** (http://127.0.0.1:5000).
 
 ---
 

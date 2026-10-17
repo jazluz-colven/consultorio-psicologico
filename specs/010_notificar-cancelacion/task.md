@@ -156,6 +156,7 @@
   `d419d1e` servicio, `b2b31ee` tests, `9010825` evidencia; push con upstream
   (`origin/feature/hu-010`); MEMORY actualizada con el estado de HU-010.
 
-- [ ] **T15 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T15 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `qa-hu-010.md` está marcado con
   fecha y la §7.2 del plan queda íntegramente en `[x]`.
+  **Cumplido 2026-10-13** (aceptación registrada en `qa-hu-010.md`).

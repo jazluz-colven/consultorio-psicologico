@@ -191,9 +191,8 @@ aporte.
   (los textos «6 hex» de planes 001-006/015/016 quedan superados por la
    decisión). **Lección**: `:focus-visible` no matchea con `element.focus()`
    de script; verificar con `Input.dispatchKeyEvent` (Tab) por CDP.
-- **HU-010 (Spec 010 enmendada, notificar cancelación) IMPLEMENTADA — QA PASS,
-  PENDIENTE DE ACEPTACIÓN** (2026-10-13, rama `feature/hu-010`, push 2026-10-13):
-  transición `confirmed → cancelled` vía `cancel_appointment()` (servicio
+- **HU-010 (Spec 010 enmendada, notificar cancelación) ACEPTADA Y CERRADA**
+  (2026-10-13, rama `feature/hu-010`): transición `confirmed → cancelled` vía `cancel_appointment()` (servicio
   interno **sin UI**, Q1); notificación por correo vía webhook n8n (evento
   **`appointment.cancellation_email` v1**, `event_id` determinista +
   `UNIQUE(event_id)` + UPDATE condicional — dedup D6; PII mínima
@@ -209,7 +208,8 @@ aporte.
   local). Commits: `9b6a850` docs, `6eac5c6` contenido, `8926931` persistencia,
   `d419d1e` servicio, `b2b31ee` tests, `9010825` evidencia. **TC-004-004 y
   TC-006-013 adaptados** al índice parcial (spec-backed, sin relajar garantías).
-  WhatsApp pendiente de Spec 009. Pendiente: aceptación (T15) + merge a `main`.
+  WhatsApp pendiente de Spec 009. **Aceptada por la usuaria 2026-10-13 (T15)**;
+  merge a `main` autorizado.
 
 ## Decisiones (y por qué)
 - **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
@@ -365,9 +365,8 @@ aporte.
 - **Pulido contraste AA CERRADO** (2026-10-12): aceptado por la usuaria
   («Me gusta. Acepto.») y mergeado a `main` (ff → `5c3847d`); QA PASS en
   `qa-pulido-contraste-aa.md`. Sin pendientes abiertos de esta tarea.
-- **HU-010 QA PASS, pendiente de aceptación** (2026-10-13): rama
-  `feature/hu-010` **empujada** (`9010825`); falta aceptación de la usuaria
-  (T15, checkbox en `qa-hu-010.md`) y merge a `main`.
+- **HU-010 ACEPTADA Y CERRADA** (2026-10-13): rama `feature/hu-010` mergeada a
+  `main` (autorización de la usuaria); suite 204/204.
 - **Spec 017 APROBADA por la usuaria** (2026-10-13, `specs/017_cancelar-cita-paciente/`):
   el **paciente cancela su propia cita**; dudas cerradas — Q1 identificación
   `#id` + número de documento; Q2 mínimo **3 horas** de antelación; Q3 pantalla

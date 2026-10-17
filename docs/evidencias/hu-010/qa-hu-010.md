@@ -89,5 +89,7 @@ efímero fuera del repo; evidencia en `docs/evidencias/hu-010/`:
 
 **PASS** (18/18 TC; suite 204/204; demo manual completa con receptor stdlib).
 
-- [ ] **Aceptación de la HU** por la usuaria (pendiente: T15).
+- [x] **Aceptación de la HU** por la usuaria: **aceptada el 2026-10-13**
+  («Ya que no se realizará ninguna modificación a HU-010, la apruebo»;
+  sin cambios sobre la implementación validada).
 - [ ] Commits por fase + Push (T14, requiere aprobación explícita).
