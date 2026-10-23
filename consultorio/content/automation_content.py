@@ -3,6 +3,9 @@
 EVENT_TYPE: str = "appointment.confirmed"
 EVENT_VERSION: int = 1
 
+CANCELLED_EVENT_TYPE: str = "appointment.cancelled"
+CANCELLED_EVENT_VERSION: int = 1
+
 DETAIL_NOT_CONFIGURED: str = "Automatización no configurada."
 DETAIL_UNAVAILABLE: str = "Servicio de automatización no disponible."
 DETAIL_TIMEOUT: str = "Tiempo de espera agotado (timeout)."
