@@ -385,10 +385,23 @@ aporte.
   v1** (`event_id` determinista + UNIQUE, payload sin PII, emitido tras el
   commit **independiente del correo**, fallo trazado y reintentable sin
   duplicados, sin reintentos automáticos). n8n guardará el `calendar_event_id`
-  en su data table (sin tocar backend). Secuencia acordada: 010 ✓ → revisión
-  de referencias 017/018 → enmienda 007 (borrado GCal con 5 condiciones del
-  usuario: fila creación con `appointment_id`+`calendar_event_id`, búsqueda
-  por registro original no por event_id de cancelación, reintentos
-  idempotentes, gestión controlada de citas sin `calendar_event_id`,
-  estados de creación/cancelación/correo distinguibles). Implementación de
-  RF-8..10 requiere autorización de planificación.
+  en su data table (sin tocar backend). Commit `1b63e5a` en `main`.
+- **Revisión de referencias 017/018 (2026-10-23, @revisor)**: ambas **SIN
+  CAMBIOS** — ya delegaban correctamente en el servicio de la 010, sin cita
+  del título antiguo ni brechas. Plan 018 sin cambios por ahora; al
+  implementar RF-8..10 de la 010, TC-018-005 deberá filtrar por `event_type`
+  (apuntar en ese plan). Opcionales dejados para planificar cada HU:
+  P-1 (contexto 018 atribuye a 010 también la reprogramación) y P-2 (errata
+  «documento de documento» en RF-1 de 017).
+- **Enmienda de la Spec 007 APROBADA** (2026-10-23): **RF-8..RF-13
+  [PENDIENTE DE IMPLEMENTACIÓN]** + sección «Contratos fijados — borrado de
+  Google Calendar». Contrato de consumo de `appointment.cancelled` por n8n:
+  fila de creación con `appointment_id`+`calendar_event_id`, búsqueda por
+  `appointment_id` (**nunca** por el `event_id` de cancelación/correo),
+  reintentos idempotentes, ausencia controlada de `calendar_event_id`,
+  tres estados separados (creación/cancelación/correo) y distinción evento de
+  negocio vs. acción técnica de correo. **Solo contrato documental**: la
+  implementación (data table, workflow, emisión) exigirá plan, tareas y
+  aprobaciones posteriores. Secuencia del ciclo completada: 010 ✓ → 017/018 ✓
+  → 007 ✓. **Pendiente**: commit de la enmienda 007 y decisión de push (un
+  push a `main` despliega en Render y vacía la BD).
