@@ -373,3 +373,92 @@ def test_tc_010_012_slot_confirmado_sigue_dando_slot_taken(
     finally:
         connection.close()
     assert count == 1
+
+
+# --- Fase 2 (spec 010 enmendada 2026-10-23): evento de negocio -------------
+# TC-010-101..111 (plan §9.8.1). Aquí solo TC-010-102 y TC-010-104 (T19);
+# el resto (101, 103, 105..111) queda para T21/T22 — sin duplicarlos.
+
+
+def _cancelled_posts(post: mock.MagicMock) -> list[mock.call]:
+    return [
+        call
+        for call in post.call_args_list
+        if call[0][1].get("event_type") == "appointment.cancelled"
+    ]
+
+
+def test_tc_010_102_payload_negocio_allowlist_sin_pii() -> None:
+    appointment = Appointment(
+        id=34,
+        document_type="CC",
+        document_number="1234567890",
+        patient_name="Ana Pérez",
+        email="ana@correo.com",
+        phone="3001234567",
+        service=SERVICE_KEY,
+        date="2026-10-15",
+        time=SLOT,
+        status="cancelled",
+        created_at="2026-10-10 10:00:00",
+    )
+    event = automation.build_cancelled_event(appointment)
+    assert set(event.keys()) == {
+        "event_id",
+        "event_type",
+        "event_version",
+        "occurred_at",
+        "appointment",
+    }
+    assert event["event_id"] == "appointment.cancelled:34:v1"
+    assert event["event_type"] == "appointment.cancelled"
+    assert event["event_version"] == 1
+    assert re.fullmatch(
+        r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", str(event["occurred_at"])
+    )
+    assert set(event["appointment"].keys()) == {
+        "id",
+        "service",
+        "date",
+        "time",
+        "status",
+    }
+    assert event["appointment"] == {
+        "id": 34,
+        "service": SERVICE_KEY,
+        "date": "2026-10-15",
+        "time": SLOT,
+        "status": "cancelled",
+    }
+    forbidden = {
+        "patient_name",
+        "email",
+        "phone",
+        "document_type",
+        "document_number",
+        "recipient",
+        "message",
+    }
+    assert forbidden.isdisjoint(event.keys())
+    assert forbidden.isdisjoint(event["appointment"].keys())
+
+
+def test_tc_010_104_url_vacia_negocio_skipped_sin_post(
+    database_path: Path,
+) -> None:
+    booking_date = _future_weekday()
+    created = booking.create_booking(_booking_data(booking_date), database_path)
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        cancelled = booking.cancel_appointment(created.id, database_path)
+        assert isinstance(cancelled, Appointment)
+        # disparo directo (T20 aún no lo enlaza en cancel_appointment)
+        automation.on_appointment_cancelled(cancelled, database_path)
+    assert cancelled.status == "cancelled"
+    event = automation.events_repository.get_by_event_id(
+        f"appointment.cancelled:{created.id}:v1", database_path
+    )
+    assert event is not None
+    assert event.status == "skipped"
+    assert event.detail == "Automatización no configurada."
+    assert len(_cancelled_posts(post)) == 0
+    assert post.call_count == 0
