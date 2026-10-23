@@ -160,3 +160,105 @@
   Hecho cuando: el checkbox de aceptación de `qa-hu-010.md` está marcado con
   fecha y la §7.2 del plan queda íntegramente en `[x]`.
   **Cumplido 2026-10-13** (aceptación registrada en `qa-hu-010.md`).
+
+---
+
+## Fase 2 — Tareas RF-8..RF-10: evento de negocio `appointment.cancelled`
+
+> **BORRADOR — pendiente de aprobación por la usuaria.** Trazabilidad:
+> HU-010 (enmienda de la spec 2026-10-23) → Spec 010 RF-8..RF-10 → `plan.md`
+> §9 (F2-D1..F2-D10, **sin aprobar**) → estas tareas → código → tests
+> TC-010-101..112 → evidencia `qa-hu-010-rf8-10.md` → commit.
+> Las tareas T1–T15 anteriores quedan **cerradas y sin tocar**. Cada tarea
+> dura **20–30 min**, se ejecuta **en orden** y su `Hecho cuando:` es
+> verificable con un comando o una comprobación concreta. **Sin marcar una
+> tarea y sin su aprobación, no se empieza la siguiente.** Baseline previo
+> verificado 2026-10-23: **204 PASS / 0 FAIL**.
+
+- [x] **T16 — Aprobación del plan §9 (F2-D1..F2-D10) y de estas tareas (usuaria)** `[trazabilidad]`
+  La usuaria aprueba el alcance de la fase 2: orden de emisión (F2-D1),
+  mecanismo en `automation_service` (F2-D2), limitación de reproceso (F2-D3),
+  riesgo para 018/017 (F2-D4), sin env vars ni esquema nuevos (F2-D5/D6),
+  rama (F2-D7), numeración TC-010-101+ (F2-D8/D9) y literales reutilizados
+  (F2-D10). **Bloqueante: no se toca código antes.**
+  Hecho cuando: `plan.md` §9.10 tiene marcada la aprobación con fecha y este
+  encabezado de fase deja de decir «BORRADOR».
+
+- [ ] **T17 — Git: rama `feature/hu-010-rf8-10` desde `main` + commit de plan/task (plan §9.9, F2-D7)** `[base][regresión]`
+  Crear la rama desde `main` (limpia, 204 PASS); commitear el `plan.md` y el
+  `task.md` ampliados; verificar el baseline antes de tocar código.
+  Hecho cuando: `git branch --show-current` → `feature/hu-010-rf8-10`,
+  `git merge-base --is-ancestor main feature/hu-010-rf8-10` → exit 0,
+  `git status` limpio y `python -m pytest -q` → **204 PASS / 0 FAIL**.
+
+- [ ] **T18 — Constantes: `CANCELLED_EVENT_TYPE`/`_VERSION` en `automation_content.py` (plan §9.3, RF-8/RF-9)** `[RF-8][RF-9]`
+  Añadir `CANCELLED_EVENT_TYPE = "appointment.cancelled"` y
+  `CANCELLED_EVENT_VERSION = 1` junto a los de HU-007, sin tocar
+  `EVENT_TYPE`/`EVENT_VERSION` ni los `DETAIL_*`; sin lógica.
+  Hecho cuando: `python -c "from consultorio.content.automation_content import CANCELLED_EVENT_TYPE as t, CANCELLED_EVENT_VERSION as v, EVENT_TYPE; assert t == 'appointment.cancelled' and v == 1 and EVENT_TYPE == 'appointment.confirmed'"` → exit 0
+  y `python -m pytest -q` → **0 FAIL** (204).
+
+- [ ] **T19 — Servicio: `_build_automation_event()` + `build_cancelled_event()` + `on_appointment_cancelled()` en `automation_service.py` (plan §9.3/§9.6, F2-D2/D10)** `[RF-8][RF-9][RF-10]`
+  Helper privado con el allowlist único; `build_event()` delega **sin cambiar
+  su firma pública**; `on_appointment_cancelled()` espejo de
+  `on_appointment_confirmed` (dedup por `UNIQUE(event_id)` → URL vacía
+  `skipped` «Automatización no configurada.» → `_post_webhook` →
+  `sent`/`failed` con los `DETAIL_*` reutilizados; **nunca propaga**).
+  Hecho cuando: `python -c "import pathlib; src = pathlib.Path('consultorio/services/automation_service.py').read_text(encoding='utf-8'); assert 'def on_appointment_cancelled' in src and 'def build_cancelled_event' in src and 'def _build_automation_event' in src"` → exit 0
+  y `python -m pytest tests/test_automation_service.py tests/test_hu_007.py tests/test_hu_008.py -q` → **0 FAIL** (HU-007/008 intactas).
+
+- [ ] **T20 — Disparo: `cancel_appointment()` emite el evento de negocio antes que el correo (plan §9.6, F2-D1)** `[RF-8]`
+  En `appointment_service.cancel_appointment()`, tras la transición
+  confirmada, llamar `automation_service.on_appointment_cancelled(...)` y
+  después `email_service.send_cancellation(...)` (ambas best-effort, firma
+  intacta; sin cambios en `create_booking()` ni en `web/`).
+  Hecho cuando: `python -c "import pathlib; src = pathlib.Path('consultorio/services/appointment_service.py').read_text(encoding='utf-8'); body = src.split('def cancel_appointment', 1)[1]; assert body.index('on_appointment_cancelled') < body.index('send_cancellation')"` → exit 0
+  y `python -m pytest -q` → **0 FAIL** (204; los TC-010 cerrados filtran por
+  `event_id`/`event_type` y no se rompen).
+
+- [ ] **T21 — Tests TC-010-101..105 en `test_cancellation_service.py` (plan §9.8.1, F2-D8/D9)** `[RF-8][RF-9][RF-10]`
+  Emitido/`sent` con 1 POST de su tipo (101); allowlist RF-9 exacta sin PII
+  (102); independencia del correo con email inválido → negocio `sent` +
+  correo `failed` (103); URL vacía → `skipped` 0 POST (104); `URLError` →
+  `failed` «Servicio de automatización no disponible.» cita intacta (105).
+  Helper `_cancelled_posts()` análogo a `_cancellation_posts()`.
+  Hecho cuando: `python -m pytest tests/test_cancellation_service.py -k "tc_010_101 or tc_010_102 or tc_010_103 or tc_010_104 or tc_010_105" -v` → **5 PASS / 0 FAIL**.
+
+- [ ] **T22 — Tests TC-010-106..111 en `test_cancellation_service.py` (plan §9.8.1)** `[RF-8][RF-10][regresión]`
+  `TimeoutError` → `failed` timeout (106); HTTP 500 → `failed` «Respuesta no
+  válida del servicio (HTTP 500).» (107); reproceso → `ALREADY_CANCELLED`,
+  1 fila y 1 POST del tipo (108); orden: POST de `appointment.cancelled`
+  precede al de `cancellation_email` (109); aislamiento con repositorio
+  caído → cita `cancelled` sin excepción (110); `build_event()` intacto,
+  `EVENT_TYPE` inalterado, constitución #1 y sin env vars nuevas (111).
+  Hecho cuando: `python -m pytest tests/test_cancellation_service.py -k "tc_010_106 or tc_010_107 or tc_010_108 or tc_010_109 or tc_010_110 or tc_010_111" -v` → **6 PASS / 0 FAIL**
+  y `python -m pytest -q` → **0 FAIL**.
+
+- [ ] **T23 — Regresión y suite completa (plan §9.8.1 TC-010-112)** `[todos]`
+  Ejecutar la suite completa sin tocar ni relajar los tests previos
+  (204 intactos + 11 nuevos).
+  Hecho cuando: `python -m pytest -q` → **215 PASS / 0 FAIL**.
+
+- [ ] **T24 — Evidencia QA y demo manual (plan §9.8.2)** `[RF-8][RF-9][RF-10][finalización]`
+  Servidor + **receptor local stdlib** y `cancel_appointment()` desde un
+  REPL/script: (a) cancelar → **2 POST** (`appointment.cancelled` +
+  `appointment.cancellation_email`), ambos `sent`; (b) URL vacía → ambos
+  `skipped`, 0 POST; (c) receptor apagado → ambos `failed` con motivo y cita
+  `cancelled` intacta; (d) reproceso → `already_cancelled` y 0 POST nuevos;
+  (e) fila `appointment.cancelled:{id}:v1` verificada en `automation_events`.
+  Sin cambios visuales → sin capturas 1280/375. Informe
+  `docs/evidencias/hu-010/qa-hu-010-rf8-10.md` con PASS/FAIL por TC y
+  checkbox de aceptación (skill `pytest-qa`); no se toca `qa-hu-010.md`.
+  Hecho cuando: existe `qa-hu-010-rf8-10.md` con veredicto **PASS** (11 TC,
+  suite 215/215), la evidencia en `docs/evidencias/hu-010/` y el servidor en
+  marcha con la URL comunicada.
+
+- [ ] **T25 — Cierre: commits por fase, push, `MEMORY.md` y registro del pendiente 018 (plan §9.9)** `[trazabilidad]`
+  Commits por fase citando HU-010 fase 2 / Spec 010 RF-8..RF-10; push
+  sincronizado; `MEMORY.md` con el estado (evento `appointment.cancelled`
+  emitido, 2 eventos por cancelación, limitación de reproceso F2-D3);
+  registrar el pendiente del coordinador F2-D4 (anotar el filtro por
+  `event_type` en el plan 018 para TC-018-005/007/012 cuando se autorice).
+  Hecho cuando: `git status` limpio, `git rev-parse HEAD` =
+  `git rev-parse origin/feature/hu-010-rf8-10` y `MEMORY.md` refleja la fase
+  2.
