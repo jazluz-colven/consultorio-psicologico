@@ -165,9 +165,9 @@
 
 ## Fase 2 — Tareas RF-8..RF-10: evento de negocio `appointment.cancelled`
 
-> **BORRADOR — pendiente de aprobación por la usuaria.** Trazabilidad:
+> **APROBADO por la usuaria (2026-10-23).** Trazabilidad:
 > HU-010 (enmienda de la spec 2026-10-23) → Spec 010 RF-8..RF-10 → `plan.md`
-> §9 (F2-D1..F2-D10, **sin aprobar**) → estas tareas → código → tests
+> §9 (F2-D1..F2-D10, **aprobado 2026-10-23**) → estas tareas → código → tests
 > TC-010-101..112 → evidencia `qa-hu-010-rf8-10.md` → commit.
 > Las tareas T1–T15 anteriores quedan **cerradas y sin tocar**. Cada tarea
 > dura **20–30 min**, se ejecuta **en orden** y su `Hecho cuando:` es
@@ -184,7 +184,7 @@
   Hecho cuando: `plan.md` §9.10 tiene marcada la aprobación con fecha y este
   encabezado de fase deja de decir «BORRADOR».
 
-- [ ] **T17 — Git: rama `feature/hu-010-rf8-10` desde `main` + commit de plan/task (plan §9.9, F2-D7)** `[base][regresión]`
+- [x] **T17 — Git: rama `feature/hu-010-rf8-10` desde `main` + commit de plan/task (plan §9.9, F2-D7)** `[base][regresión]`
   Crear la rama desde `main` (limpia, 204 PASS); commitear el `plan.md` y el
   `task.md` ampliados; verificar el baseline antes de tocar código.
   Hecho cuando: `git branch --show-current` → `feature/hu-010-rf8-10`,

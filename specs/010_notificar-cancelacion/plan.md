@@ -657,15 +657,14 @@ Evidencia: payload del evento cancellation_email capturado + dump de automation_
 
 ---
 
-## 9. Fase 2 — RF-8..RF-10: evento de negocio `appointment.cancelled` (**BORRADOR — pendiente de aprobación**)
+## 9. Fase 2 — RF-8..RF-10: evento de negocio `appointment.cancelled` (**APROBADO por la usuaria 2026-10-23**)
 
 > Trazabilidad: **HU-010 (enmienda de la spec 2026-10-23) → Spec 010
 > RF-8..RF-10 (`specs/010_notificar-cancelacion/spec.md`) → §9 de este plan →
 > código → tests TC-010-101+ → evidencia → commit**
-> Estado: **plan y tareas en borrador**. La enmienda que introduce RF-8..RF-10
-> está aprobada por la usuaria (2026-10-23), pero **no se implementa nada de
-> esta fase sin la aprobación explícita de este plan y de `task.md`**
-> (AGENTS.md: no avanzar de fase sin autorización).
+> Estado: **plan y tareas APROBADOS por la usuaria (2026-10-23)**; fase 2
+> autorizada para implementación (AGENTS.md: no avanzar de fase sin
+> autorización).
 > Baseline verificado en `main` (2026-10-23): **204 PASS / 0 FAIL**
 > (`python -m pytest -q`).
 
@@ -948,7 +947,8 @@ enmiendas. TC-010-016 solo fija el conjunto de variables `AUTOMATION_*` de
 - [x] Enmienda de la spec 010 con RF-8..RF-10 — **cumplida 2026-10-23**
       (commit `1b63e5a`, aprobada por la usuaria).
 - [x] Baseline de la fase 2 verificado — **2026-10-23: 204 PASS / 0 FAIL**.
-- [ ] Rama `feature/hu-010-rf8-10` creada y baseline re-verificado en ella.
+- [x] Rama `feature/hu-010-rf8-10` creada y baseline re-verificado en ella —
+      **cumplida 2026-10-23** (commit `5fad34b`, 204 PASS / 0 FAIL en la rama).
 - [ ] Implementación, tests (215 PASS / 0 FAIL), demo e informe QA
       `qa-hu-010-rf8-10.md` con PASS.
 - [ ] Aceptación de la usuaria y cierre (commits, push, `MEMORY.md`,
