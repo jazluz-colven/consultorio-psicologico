@@ -189,8 +189,10 @@ def cancel_appointment(
     """Atomically move a confirmed appointment to cancelled (spec 010 RF-1).
 
     Returns the updated appointment, or the APPOINTMENT_NOT_FOUND /
-    ALREADY_CANCELLED sentinel. The cancellation e-mail is best-effort and is
-    only attempted on the first successful transition (RF-4, D6/D7).
+    ALREADY_CANCELLED sentinel. The business event `appointment.cancelled` is
+    emitted first and the cancellation e-mail second (RF-8, F2-D1); both are
+    best-effort and only attempted on the first successful transition
+    (RF-4, D6/D7).
     """
     appointment = repository.get_appointment_by_id(appointment_id, database_path)
     if appointment is None:
@@ -201,6 +203,15 @@ def cancel_appointment(
     if updated is None:
         # already cancelled / concurrent cancellation: no second notification
         return ALREADY_CANCELLED
+    # business event first (RF-8, F2-D1): best-effort, never raises (RF-10)
+    automation_service.on_appointment_cancelled(
+        updated,
+        database_path,
+        automation_url,
+        automation_timeout,
+        automation_auth_header,
+    )
+    # cancellation e-mail after the business event (F2-D1): best-effort too
     email_service.send_cancellation(
         updated,
         database_path,

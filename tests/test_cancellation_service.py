@@ -376,8 +376,8 @@ def test_tc_010_012_slot_confirmado_sigue_dando_slot_taken(
 
 
 # --- Fase 2 (spec 010 enmendada 2026-10-23): evento de negocio -------------
-# TC-010-101..111 (plan §9.8.1). Aquí solo TC-010-102 y TC-010-104 (T19);
-# el resto (101, 103, 105..111) queda para T21/T22 — sin duplicarlos.
+# TC-010-101..111 (plan §9.8.1). T19: TC-010-102/104; T20: TC-010-101/103/108/109
+# (disparo vía cancel_appointment). Quedan para T21/T22: 105/106/107/110/111.
 
 
 def _cancelled_posts(post: mock.MagicMock) -> list[mock.call]:
@@ -450,9 +450,7 @@ def test_tc_010_104_url_vacia_negocio_skipped_sin_post(
     created = booking.create_booking(_booking_data(booking_date), database_path)
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         cancelled = booking.cancel_appointment(created.id, database_path)
-        assert isinstance(cancelled, Appointment)
-        # disparo directo (T20 aún no lo enlaza en cancel_appointment)
-        automation.on_appointment_cancelled(cancelled, database_path)
+    assert isinstance(cancelled, Appointment)
     assert cancelled.status == "cancelled"
     event = automation.events_repository.get_by_event_id(
         f"appointment.cancelled:{created.id}:v1", database_path
@@ -462,3 +460,112 @@ def test_tc_010_104_url_vacia_negocio_skipped_sin_post(
     assert event.detail == "Automatización no configurada."
     assert len(_cancelled_posts(post)) == 0
     assert post.call_count == 0
+
+
+def test_tc_010_101_cancelar_emite_evento_negocio_y_correo(
+    database_path: Path,
+) -> None:
+    booking_date = _future_weekday()
+    created = booking.create_booking(_booking_data(booking_date), database_path)
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        result = booking.cancel_appointment(
+            created.id, database_path, WEBHOOK_URL, TIMEOUT
+        )
+    assert isinstance(result, Appointment)
+    assert result.status == "cancelled"
+    business_posts = _cancelled_posts(post)
+    assert len(business_posts) == 1
+    url, payload, timeout, auth_header = business_posts[0][0]
+    assert url == WEBHOOK_URL
+    assert timeout == TIMEOUT
+    assert auth_header == ""
+    assert payload["event_id"] == f"appointment.cancelled:{created.id}:v1"
+    assert payload["event_type"] == "appointment.cancelled"
+    assert payload["event_version"] == 1
+    assert payload["appointment"]["id"] == created.id
+    assert payload["appointment"]["status"] == "cancelled"
+    event = automation.events_repository.get_by_event_id(
+        f"appointment.cancelled:{created.id}:v1", database_path
+    )
+    assert event is not None
+    assert event.status == "sent"
+    assert event.detail is None
+    assert event.sent_at is not None
+    assert len(_cancellation_posts(post)) == 1
+
+
+def test_tc_010_103_evento_negocio_independiente_del_correo(
+    database_path: Path,
+) -> None:
+    booking_date = _future_weekday()
+    created = booking.create_booking(_booking_data(booking_date), database_path)
+    connection = sqlite3.connect(str(database_path))
+    try:
+        connection.execute(
+            "UPDATE appointments SET email = '' WHERE id = ?", (created.id,)
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        result = booking.cancel_appointment(
+            created.id, database_path, WEBHOOK_URL, TIMEOUT
+        )
+    assert isinstance(result, Appointment)
+    assert result.status == "cancelled"
+    assert len(_cancelled_posts(post)) == 1
+    business_event = automation.events_repository.get_by_event_id(
+        f"appointment.cancelled:{created.id}:v1", database_path
+    )
+    assert business_event is not None
+    assert business_event.status == "sent"
+    assert business_event.sent_at is not None
+    assert len(_cancellation_posts(post)) == 0
+    email_event = email.events_repository.get_by_event_id(
+        _event_id(created.id), database_path
+    )
+    assert email_event is not None
+    assert email_event.status == "failed"
+
+
+def test_tc_010_108_reproceso_already_cancelled_un_evento_negocio(
+    database_path: Path,
+) -> None:
+    booking_date = _future_weekday()
+    created = booking.create_booking(_booking_data(booking_date), database_path)
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        first = booking.cancel_appointment(
+            created.id, database_path, WEBHOOK_URL, TIMEOUT
+        )
+        second = booking.cancel_appointment(
+            created.id, database_path, WEBHOOK_URL, TIMEOUT
+        )
+    assert isinstance(first, Appointment)
+    assert second == booking.ALREADY_CANCELLED
+    assert len(_cancelled_posts(post)) == 1
+    assert _count_events(
+        f"appointment.cancelled:{created.id}:v1", database_path
+    ) == 1
+
+
+def test_tc_010_109_orden_evento_negocio_antes_que_el_correo(
+    database_path: Path,
+) -> None:
+    booking_date = _future_weekday()
+    created = booking.create_booking(_booking_data(booking_date), database_path)
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        result = booking.cancel_appointment(
+            created.id, database_path, WEBHOOK_URL, TIMEOUT
+        )
+    assert isinstance(result, Appointment)
+    business_index = next(
+        index
+        for index, call in enumerate(post.call_args_list)
+        if call[0][1].get("event_type") == "appointment.cancelled"
+    )
+    email_index = next(
+        index
+        for index, call in enumerate(post.call_args_list)
+        if call[0][1].get("event_type") == "appointment.cancellation_email"
+    )
+    assert business_index < email_index
