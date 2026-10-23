@@ -376,3 +376,19 @@ aporte.
   la cancelación (**enmienda coordinada de la Spec 008** registrada). Pendiente:
   `plan.md` + `task.md` + rama `feature/hu-017` **tras el merge de HU-010**
   (reutiliza `cancel_appointment()`).
+- **Enmienda de la Spec 010 APROBADA** (2026-10-23): título ampliado a
+  **«Servicio centralizado de cancelación y notificación de citas»**
+  (identificador y ruta intactos). RF-1..RF-4 conservados (trazabilidad con
+  HU-010); **RF-5..RF-7 consolidados** (transición única, liberación de
+  horario, fallo de canal sin revertir — ya implementados); **RF-8..RF-10
+  [PENDIENTE DE IMPLEMENTACIÓN]**: evento de negocio **`appointment.cancelled`
+  v1** (`event_id` determinista + UNIQUE, payload sin PII, emitido tras el
+  commit **independiente del correo**, fallo trazado y reintentable sin
+  duplicados, sin reintentos automáticos). n8n guardará el `calendar_event_id`
+  en su data table (sin tocar backend). Secuencia acordada: 010 ✓ → revisión
+  de referencias 017/018 → enmienda 007 (borrado GCal con 5 condiciones del
+  usuario: fila creación con `appointment_id`+`calendar_event_id`, búsqueda
+  por registro original no por event_id de cancelación, reintentos
+  idempotentes, gestión controlada de citas sin `calendar_event_id`,
+  estados de creación/cancelación/correo distinguibles). Implementación de
+  RF-8..10 requiere autorización de planificación.
