@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="cancellation">
+    <h1 class="cancellation__title">{{ page_title }}</h1>
+
+    <p class="cancellation__notice">{{ notice }}</p>
+
+    <div class="cancellation__messages" aria-live="polite">
+        {% if message %}<p class="cancellation__message" role="alert">{{ message }}</p>{% endif %}
+    </div>
+
+    <p class="cancellation__reference">
+        <span class="cancellation__label">{{ label_reference }}:</span>
+        <span class="cancellation__reference-value">#{{ cita_id }}</span>
+    </p>
+
+    <form class="cancellation__form" method="post" action="/citas/cancelar/{{ cita_id }}">
+        <p class="cancellation__field">
+            <label class="cancellation__label" for="document_number">{{ label_document_number }}</label>
+            <input class="cancellation__input" id="document_number" name="document_number"
+                   type="text" inputmode="numeric" pattern="[0-9]+" required autocomplete="off">
+        </p>
+
+        <p class="cancellation__actions">
+            <button class="cancellation__submit" type="submit">{{ button_label }}</button>
+        </p>
+    </form>
+</article>
+{% endblock %}

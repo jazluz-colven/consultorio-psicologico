@@ -1076,3 +1076,160 @@ button:focus-visible {
         font-size: 1.5rem;
     }
 }
+
+/* HU-017 — patient cancellation flow (spec 017, D8).
+   Minimal additions on top of the existing .appointment__* primitives. */
+.cancellation {
+    max-width: 40rem;
+    margin-inline: auto;
+}
+
+.cancellation__title {
+    margin: 0 0 1.5rem;
+    color: var(--color-text);
+    font-size: 1.8rem;
+    text-wrap: balance;
+}
+
+.cancellation__title--success {
+    color: var(--color-primary-dark);
+}
+
+.cancellation__notice {
+    margin: 0 0 1.5rem;
+    padding: 1rem 1.25rem;
+    color: var(--color-text);
+    background-color: var(--color-support);
+    border-left: 4px solid var(--color-accent-dark);
+    border-radius: 8px;
+    text-align: justify;
+    hyphens: none;
+}
+
+.cancellation__messages {
+    margin: 0 0 1rem;
+}
+
+.cancellation__message {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    color: var(--color-accent-dark);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-accent-dark);
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: justify;
+    hyphens: none;
+}
+
+.cancellation__reference {
+    margin: 0 0 1rem;
+    color: var(--color-text);
+    text-align: justify;
+    hyphens: none;
+}
+
+.cancellation__label {
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.cancellation__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: 1.5rem;
+    background-color: var(--color-secondary);
+    border-radius: 12px;
+}
+
+.cancellation__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0;
+}
+
+.cancellation__input {
+    padding: 0.6rem 0.75rem;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--color-text);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-primary-dark);
+    border-radius: 8px;
+}
+
+.cancellation__input:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
+}
+
+.cancellation__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.cancellation__submit {
+    padding: 0.7rem 1.4rem;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--color-background);
+    background-color: var(--color-primary-dark);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.cancellation__submit:hover,
+.cancellation__submit:focus {
+    background-color: var(--color-text);
+}
+
+.cancellation__submit:disabled {
+    background-color: var(--color-support);
+    color: var(--color-text);
+    cursor: not-allowed;
+}
+
+.cancellation__back-link {
+    display: inline-block;
+    padding: 0.65rem 1.25rem;
+    font-weight: bold;
+    color: var(--color-primary-dark);
+    background-color: var(--color-background);
+    border: 2px solid var(--color-primary-dark);
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.cancellation__back-link:hover,
+.cancellation__back-link:focus {
+    color: var(--color-accent-dark);
+    border-color: var(--color-accent-dark);
+    text-decoration: none;
+}
+
+.cancellation__back-link:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
+}
+
+.cancellation__summary {
+    margin-bottom: 1.5rem;
+}
+
+.cancellation__success-message {
+    margin: 0 0 1.5rem;
+    color: var(--color-primary-dark);
+    text-align: justify;
+    hyphens: none;
+}
+
+.cancellation__back {
+    margin: 2rem 0 0;
+}

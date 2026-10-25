@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ success_title }} — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="cancellation">
+    <h1 class="cancellation__title cancellation__title--success">{{ success_title }}</h1>
+
+    <p class="cancellation__success-message">{{ success_message }}</p>
+
+    <dl class="appointment__summary cancellation__summary">
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_service }}</dt>
+            <dd class="appointment__summary-value">{{ service_name }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_date }}</dt>
+            <dd class="appointment__summary-value">{{ formatted_date }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_time }}</dt>
+            <dd class="appointment__summary-value">{{ appointment_time }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_status }}</dt>
+            <dd class="appointment__summary-value">{{ status_label }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_reference }}</dt>
+            <dd class="appointment__summary-value">#{{ cita_id }}</dd>
+        </div>
+    </dl>
+
+    <p class="cancellation__back">
+        <a class="cancellation__back-link" href="{{ url_for('home.index') }}">Volver al inicio</a>
+    </p>
+</article>
+{% endblock %}

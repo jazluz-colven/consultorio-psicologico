@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="cancellation">
+    <h1 class="cancellation__title">{{ page_title }}</h1>
+
+    <p class="cancellation__reference">
+        <span class="cancellation__label">{{ label_reference }}:</span>
+        <span class="cancellation__reference-value">#{{ cita_id }}</span>
+    </p>
+
+    <dl class="appointment__summary cancellation__summary">
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_service }}</dt>
+            <dd class="appointment__summary-value">{{ service_name }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_date }}</dt>
+            <dd class="appointment__summary-value">{{ formatted_date }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_time }}</dt>
+            <dd class="appointment__summary-value">{{ appointment_time }}</dd>
+        </div>
+        <div class="appointment__summary-row">
+            <dt class="appointment__summary-label">{{ label_status }}</dt>
+            <dd class="appointment__summary-value">{{ status_label }}</dd>
+        </div>
+    </dl>
+
+    <form class="cancellation__form" method="post" action="/citas/cancelar/{{ cita_id }}/confirmar">
+        <input type="hidden" name="document_number" value="{{ document_number }}">
+
+        <p class="cancellation__actions">
+            <button class="cancellation__submit" type="submit">{{ confirm_button }}</button>
+            <a class="cancellation__back-link" href="/citas/confirmada/{{ cita_id }}">{{ back_button }}</a>
+        </p>
+    </form>
+</article>
+<script src="{{ url_for('static', filename='js/cancellation.js') }}"></script>
+{% endblock %}
