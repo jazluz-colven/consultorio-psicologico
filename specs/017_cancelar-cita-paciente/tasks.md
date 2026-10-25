@@ -15,10 +15,10 @@ Estado: aprobado por la usuaria (2026-10-25, junto con `plan.md`).
 - [x] **T1. Crear `consultorio/content/cancellation_content.py` con los 11 literales contractuales de la tabla de la spec más las etiquetas funcionales y `EMAIL_CANCEL_LINK_LABEL`, y añadir su espejo en `tests/expected_content.py` con test nuevo.** RF-2, RF-3, RF-4, RF-7, RF-9, RF-12, RF-13
   - Hecho cuando: `python -m pytest -q tests/test_cancellation_content.py` queda en verde; los 11 literales coinciden carácter a carácter con la tabla de la spec; «Cancelada» se reutiliza desde `appointment_content.STATUS_CANCELLED_LABEL` (sin duplicar texto) y el espejo en `expected_content.py` cubre también las etiquetas nuevas.
 
-- [ ] **T2. Implementar con TDD la verificación de propiedad y la ventana de 3 horas en `consultorio/services/cancellation_flow_service.py` (`verify_cancellation_request`, con parámetro `now` explícito).** RF-1, RF-2, RF-4
+- [x] **T2. Implementar con TDD la verificación de propiedad y la ventana de 3 horas en `consultorio/services/cancellation_flow_service.py` (`verify_cancellation_request`, con parámetro `now` explícito).** RF-1, RF-2, RF-4
   - Hecho cuando: los tests unitarios de `tests/test_cancellation_flow_service.py` pasan con `now` fijo y cubren: borde exacto de 3 horas → permitido; 2 h 59 min, hora iniciada y hora pasada → `TOO_SOON`; referencia inexistente y documento incorrecto → un único resultado `FAILED` sin datos de la cita en la salida.
 
-- [ ] **T3. Implementar con TDD la ejecución `cancel_verified_request()` delegando en `cancel_appointment()` de la Spec 010, con mapeo de resultados SUCCESS / ALREADY_CANCELLED / FAILED / TOO_SOON.** RF-5, RF-8, RF-9
+- [x] **T3. Implementar con TDD la ejecución `cancel_verified_request()` delegando en `cancel_appointment()` de la Spec 010, con mapeo de resultados SUCCESS / ALREADY_CANCELLED / FAILED / TOO_SOON.** RF-5, RF-8, RF-9
   - Hecho cuando: `cancellation_flow_service.py` no contiene UPDATE, transiciones ni envíos propios (solo importa y llama a `cancel_appointment()`), y los tests prueban que un segundo intento devuelve `ALREADY_CANCELLED` con exactamente 1 fila `appointment.cancellation_email` y 0 POST adicionales al webhook.
 
 - [ ] **T4. Crear las plantillas `templates/cancellation/{verify,summary,success}.html` con identidad Serenidad Natural, contraste AA y párrafos justificados, más el guard de doble envío RF-10 en `static/js/cancellation.js` y sus estilos mínimos en `static/css/main.css`.** RF-3, RF-7, RF-10
