@@ -64,6 +64,17 @@ def _current(app, appointment_id: int) -> Appointment:
     return current
 
 
+def _cancel_in_database(app, appointment_id: int) -> Appointment:
+    """Mark an existing appointment as cancelled through the repository."""
+    updated = repository.update_appointment_status(
+        appointment_id,
+        appointment_content.STATUS_CANCELLED,
+        _database_path(app),
+    )
+    assert updated is not None
+    return updated
+
+
 def _article(html: str, cita_id: int) -> str:
     """Extract the cancellation card and normalise only its own reference."""
     match = re.search(
@@ -560,3 +571,55 @@ def test_tc_017_006_reenvio_muestra_ya_cancelada_un_evento_cero_posts(
     assert _count_events(app, event_id) == 1
     assert _event_status(app, event_id) == "sent"
     assert _current(app, created.id).status == appointment_content.STATUS_CANCELLED
+
+
+# --- TC-017-008 (RF-11, RF-12): real status and cancel button ----------------
+# The confirmed-appointment page shows the status read from the database and
+# only offers the cancellation entry point for `confirmed` appointments.
+
+
+def test_tc_017_008_cita_confirmada_muestra_estado_y_boton_cancelar(
+    app, client
+) -> None:
+    """RF-12: a confirmed appointment shows «Confirmada» and a «Cancelar cita»
+    link to the verification step."""
+    created = _insert_appointment(app, 6)
+
+    response = client.get(f"/citas/confirmada/{created.id}")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert appointment_content.STATUS_CONFIRMED_LABEL in html
+    assert appointment_content.STATUS_CANCELLED_LABEL not in html
+    assert cc.CANCEL_BUTTON_LABEL in html
+    assert f'href="/citas/cancelar/{created.id}"' in html
+    link = re.search(
+        rf'<a[^>]*href="/citas/cancelar/{created.id}"[^>]*>(.*?)</a>',
+        html,
+        re.DOTALL,
+    )
+    assert link is not None
+    assert cc.CANCEL_BUTTON_LABEL in link.group(1)
+
+
+def test_tc_017_008_cita_cancelada_muestra_estado_sin_boton(app, client) -> None:
+    """RF-11: a cancelled appointment shows «Cancelada» (200, not 404) and no
+    cancellation button."""
+    created = _insert_appointment(app, 6)
+    _cancel_in_database(app, created.id)
+
+    response = client.get(f"/citas/confirmada/{created.id}")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert appointment_content.STATUS_CANCELLED_LABEL in html
+    assert appointment_content.STATUS_CONFIRMED_LABEL not in html
+    assert cc.CANCEL_BUTTON_LABEL not in html
+    assert f'/citas/cancelar/{created.id}"' not in html
+
+
+def test_tc_017_008_id_desconocido_404(client) -> None:
+    """The unknown-id behaviour stays a 404 (regression guard)."""
+    response = client.get(f"/citas/confirmada/{MISSING_ID}")
+
+    assert response.status_code == 404

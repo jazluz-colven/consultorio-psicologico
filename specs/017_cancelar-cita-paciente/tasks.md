@@ -30,7 +30,7 @@ Estado: aprobado por la usuaria (2026-10-25, junto con `plan.md`).
 - [x] **T6. Crear `POST /citas/cancelar/<int:cita_id>/confirmar` (re-verificación de propiedad, re-chequeo de ventana y ejecución) y `GET …/exito` con redirección 303 (PRG), mapeando los mensajes de conflicto y error.** RF-1, RF-4, RF-5, RF-6, RF-7, RF-9
   - Hecho cuando: el flujo completo verificación → resumen → confirmación → éxito pasa con 303 a `/citas/cancelar/<id>/exito`, la cita queda `cancelled`, el literal «Cita cancelada» y el estado «Cancelada» aparecen en la pantalla de éxito con datos y referencia, el hueco queda libre en `/citas/horarios` y la re-reserva devuelve 303; un reenvío del POST muestra «Esta cita ya fue cancelada.» sin segundo evento de notificación.
 
-- [ ] **T7. Actualizar `/citas/confirmada/<id>` (`web/appointments.py` + `templates/appointments/confirmation.html`) para mostrar el estado real y el botón «Cancelar cita» solo en citas confirmadas.** RF-11, RF-12
+- [x] **T7. Actualizar `/citas/confirmada/<id>` (`web/appointments.py` + `templates/appointments/confirmation.html`) para mostrar el estado real y el botón «Cancelar cita» solo en citas confirmadas.** RF-11, RF-12
   - Hecho cuando: los tests TC-017-008 pasan: cita confirmada → etiqueta «Confirmada» y botón «Cancelar cita» que enlaza a `/citas/cancelar/<id>`; cita cancelada → etiqueta «Cancelada» y sin botón; id desconocido → 404.
 
 - [ ] **T8. Añadir el enlace directo de cancelación al correo de confirmación (parámetro opcional `cancellation_url` al final de `create_booking()`, `send_confirmation()` y `build_confirmation_message()`, URL absoluta con `url_for(_external=True)` en la capa web).** RF-13

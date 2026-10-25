@@ -25,8 +25,11 @@ from consultorio.content.appointment_content import (
     MSG_SELECT_DATE_HINT,
     MSG_SLOT_TAKEN,
     MSG_SUBMITTING,
+    STATUS_CANCELLED_LABEL,
+    STATUS_CONFIRMED,
     STATUS_CONFIRMED_LABEL,
 )
+from consultorio.content.cancellation_content import CANCEL_BUTTON_LABEL
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.services.appointment_service import (
     SLOT_TAKEN,
@@ -173,12 +176,23 @@ def confirm(cita_id: int):
     if appointment is None:
         abort(404)
     service_name = SERVICES_CATALOG[appointment.service]["name"]
+    # The page reflects the state stored in the database (RF-11) and only a
+    # confirmed appointment offers the cancellation entry point (RF-12).
+    is_confirmed = appointment.status == STATUS_CONFIRMED
     return render_template(
         "appointments/confirmation.html",
         view=get_home_view(),
         appointment=appointment,
         service_name=service_name,
-        status_label=STATUS_CONFIRMED_LABEL,
+        status_label=(
+            STATUS_CONFIRMED_LABEL if is_confirmed else STATUS_CANCELLED_LABEL
+        ),
+        cancel_url=(
+            url_for("cancellation.verify", cita_id=appointment.id)
+            if is_confirmed
+            else None
+        ),
+        cancel_button_label=CANCEL_BUTTON_LABEL,
         confirmation_title=CONFIRMATION_TITLE,
         page_title=CONFIRMATION_TITLE,
     )

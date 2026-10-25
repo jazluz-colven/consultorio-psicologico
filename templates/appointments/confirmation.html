@@ -37,6 +37,12 @@
         </div>
     </dl>
 
+    {% if cancel_url %}
+    <p class="appointment__actions">
+        <a class="cancellation__back-link" href="{{ cancel_url }}">{{ cancel_button_label }}</a>
+    </p>
+    {% endif %}
+
     <p class="appointment__back"><a href="{{ url_for('home.index') }}">Volver al inicio</a></p>
 </article>
 {% endblock %}
