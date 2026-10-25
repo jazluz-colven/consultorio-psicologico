@@ -103,6 +103,10 @@ aprobada (Spec 010) sin reescribirla.
 - Reprogramación o cambio de fecha/hora de la cita.
 - Políticas de cancelación adicionales (plazos distintos a las 3 horas,
   penalizaciones).
+- Notificación de cancelación: la Spec 017 no implementa ni gestiona
+  directamente las notificaciones. La cancelación se procesa mediante el
+  servicio centralizado definido en la Spec 010, que coordina la notificación
+  según sus contratos y los canales habilitados.
 - Notificación por WhatsApp (pendiente de la Spec 009).
 - Panel interno de agenda y visualización de cancelaciones (Specs 011/012).
 - Cancelación por parte del consultorio desde una interfaz interna.
