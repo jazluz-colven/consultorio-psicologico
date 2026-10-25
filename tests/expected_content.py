@@ -354,3 +354,55 @@ CANCELLATION_EMAIL_FOOTER = (
 )
 
 DETAIL_CANCELLATION_NOT_CONFIGURED = "Envío de correo no configurado."
+
+# --- HU-017: Cancelar una cita por parte del paciente (espejo único de la spec 017) ---
+# «Cancelada» (estado mostrado) se reutiliza de STATUS_CANCELLED_LABEL (HU-010),
+# ya espejado arriba; aquí no se duplica el texto (plan 017, D5).
+
+CANCEL_PAGE_TITLE = "Cancelar cita"
+
+CANCEL_NOTICE = (
+    "Si cancelas tu cita, este horario quedará libre y no podrás "
+    "recuperarlo desde aquí."
+)
+
+CANCEL_CONFIRM_BUTTON = "Sí, cancelar mi cita"
+
+CANCEL_BACK_BUTTON = "No, volver"
+
+CANCEL_SUCCESS_TITLE = "Cita cancelada"
+
+CANCEL_SUCCESS_MESSAGE = (
+    "Tu cita ha sido cancelada. El horario ya está disponible para "
+    "otra persona."
+)
+
+MSG_VERIFICATION_FAILED = (
+    "No pudimos verificar tu cita. Revisa los datos e inténtalo de nuevo."
+)
+
+MSG_ALREADY_CANCELLED = "Esta cita ya fue cancelada."
+
+MSG_NOTICE_PERIOD = (
+    "Solo puedes cancelar tu cita desde el sitio con al menos 3 horas "
+    "de anticipación. Si necesitas cancelar con menos tiempo, "
+    "contáctate con el consultorio."
+)
+
+CANCEL_BUTTON_LABEL = "Cancelar cita"
+
+EMAIL_CANCEL_LINK_LABEL = "Cancelar cita"
+
+# Functional labels of the verification form and the summary (plan 017, D5)
+
+LABEL_REFERENCE = "Referencia de la cita"
+
+LABEL_DOCUMENT_NUMBER = "Número de documento"
+
+LABEL_SERVICE = "Servicio"
+
+LABEL_DATE = "Fecha"
+
+LABEL_TIME = "Hora"
+
+LABEL_STATUS = "Estado"
