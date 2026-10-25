@@ -26,6 +26,10 @@ from consultorio.content.appointment_content import (
     MSG_REQUIRED_TIME,
     STATUS_CANCELLED,
 )
+from consultorio.content.automation_content import (
+    CANCELLED_EVENT_TYPE,
+    CANCELLED_EVENT_VERSION,
+)
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import Appointment
@@ -197,14 +201,19 @@ def cancel_appointment(
     appointment = repository.get_appointment_by_id(appointment_id, database_path)
     if appointment is None:
         return APPOINTMENT_NOT_FOUND
-    updated = repository.update_appointment_status(
-        appointment_id, STATUS_CANCELLED, database_path
+    updated = repository.update_appointment_status_with_pending_event(
+        appointment_id,
+        STATUS_CANCELLED,
+        f"{CANCELLED_EVENT_TYPE}:{appointment_id}:v{CANCELLED_EVENT_VERSION}",
+        CANCELLED_EVENT_TYPE,
+        CANCELLED_EVENT_VERSION,
+        database_path,
     )
     if updated is None:
         # already cancelled / concurrent cancellation: no second notification
         return ALREADY_CANCELLED
     # business event first (RF-8, F2-D1): best-effort, never raises (RF-10)
-    automation_service.on_appointment_cancelled(
+    automation_service.publish_cancelled_event(
         updated,
         database_path,
         automation_url,

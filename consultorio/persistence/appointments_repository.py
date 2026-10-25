@@ -143,3 +143,48 @@ def update_appointment_status(
         if cursor.rowcount == 0:
             return None
     return get_appointment_by_id(appointment_id, database_path)
+
+
+def update_appointment_status_with_pending_event(
+    appointment_id: int,
+    new_status: str,
+    event_id: str,
+    event_type: str,
+    event_version: int,
+    database_path: str | Path,
+) -> Appointment | None:
+    """Cancel the appointment and register its pending automation event in the
+    SAME SQLite connection/transaction (spec 010 RF-11/RF-12, F2-D11).
+
+    «Sin traza local, sin cancelación confirmada»: the status transition and
+    the `pending` event row are committed together, or not at all.
+
+    Returns the updated appointment, or None when the row does not exist or is
+    not 'confirmed' (no event is registered in that case). If the event INSERT
+    fails, the whole transaction is rolled back — the appointment is NOT
+    cancelled — and the error propagates (RF-12).
+    """
+    with get_connection(database_path) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE appointments SET status = ?
+            WHERE id = ? AND status = 'confirmed'
+            """,
+            (new_status, appointment_id),
+        )
+        if cursor.rowcount == 0:
+            # inexistente o ya cancelada: rollback y sin registro de evento
+            connection.rollback()
+            return None
+        connection.execute(
+            """
+            INSERT INTO automation_events (
+                event_id, event_type, event_version, appointment_id, status
+            ) VALUES (?, ?, ?, ?, 'pending')
+            """,
+            (event_id, event_type, event_version, appointment_id),
+        )
+        # Commit conjunto al salir del contexto: o ambas confirmadas o ninguna.
+        # Un fallo del INSERT revierte TODO y propaga (RF-12); la publicación
+        # (POST) ocurre después del commit, fuera de esta transacción (RF-11).
+    return get_appointment_by_id(appointment_id, database_path)

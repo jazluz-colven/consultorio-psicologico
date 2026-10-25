@@ -104,3 +104,25 @@ def mark_failed(
             """,
             (detail, event_id),
         )
+
+
+def claim_failed_event(
+    event_id: str, database_path: str | Path
+) -> bool:
+    """
+    Atomically move an event from 'failed' to 'pending' for reprocessing.
+    Only applies to 'appointment.cancelled' events.
+    Returns True if the event was claimed, False otherwise.
+    """
+    with get_connection(database_path) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE automation_events
+            SET status = 'pending', detail = NULL
+            WHERE event_id = ?
+              AND status = 'failed'
+              AND event_type = 'appointment.cancelled'
+            """,
+            (event_id,),
+        )
+        return cursor.rowcount == 1

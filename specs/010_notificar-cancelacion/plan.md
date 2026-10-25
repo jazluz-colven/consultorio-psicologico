@@ -13,12 +13,16 @@
 > Baseline verificado en `main` (2026-10-13): **187 PASS / 0 FAIL**
 > (`python -m pytest -q`).
 >
-> **Fase 2 — RF-8..RF-10 (enmienda de la spec 2026-10-23)**: los §9–§9.10 de
-> este plan son un **BORRADOR pendiente de aprobación** por la usuaria; no se
-> implementa nada de esa fase hasta la aprobación explícita del plan y de
-> `task.md`. Baseline de la fase 2 verificado en `main` (2026-10-23):
-> **204 PASS / 0 FAIL**. El contenido de HU-010 (§0–§8, D1–D16,
-> TC-010-001..018) queda **íntegro y cerrado**.
+> **Fase 2 — RF-8..RF-15 (enmienda 2 de la spec, aprobada por la usuaria
+> 2026-10-23)**: los §9–§9.10 de este plan fueron **reescritos contra la
+> enmienda 2** y **REAPROBADOS por la usuaria el 2026-10-23** («Apruebo»),
+> con la fase 2 **dividida en 2A (T21–T25) y 2B (T26–T27)** («Divide la
+> fase», 2026-10-23); la 2B queda pendiente del cierre de la 2A. T16–T20
+> ya ejecutadas y commiteadas (hasta `223a43c`) contra el texto anterior de la
+> spec; la corrección de alineación (registro transaccional y reproceso) es
+> trabajo nuevo de esta fase (T21+). Baseline: `main` **204 PASS / 0 FAIL**;
+> en la rama, tras T18–T20: **210 PASS / 0 FAIL**. El contenido de HU-010
+> (§0–§8, D1–D16, TC-010-001..018) queda **íntegro y cerrado**.
 
 ---
 
@@ -657,42 +661,88 @@ Evidencia: payload del evento cancellation_email capturado + dump de automation_
 
 ---
 
-## 9. Fase 2 — RF-8..RF-10: evento de negocio `appointment.cancelled` (**APROBADO por la usuaria 2026-10-23**)
+## 9. Fase 2 — RF-8..RF-15: evento de negocio `appointment.cancelled` y reproceso (**REESCRITO CONTRA LA ENMIENDA 2 — APROBADO por la usuaria el 2026-10-23**)
 
-> Trazabilidad: **HU-010 (enmienda de la spec 2026-10-23) → Spec 010
-> RF-8..RF-10 (`specs/010_notificar-cancelacion/spec.md`) → §9 de este plan →
-> código → tests TC-010-101+ → evidencia → commit**
-> Estado: **plan y tareas APROBADOS por la usuaria (2026-10-23)**; fase 2
-> autorizada para implementación (AGENTS.md: no avanzar de fase sin
-> autorización).
-> Baseline verificado en `main` (2026-10-23): **204 PASS / 0 FAIL**
-> (`python -m pytest -q`).
+> Trazabilidad: **HU-010 (enmienda 2 de la spec, aprobada 2026-10-23) → Spec 010
+> RF-8..RF-15 (`specs/010_notificar-cancelacion/spec.md`) → §9 de este plan →
+> código → tests TC-010-101..119 → evidencia → commit**
+> Estado: la usuaria aprobó la enmienda 2 de la spec el 2026-10-23; **este §9,
+> reescrito contra ese texto, fue reaprobado por la usuaria el 2026-10-23**
+> («Apruebo»), junto con las tareas T21–T27 y con la **división de la fase en
+> 2A (T21–T25) y 2B (T26–T27)** («Divide la fase»). La implementación se
+> reanuda por la fase 2A; la 2B queda pendiente del cierre de la 2A.
+> T16–T20 ya ejecutadas contra el texto anterior del plan (hasta `223a43c`);
+> la corrección de alineación — registro transaccional (F2-D11) y
+> `reprocess_automation_event()` (F2-D3 reescrito, F2-D12) — es trabajo nuevo
+> de esta fase, sin reabrir T19/T20. **Hasta que se implemente, no afirmar que
+> la atomicidad está garantizada por el código**: hoy `update_appointment_status`
+> e `insert_event` abren conexiones separadas y el registro del evento es
+> post-commit (desalineación aceptada como consecuencia del cambio de diseño,
+> corregida en T22).
+> Baseline: `main` **204 PASS / 0 FAIL**; rama `feature/hu-010-rf8-10`
+> **210 PASS / 0 FAIL** (TC-010-101/102/103/104/108/109 añadidos en T19/T20).
 
 ### 9.1 Alcance y fuera de alcance
 
-**Alcance** (solo RF-8..RF-10 de la spec 010): que, cuando una cancelación
-quede confirmada en persistencia, el sistema **registre y emita el evento de
-negocio `appointment.cancelled` (v1)** de forma **independiente del resultado
-del envío del correo de cancelación** (RF-8), con un **payload versionado sin
-datos personales** conforme al contrato de la spec (RF-9), y que un fallo de
-publicación quede **trazado como `failed` con motivo en español, reintentable
-sin duplicados y sin reintentos automáticos**, sin que la cancelación
-confirmada se vea afectada (RF-10). Mismo modelo de fiabilidad que HU-007/
-008/010: registro en `automation_events` con `event_id` determinista
-`appointment.cancelled:{appointment.id}:v1` y `UNIQUE(event_id)`, un solo
-POST best-effort al webhook de automatización tras el commit, estados
-`pending → sent | skipped | failed`.
+**Alcance** (RF-8..RF-15 de la spec 010, enmienda 2): que, cuando una
+cancelación quede confirmada en persistencia, el sistema **registre y emita el
+evento de negocio `appointment.cancelled` (v1)** de forma **independiente del
+resultado del envío del correo de cancelación** (RF-8), con un **payload
+versionado sin datos personales** conforme al contrato de la spec (RF-9), y
+con el siguiente contrato de fiabilidad, según la enmienda 2:
+
+- **Atomicidad (RF-11/RF-12)**: la transición de la cita a `cancelled` y el
+  registro del evento en estado `pending` se confirman o se revierten como
+  partes de **una única transacción de persistencia sobre la misma conexión**
+  SQLite («sin traza local, sin cancelación confirmada»); el registro fallido
+  **antes** del commit produce rollback completo (la cita no queda Cancelada,
+  sin evento ni notificación derivada). La publicación (POST al webhook) se
+  realiza **siempre después del commit**.
+- **Fiabilidad de publicación (RF-10)**: un fallo del POST **después** del
+  commit deja el evento `failed` con el motivo en español y la cancelación
+  intacta; **sin reintentos automáticos**. El reproceso posterior se rige por
+  RF-13..RF-15.
+- **Reproceso (RF-13/RF-14)**: `reprocess_automation_event()` es una función
+  de servicio (sin UI ni endpoint) que, por decisión explícita del
+  administrador, reintenta la publicación de un evento `appointment.cancelled`
+  en estado `failed`, conservando el mismo `event_id` y la misma fila, y
+  trazando el resultado (`sent` | `failed` con detalle | `skipped` si la URL
+  está vacía). Sobre `sent`, `skipped` y `pending` es **no-op**: sin POST y
+  sin modificar el registro. Cuatro estados fijos, sin estados nuevos.
+- **Exclusión de concurrencia (RF-15)**: la admisión del reproceso es una
+  transición atómica condicionada al estado actual del evento; si dos
+  solicitudes compiten, solo una realiza el intento.
+
+Mismo modelo de fiabilidad que HU-007/008/010: registro en `automation_events`
+con `event_id` determinista `appointment.cancelled:{appointment.id}:v1` y
+`UNIQUE(event_id)`, un solo POST best-effort al webhook de automatización,
+estados `pending → sent | skipped | failed`. **Límite de alcance**: el
+reproceso y la atomicidad aplican **solo al evento `appointment.cancelled`**;
+`appointment.cancellation_email` conserva su registro post-commit (limitación
+conocida, documentada en F2-D11).
 
 **Base existente reutilizada** (HU-007/008/010 aceptadas): tabla
 `automation_events` con `UNIQUE(event_id)` y `insert_event`/`mark_sent`/
 `mark_skipped`/`mark_failed`; `automation_service._post_webhook()` (stdlib,
 timeout y auth header heredados); constantes `DETAIL_*` de
 `content/automation_content.py`; `cancel_appointment()` con transición
-atómica `confirmed → cancelled` ya commitada antes de cualquier emisión.
-`build_event()` de `automation_service` ya produce exactamente la forma de
-payload que RF-9 exige (mismas claves: `event_id`, `event_type`,
-`event_version`, `occurred_at`, `appointment{id,service,date,time,status}`),
+atómica `confirmed → cancelled`. `build_event()` de `automation_service` ya
+produce exactamente la forma de payload que RF-9 exige (mismas claves),
 solo que con `EVENT_TYPE = "appointment.confirmed"`.
+
+**Base ejecutada en esta rama (T18–T20, hasta `223a43c`)**: constantes
+`CANCELLED_EVENT_TYPE`/`_VERSION`; `_build_automation_event()` +
+`build_cancelled_event()` + `on_appointment_cancelled()` (con `insert_event`
+y `UNIQUE` dedup **post-commit**); disparo en `cancel_appointment()` antes que
+el correo (F2-D1). **Estado de ese código frente a la enmienda 2**:
+
+| Pieza | Cumple la enmienda 2 | Acción |
+|---|---|---|
+| Constantes, `build_cancelled_event()`, allowlist RF-9 | Sí | Sin cambios |
+| Orden de emisión negocio → correo (F2-D1) | Sí (la publicación sigue tras el commit) | Sin cambios |
+| Registro del evento `pending` | **No**: es post-commit y en conexión separada (F2-D3 anterior); RF-11/RF-12 exigen la misma transacción que el UPDATE de la cita | **Corrección nueva (T22)**: transacción conjunta |
+| Vía de reproceso del `failed` | **No**: no existía; RF-13..RF-15 exigen `reprocess_automation_event()` | **Función nueva (T24)** |
+| Afirmar «atomicidad garantizada por el código» | **No verificable hoy** | No se afirma hasta implementar T22 |
 
 **Fuera de alcance** de esta fase:
 
@@ -700,42 +750,62 @@ solo que con `EVENT_TYPE = "appointment.confirmed"`.
   fase posterior** (su enmienda 2026-10-23 fija solo el contrato de consumo;
   este plan satisface el contrato de emisión, no la implementación de n8n).
 - UI, endpoints o tokens de administración (cancelación de interfaz = Specs
-  017/018; ninguna de las dos se implementa aquí).
-- Reintentos automáticos, colas, workers o cualquier infraestructura
-  nueva; tampoco una función/CLI de reintento (ver limitación F2-D3).
+  017/018; `reprocess_automation_event()` es función de servicio invocada
+  internamente, como `cancel_appointment()`).
+- Reintentos automáticos, colas, workers o cualquier infraestructura nueva;
+  el único reproceso posible es el **explícito del administrador** sobre
+  eventos `failed` (RF-13).
+- Estados nuevos en `automation_events` o marcas de «en curso»; los cuatro
+  estados (`pending`, `sent`, `skipped`, `failed`) son fijos (decisión de la
+  usuaria). Consecuencia aceptada: un evento `pending` huérfano (proceso
+  interrumpido tras el commit y antes del POST) **puede permanecer `pending`
+  indefinidamente y, con el mecanismo actual, no habrá vía de recuperación**;
+  limitación operativa explícita en la spec y en F2-D11.
+- Cambios en `appointment.cancellation_email`, `send_cancellation()` ni en el
+  contenido del correo (su registro post-commit queda como limitación
+  conocida).
 - Dependencias nuevas, variables de entorno nuevas (se reutilizan
   `AUTOMATION_WEBHOOK_URL`/`AUTOMATION_TIMEOUT_SECONDS`/
   `AUTOMATION_WEBHOOK_AUTH_HEADER`) y cambios de esquema (la tabla
   `automation_events` ya existe con su UNIQUE).
+- Cambios en `tests/expected_content.py`: **sin cambios** por esta enmienda
+  (decisión de la usuaria 2026-10-23; los literales visibles de correo y
+  estados no cambian — F2-D13).
 - Implementación de la Spec 007 (data table y workflow de n8n) y actualización
   del plan 018 (se anota como pendiente del coordinador, F2-D4).
-- Cambios en `send_cancellation()`, en el contenido del correo, en
-  `create_booking()`, en `web/`, plantillas, CSS o JS.
 
-### 9.2 Matriz de cobertura RF (fase 2)
+### 9.2 Matriz de cobertura RF (fase 2, enmienda 2)
 
 | RF | Enunciado (resumen) | Dónde se cubre |
 |----|---------------------|----------------|
-| RF-8 | Cancelación confirmada → se registra y emite `appointment.cancelled` v1, independiente del correo, `event_id` determinista + UNIQUE | §9.3 `on_appointment_cancelled()` + disparo en `cancel_appointment()` tras el commit; §9.6 F2-D1; §9.7 TC-010-101/103/108/109 |
-| RF-9 | Payload con `event_id`, `event_type`, `event_version` (1), `occurred_at`, `appointment{id,service,date,time,status:"cancelled"}`; sin `patient_name`, `email`, `phone`, `document_type`, `document_number`, `recipient`, `message` | §9.4 contrato JSON + `build_cancelled_event()` (allowlist, mismo esqueleto que `build_event()`); §9.7 TC-010-101/102 |
-| RF-10 | Fallo → estado `failed` con motivo en español; reintento sin duplicados (UNIQUE); sin reintentos automáticos; cancelación intacta; URL vacía → `skipped` | §9.5 estados e incidencias + dedup por `UNIQUE(event_id)` + «nunca propaga»; F2-D3 (limitación de reproceso); §9.7 TC-010-104/105/106/107/110 |
-| RNF (spec) | Minimización de datos, trazabilidad, sin colas | §9.4 allowlist sin PII; `automation_events` con `appointment_id`; F2-D5/D6 |
-| CL «Webhook no configurado» | Evento `skipped`; la cancelación no depende de la automatización | §9.5; TC-010-104 |
+| RF-8 | Cancelación confirmada → se registra y emite `appointment.cancelled` v1, independiente del correo, `event_id` determinista + UNIQUE | §9.3 transacción (registro `pending`) + publicación post-commit en `cancel_appointment()`; §9.6; §9.8.1 TC-010-101/103/104/109; **CA-1, CA-3** |
+| RF-9 | Payload con `event_id`, `event_type`, `event_version` (1), `occurred_at`, `appointment{id,service,date,time,status:"cancelled"}`; sin PII ni `recipient`/`message` | §9.4 contrato JSON + `build_cancelled_event()` (allowlist); §9.8.1 TC-010-102/111; **CA-2** |
+| RF-10 | Fallo de publicación **tras el commit** → `failed` con motivo en español; sin reintentos automáticos; cancelación intacta; URL vacía → `skipped` | §9.5 estados + «nunca propaga» de la publicación; §9.8.1 TC-010-105/106/107; **CA-4** |
+| RF-11 | Transición y registro `pending` en la misma conexión/transacción («sin traza local, sin cancelación confirmada»); publicación tras el commit | §9.3 (función transaccional) + §9.6; §9.8.1 TC-010-101/115; **CA-5** |
+| RF-12 | Registro `pending` fallido antes del commit → rollback completo (cita sin Cancelar, sin evento, sin POST) | §9.3 + §9.5 matriz de fallos; §9.8.1 TC-010-110; **CA-5** |
+| RF-13 | Reproceso de un `failed`: mismo `event_id`, misma fila, 1 POST, resultado trazado (`sent`/`failed`/`skipped`) | §9.3 `reprocess_automation_event()`; §9.6; §9.8.1 TC-010-113/114/115/118; **CA-6** |
+| RF-14 | Reproceso sobre `sent`/`skipped`/`pending` → no-op, sin POST y sin modificar el registro | §9.6 tabla de 4 estados; §9.8.1 TC-010-108 (guarda de transición) + TC-010-116; **CA-7** |
+| RF-15 | Reprocesos concurrentes → únicamente uno realiza el intento (transición atómica condicionada al estado) | §9.3 `claim_failed_event()`; §9.7 F2-D12; §9.8.1 TC-010-117; **CA-8** |
+| RNF (spec) | Minimización de datos, trazabilidad, atomicidad de la traza, sin colas | §9.4 allowlist sin PII; `automation_events` con `appointment_id`; F2-D5/D6/D11/D12 |
+| CL «Webhook no configurado» | Evento `skipped`; la cancelación no depende de la automatización | §9.5; TC-010-104 y reproceso TC-010-114 (URL vacía) |
+| CL «pending huérfano» | Queda `pending`; sin vía de recuperación en esta fase (limitación aceptada) | §9.1 fuera de alcance + F2-D11; sin test de recuperación (explícitamente fuera) |
 | Compatibilidad Spec 007 (contrato de consumo) | n8n identifica la cita por `appointment_id` | El payload incluye `appointment.id`; el `event_id` de cancelación no se usa para localizar Calendar (RF-9 de la 007 es responsabilidad de n8n) |
 
 ### 9.3 Módulos a tocar (responsabilidades y «NO debe hacer»)
 
-Solo se cambian **tres módulos de código** y los tests; sin esquema, sin
-`config.py`, sin `web/`:
+Se cambian **cuatro módulos de código** (persistencia ahora incluida por la
+enmienda 2) y los tests; sin esquema, sin `config.py`, sin `web/`:
 
 | Módulo | Cambio y responsabilidad | NO debe hacer |
 |---|---|---|
-| `consultorio/content/automation_content.py` | + `CANCELLED_EVENT_TYPE = "appointment.cancelled"`, `CANCELLED_EVENT_VERSION = 1` (junto a `EVENT_TYPE`/`EVENT_VERSION` de HU-007) | Contener lógica; duplicar los `DETAIL_*` existentes (se reutilizan) |
-| `consultorio/services/automation_service.py` | + `_build_automation_event(appointment, event_type, event_version)` (helper privado, allowlist única); `build_event()` **delega sin cambiar su firma pública**; + `build_cancelled_event()`; + `on_appointment_cancelled()` (registro → dedup → `skipped`/`failed`/`sent`, **nunca propaga**) | Mezclar composición de mensajes de correo; tocar `_post_webhook`; propagar excepciones; reintentar |
-| `consultorio/services/appointment_service.py` | En `cancel_appointment()`, tras el commit y **antes** de `send_cancellation()`, invocar `automation_service.on_appointment_cancelled(...)` best-effort (F2-D1) | Cambiar la firma o el contrato de `cancel_appointment()`/`create_booking()`; crear endpoints; revertir la cancelación |
-| `consultorio/services/email_service.py` | **SIN CAMBIOS** (el correo de cancelación queda exactamente como está) | — |
-| `consultorio/persistence/*` | **SIN CAMBIOS** (se reutilizan `insert_event`/`mark_*` y el `UNIQUE(event_id)` ya existentes) | — |
-| `tests/test_cancellation_service.py` | + bloque TC-010-101..111 (los TC-010-001..012 cerrados **no se modifican**: ya filtran por `event_id`/`event_type`, precedente D15) | Relajar o eliminar aserciones cerradas |
+| `consultorio/content/automation_content.py` | `CANCELLED_EVENT_TYPE = "appointment.cancelled"`, `CANCELLED_EVENT_VERSION = 1` (ya en la rama, T18) | Contener lógica; duplicar los `DETAIL_*` existentes (se reutilizan) |
+| `consultorio/services/automation_service.py` | **ya en la rama**: `_build_automation_event()`, `build_event()` delega sin cambiar su firma pública, `build_cancelled_event()`. **Nuevo (T22)**: `publish_cancelled_event()` (solo publicación: `skipped`/`failed`/`sent` sobre un registro `pending` ya existente, **nunca propaga**). **Nuevo (T24)**: `reprocess_automation_event()` (RF-13..RF-15: admisión atómica del `failed` → recuperar payload/registro → POST → `mark_*`) | Mezclar composición de mensajes de correo; tocar `_post_webhook`; reintentar automáticamente; crear el registro `pending` fuera de la transacción de la cancelación |
+| `consultorio/services/appointment_service.py` | `cancel_appointment()`: usar la **nueva operación transaccional** de persistencia (UPDATE cita + INSERT evento `pending`, misma conexión) y, tras el commit, publicar el negocio (F2-D1) antes que el correo | Cambiar la firma o el contrato de `cancel_appointment()`/`create_booking()`; crear endpoints; revertir la cancelación por fallo de publicación; registrar el evento en conexión separada |
+| `consultorio/persistence/appointments_repository.py` | **Nuevo (T22)**: operación transaccional `update_appointment_status_with_pending_event()` (o combinación de menor superficie equivalente en los repositorios) que ejecuta el `UPDATE … AND status='confirmed'` y el `INSERT … status='pending'` del evento en **la misma conexión/transacción**; devuelve la cita actualizada o `None`. `update_appointment_status()` existente **se conserva** (call sites HU-010 cerrados) | Reglas de publicación ni llamadas HTTP; exponer transacciones abiertas al servicio |
+| `consultorio/persistence/automation_events_repository.py` | **Nuevo (T24)**: `claim_failed_event(event_id, …)` — transición atómica de admisión del reproceso (`UPDATE … SET status='pending' WHERE event_id=? AND status='failed' AND event_type='appointment.cancelled'`); `insert_event`/`mark_*` existentes sin cambios de firma | Abrir la transacción de la cancelación; decidir políticas de reproceso |
+| `consultorio/services/email_service.py` | **SIN CAMBIOS** (el correo de cancelación conserva su registro post-commit; limitación documentada en F2-D11) | — |
+| `consultorio/persistence/database.py` | **SIN CAMBIOS** (sin esquema nuevo: `automation_events` ya existe con su UNIQUE) | — |
+| `tests/test_cancellation_service.py` | TC-010-101/102/103/104/108/109 **ya en la rama**; se redefinen/adapta el bloque pendiente 105..117 (§9.8.1). Los TC-010-001..018 cerrados **no se modifican** (filtran por `event_id`/`event_type`, precedente D15) | Relajar o eliminar aserciones cerradas |
 
 ### 9.4 Contrato del evento (RF-9; idéntico al de la spec)
 
@@ -765,27 +835,40 @@ Solo se cambian **tres módulos de código** y los tests; sin esquema, sin
   `appointment.id`); el `event_id` de este evento no sirve para localizar el
   evento de Google Calendar (lo gestiona n8n en su data table).
 
-### 9.5 Estados e incidencias (RF-8, RF-10; `detail` en español)
+### 9.5 Estados, matriz de fallos e incidencias (RF-8, RF-10..RF-12; `detail` en español)
 
 | Situación | `status` | `detail` (reutilizado de `automation_content`) |
 |---|---|---|
-| Evento registrado, a punto de enviarse | `pending` | `NULL` |
+| Evento registrado en la transacción de la cancelación, a punto de enviarse | `pending` | `NULL` |
 | HTTP 2xx del webhook | `sent` | `NULL` + `sent_at` |
-| `AUTOMATION_WEBHOOK_URL` vacía | `skipped` | `Automatización no configurada.` |
+| `AUTOMATION_WEBHOOK_URL` vacía (flujo normal o reproceso) | `skipped` | `Automatización no configurada.` |
 | Timeout | `failed` | `Tiempo de espera agotado (timeout).` |
 | `URLError` / conexión rechazada | `failed` | `Servicio de automatización no disponible.` |
 | Respuesta no-2xx | `failed` | `Respuesta no válida del servicio (HTTP {code}).` |
 | Otra excepción | `failed` | `Error inesperado durante la automatización.` |
 
-Ningún estado altera la cita: la cancelación ya está commitada (RF-10). Sin
-reintentos automáticos; `UNIQUE(event_id)` impide duplicados ante cualquier
-reproceso (RF-8/RF-10). Sin literales nuevos (F2-D10).
+**Matriz de fallos (RF-10, RF-11, RF-12; idéntica a la spec):**
 
-### 9.6 Algoritmo en pseudocódigo (fase 2)
+| Fallo | Cancelación de la cita | Evento `appointment.cancelled` |
+|---|---|---|
+| El registro del evento falla **antes** del commit (fallo de la transacción) | **No queda confirmada**: rollback de la operación completa; la cita conserva su estado anterior | No se crea ningún registro |
+| El commit se completa pero falla el POST al webhook | **Permanece confirmada** (RF-10) | Queda `failed` con el motivo; reprocesable vía `reprocess_automation_event()` (RF-13) |
+| Webhook no configurado (URL vacía) | **Permanece confirmada** (RF-8) | Queda `skipped` con su detalle |
+
+Ningún fallo de **publicación** altera la cita: la cancelación ya está
+commitada (RF-10). Sin reintentos automáticos. Cuatro estados fijos
+(`pending`, `sent`, `skipped`, `failed`); `UNIQUE(event_id)` garantiza un
+único registro por cancelación (RF-8). Durante el reproceso, la admisión
+atómica transiciona `failed → pending` (F2-D12); si el proceso se
+interrumpiera en ese intervalo, el evento quedaría `pending` — **misma
+limitación operativa del `pending` huérfano, aceptada en esta fase** (§9.1).
+Sin literales nuevos (F2-D10).
+
+### 9.6 Algoritmo en pseudocódigo (fase 2, enmienda 2)
 
 ```text
 # --- content/automation_content.py ------------------------------------
-CANCELLED_EVENT_TYPE: str = "appointment.cancelled"        # [RF-8][RF-9]
+CANCELLED_EVENT_TYPE: str = "appointment.cancelled"        # [RF-8][RF-9] (ya en rama)
 CANCELLED_EVENT_VERSION: int = 1
 
 # --- services/automation_service.py -----------------------------------
@@ -806,18 +889,16 @@ FUNCTION build_cancelled_event(appointment) -> dict:      # [RF-9]
     RETURN _build_automation_event(
         appointment, CANCELLED_EVENT_TYPE, CANCELLED_EVENT_VERSION)
 
-FUNCTION on_appointment_cancelled(appointment, database_path,
-                                  url="", timeout=3.0, auth="") -> None:
-    TRY:                                                  # nunca propaga [RF-10]
+FUNCTION publish_cancelled_event(appointment, database_path,
+                                 url="", timeout=3.0, auth="") -> None:
+    # SOLO publicación; el registro `pending` YA existe (misma transacción
+    # que la cancelación, RF-11). Nunca propaga [RF-10].  POST tras commit.
+    TRY:
         event = build_cancelled_event(appointment)
         event_id = str(event["event_id"])
-        created = events_repository.insert_event(        # UNIQUE(event_id)
-            event_id, CANCELLED_EVENT_TYPE, CANCELLED_EVENT_VERSION,
-            appointment.id, database_path)
-        IF NOT created: RETURN                            # reproceso: 0 POST [RF-8]
         IF NOT url:
             events_repository.mark_skipped(event_id, DETAIL_NOT_CONFIGURED,
-                                           database_path); RETURN   # [RF-10]
+                                           database_path); RETURN   # [RF-8]
         TRY: status_code = _post_webhook(url, event, timeout, auth)
         CATCH TimeoutError:     mark_failed(… DETAIL_TIMEOUT); RETURN
         CATCH urllib.error.URLError: mark_failed(… DETAIL_UNAVAILABLE); RETURN
@@ -825,132 +906,287 @@ FUNCTION on_appointment_cancelled(appointment, database_path,
         IF 200 <= status_code < 300: mark_sent(event_id, database_path)
         ELSE: mark_failed(… DETAIL_INVALID_RESPONSE_TEMPLATE.format(…))
     CATCH Exception:
-        RETURN   # un fallo del evento jamás afecta la cancelación [RF-10]
+        RETURN   # un fallo de publicación jamás afecta la cancelación [RF-10]
+
+FUNCTION reprocess_automation_event(event_id, database_path,
+                                    url="", timeout=3.0, auth="") -> bool:
+    # Reproceso explícito del administrador sobre un evento
+    # `appointment.cancelled` en estado `failed` [RF-13]; sin UI ni endpoint.
+    TRY:
+        # Admisión atómica condicionada al estado [RF-15]: solo una solicitud
+        # concurrente transiciona failed → pending; el resto ve rowcount 0.
+        admitted = events_repository.claim_failed_event(event_id, database_path)
+        IF NOT admitted: RETURN False                    # no-op [RF-14]
+        event_row = events_repository.get_by_event_id(event_id, database_path)
+        appointment = appointments_repository.get_appointment_by_id(
+            event_row.appointment_id, database_path)
+        event = build_cancelled_event(appointment)       # mismo event_id [RF-13]
+        IF NOT url:
+            mark_skipped(event_id, DETAIL_NOT_CONFIGURED, database_path)
+            RETURN True                                  # [RF-8] misma semántica
+        TRY: status_code = _post_webhook(url, event, timeout, auth)
+        CATCH TimeoutError:     mark_failed(… DETAIL_TIMEOUT); RETURN True
+        CATCH urllib.error.URLError: mark_failed(… DETAIL_UNAVAILABLE); RETURN True
+        CATCH Exception:        mark_failed(… DETAIL_UNEXPECTED); RETURN True
+        IF 200 <= status_code < 300: mark_sent(event_id, database_path)
+        ELSE: mark_failed(… DETAIL_INVALID_RESPONSE_TEMPLATE.format(…))
+        RETURN True
+    CATCH Exception:
+        RETURN False   # jamás propaga; el registro queda trazado
+
+# --- persistence/appointments_repository.py ----------------------------
+FUNCTION update_appointment_status_with_pending_event(
+        appointment_id, new_status, event_id, event_type, event_version,
+        database_path) -> Appointment | None:             # [RF-11][RF-12]
+    # MISMA conexión y transacción: o ambas confirmadas o ninguna.
+    TRY:
+        connection = get_connection(database_path)
+        TRY:
+            cursor = connection.execute(
+                UPDATE appointments SET status = ?
+                 WHERE id = ? AND status = 'confirmed',    # transición atómica
+                (new_status, appointment_id))
+            IF cursor.rowcount == 0:
+                connection.rollback(); RETURN None         # sin evento, sin cambio
+            connection.execute(
+                INSERT INTO automation_events (
+                    event_id, event_type, event_version, appointment_id, status)
+                VALUES (?, ?, ?, ?, 'pending'),            # registro conjuntante
+                (event_id, event_type, event_version, appointment_id))
+            connection.commit()                            # «sin traza local,
+                                                           #  sin cancelación
+                                                           #  confirmada»
+        CATCH:
+            connection.rollback()                          # [RF-12] rollback
+            RAISE                                          # cita SIN cancelar
+        FINALLY: connection.close()
+        RETURN get_appointment_by_id(appointment_id, database_path)
+    # sqlite3.IntegrityError/OperationalError propagan al servicio (fallo real)
 
 # --- services/appointment_service.py ----------------------------------
+APPOINTMENT_NOT_FOUND: str = "appointment_not_found"
+ALREADY_CANCELLED: str = "already_cancelled"
+
 FUNCTION cancel_appointment(appointment_id, database_path, url="", timeout=3.0,
                             auth_header="") -> Appointment | str:
-    … UPDATE condicional confirmed → cancelled (SIN CAMBIOS) …
-    IF updated IS None: RETURN ALREADY_CANCELLED          # sin emisiones
-    automation_service.on_appointment_cancelled(          # [RF-8] PRIMERO (F2-D1)
-        updated, database_path, url, timeout, auth_header)
+    appointment = repository.get_appointment_by_id(appointment_id, database_path)
+    IF appointment IS None: RETURN APPOINTMENT_NOT_FOUND
+    event_id = f"{CANCELLED_EVENT_TYPE}:{appointment_id}:v{CANCELLED_EVENT_VERSION}"
+    TRY:                                                   # [RF-11][RF-12]
+        updated = repository.update_appointment_status_with_pending_event(
+            appointment_id, STATUS_CANCELLED, event_id,
+            CANCELLED_EVENT_TYPE, CANCELLED_EVENT_VERSION, database_path)
+    CATCH (sqlite3.IntegrityError, sqlite3.OperationalError):
+        RAISE   # registro fallido → rollback; la cita NO queda Cancelada (RF-12)
+    IF updated IS None:
+        RETURN ALREADY_CANCELLED   # ya cancelada: SIN emisiones [RF-4][CL-1]
+    automation_service.publish_cancelled_event(          # [RF-8] POST tras
+        updated, database_path, url, timeout, auth_header)  # commit; primero (F2-D1)
     email_service.send_cancellation(                      # después (F2-D1)
         updated, database_path, url, timeout, auth_header)
     RETURN updated
+
+# create_booking() y web/: SIN CAMBIOS (firma e HTTP intactos)     [RF-3]
 ```
+
+> **Nota sobre `on_appointment_cancelled()` (T19, ya en la rama)**: la función
+> actual registra el evento con `insert_event` **post-commit**, en conexión
+> separada — diseño del plan previo, **desalineado con RF-11/RF-12**. En T22
+> se reemplaza por la transacción de `update_appointment_status_with_pending_event()`
+> + `publish_cancelled_event()` (solo publicación). El orden F2-D1 (negocio
+> antes que correo) y el contrato público de `cancel_appointment()` se
+> conservan; los TC-010-101..109 ya verdes deben seguir pasando sin relajarse
+> (ver §9.8.1).
 
 ### 9.7 Decisiones técnicas (fase 2)
 
 | # | Decisión | Justificación | Alternativa descartada | RF |
 |---|---|---|---|---|
 | F2-D1 | **Orden de emisión: evento de negocio `appointment.cancelled` PRIMERO, correo `appointment.cancellation_email` DESPUÉS**, ambos tras el commit y ambos best-effort | (a) Precedente exacto de HU-007/008 en `create_booking()`: evento de negocio (`appointment.confirmed`) antes que la acción técnica de correo (`confirmation_email`). (b) RF-8 exige independencia del resultado del correo: emitiéndolo primero se cumple trivialmente — un fallo total del envío del correo no puede condicionarlo. (c) Semántica de la Spec 007 RF-13: el evento de negocio es «la cita fue cancelada» (hecho confirmado) y es el que activa el borrado de Calendar; el correo es una acción técnica posterior. | *Correo primero*: invierte el precedente de HU-007/008 y haría que el hecho de negocio dependiera en el tiempo de una acción técnica, contrario al espíritu de RF-8. *Emitirlos en paralelo/ambos al final*: complejidad nueva sin ganancia (son síncronos, secuenciales y baratos); el orden entre dos best-effort independientes no altera su semántica de fallo individual | RF-8 |
-| F2-D2 | **Funciones nuevas en `automation_service.py`**: `on_appointment_cancelled()` + `build_cancelled_event()`, con el esqueleto del payload compartido vía helper privado `_build_automation_event()`; constantes en `automation_content.py`; `build_event()` conserva su firma pública | El evento de negocio pertenece al dominio de automatización (mismo módulo que `appointment.confirmed`); la Spec 007 RF-13 exige distinguirlo del correo, y `email_service` es el dominio de la composición de mensajes. El helper evita dos copias del allowlist (deriva de contrato). El patrón «una función por evento que nunca propaga» es el precedente aceptado HU-007 → HU-008 → HU-010. | *Ponerlo en `email_service`*: mezcla dominios (RF-13) y contradice la separación de responsabilidades del §9.3. *Duplicar `build_event()` íntegro*: dos allowlists que pueden divergir. *Parametrizar `on_appointment_confirmed(event_type=…)`*: renombra semánticamente un flujo cerrado y aceptado, mayor superficie de regresión sin ganancia. *Refactorizar el dispatch de `send_cancellation()` para compartirlo*: tocaría código cerrado de HU-010 fuera del alcance autorizado | RF-8, RF-9 |
-| F2-D3 | **Reintentabilidad de un evento `failed` hoy: sin vía automatizada — limitación conocida documentada**. El reproceso manual = el administrador reconstruye el payload determinista desde la fila de la cita y hace un POST con la **misma `event_id`** al webhook (p. ej. `Invoke-RestMethod`/`curl`); `UNIQUE(event_id)` garantiza que la aplicación nunca reemitirá el mismo evento. Re-invocar `on_appointment_cancelled()` sobre un evento ya registrado es **no-op** (dedup antes del POST): seguro, pero **no es** un reintento | No existen UI, endpoint, CLI ni payload almacenado en `automation_events` (solo metadatos), así que hoy no hay vía de reintento programática; inventarla sería infraestructura nueva sin spec (los reintentos automáticos están expresamente fuera de alcance). Es la misma limitación ya asumida y aceptada en HU-007/008/010 («el reproceso lo decide el administrador» sin mecanismo). RF-10 se cumple en el backend: estado `failed` + motivo + reintentabilidad sin duplicados garantizada por la capa de persistencia | *Función/endpoint de reintento ahora*: feature sin spec ni UI, amplía alcance. *Almacenar el payload JSON completo en la tabla para re-POST directo*: cambio de esquema sin requisito. *Asumir que re-invocar la función reintenta*: falso — el dedup la convierte en no-op; queda explícito para no inducir a error | RF-10 |
+| F2-D2 | **Funciones nuevas en `automation_service.py`**: composición del payload con el helper privado `_build_automation_event()` (allowlist única) y `build_cancelled_event()` (ya en la rama); **publicación** del evento en `publish_cancelled_event()` (enmienda 2: el registro `pending` vive en la transacción de la cancelación, F2-D11) y **reproceso** en `reprocess_automation_event()` (F2-D3); constantes en `automation_content.py`; `build_event()` conserva su firma pública | El evento de negocio pertenece al dominio de automatización (mismo módulo que `appointment.confirmed`); la Spec 007 RF-13 exige distinguirlo del correo, y `email_service` es el dominio de la composición de mensajes. El helper evita dos copias del allowlist (deriva de contrato). El patrón «una función por evento que nunca propaga» es el precedente aceptado HU-007 → HU-008 → HU-010. La separación registro-transaccional (repositorio) / publicación-post-commit (servicio) es la que RF-11/RF-12 exigen | *Ponerlo en `email_service`*: mezcla dominios (RF-13) y contradice la separación de responsabilidades del §9.3. *Duplicar `build_event()` íntegro*: dos allowlists que pueden divergir. *Parametrizar `on_appointment_confirmed(event_type=…)`*: renombra semánticamente un flujo cerrado y aceptado, mayor superficie de regresión sin ganancia. *Mantener `on_appointment_cancelled()` con `insert_event` interno* (estado de la rama): incumple RF-11 al registrar en conexión separada | RF-8, RF-9, RF-11, RF-13 |
+| F2-D3 | **Reproceso del evento `failed`: función de servicio `reprocess_automation_event()` (RF-13..RF-15)** — sin UI ni endpoint, invocada únicamente por decisión explícita del administrador; admite solo eventos `appointment.cancelled` en estado `failed`, transiciona atómicamente `failed → pending` como admisión, recupera el payload (reconstruido deterministamente con el mismo `event_id`) y el registro existente, realiza **un único** nuevo POST y traza el resultado (`sent` \| `failed` con detalle en español \| `skipped` si la URL está vacía). Sobre `sent`, `skipped` y `pending`: no-op sin POST ni modificación (RF-14). Sin reintentos automáticos | Resolución aprobada por la usuaria (enmienda 2) de la contradicción del texto anterior («choca en el INSERT y se descarta» vs. «reintento sin duplicados» vs. «lo decide el administrador»): el administrador decide y el mecanismo es programático, reutilizando la fila y el `UNIQUE(event_id)`; mismo patrón de servicio sin UI que `cancel_appointment()` (F2-D1/D15) | *POST manual del admin con payload reconstruido* (F2-D3 anterior): sin traza en la app y propenso a error. *Reinvocar `publish_cancelled_event()`/`on_appointment_cancelled()`*: no-op o doble registro según la versión, no es reproceso. *Reintentos automáticos/colas/workers*: infraestructura nueva, fuera de alcance. *Almacenar el payload JSON en la tabla*: cambio de esquema sin requisito (el payload es reconstruible y determinista). *Nuevos estados o marcas de «en curso»*: la usuaria fijó cuatro estados y postergó la extensión | RF-13, RF-14, RF-15 |
+| F2-D11 | **Atomicidad transaccional del registro con la cancelación (RF-11/RF-12)**: nueva operación de persistencia (propuesta: `update_appointment_status_with_pending_event()` en `appointments_repository`, de la menor superficie posible) que ejecuta el `UPDATE … AND status='confirmed'` y el `INSERT` del evento `pending` en **la misma conexión y transacción** SQLite; commit conjuntivo («sin traza local, sin cancelación confirmada»); fallo del INSERT → **rollback y la cita no queda Cancelada** (RF-12), sin evento ni notificación derivada. El `update_appointment_status()` existente se conserva para no romper call sites cerrados. **Limitación reconocida y aceptada por la usuaria**: si el proceso termina después del commit y antes del POST, el evento puede permanecer `pending` indefinidamente y, con el mecanismo actual, no habrá vía de recuperación (sin estados nuevos en esta fase; el reproceso cubre solo `failed`) | Corrige la desalineación del código de T19/T20 (registro `insert_event` post-commit en conexión separada), aceptada como consecuencia del cambio de diseño y no como defecto; hasta implementarla no se afirma que la atomicidad está garantizada por el código. Hoy `update_appointment_status` e `insert_event` abren conexiones distintas: entre el commit del UPDATE y el INSERT hay una ventana sin traza local que RF-11 prohíbe. La publicación (POST) se queda tras el commit, igual que hasta ahora | *Dejar el registro post-commit* (estado actual): incumple RF-11/RF-12 y la matriz de fallos aprobada. *Transacción que incluya también el POST*: un fallo de red tumbaría la cancelación (contra RF-10). *Dos UPDATEs en transacciones separadas*: no es atomicidad. *Tabla o estados nuevos para el pending huérfano*: la usuaria fijó cuatro estados y aceptó la limitación para esta fase | RF-11, RF-12, RF-8, RF-10 |
+| F2-D12 | **Exclusión de concurrencia del reproceso (RF-15)**: la admisión se garantiza con una **transición atómica condicionada al estado**, `UPDATE automation_events SET status='pending', detail=NULL WHERE event_id=? AND status='failed' AND event_type='appointment.cancelled'` (`claim_failed_event()`); solo la solicitud que obtiene `rowcount = 1` realiza el intento; las demás son no-op (RF-14) sin POST ni modificación | SQLite serializa escrituras: el UPDATE condicional es un cierre natural de admisión sin colas, workers ni estados nuevos; mismo patrón de «transición condicional como exclusión» que el `UPDATE … AND status='confirmed'` de la cancelación (D6) | *SELECT previo + POST*: carrera entre chequeo y publicación (doble POST). *Bloqueo optimista con nueva columna `claimed_at`*: esquema nuevo y estados de facto nuevos. *Bloqueos explícitos/`BEGIN IMMEDIATE` en el servicio*: complejidad innecesaria para el volumen y sin requisito | RF-15 |
 | F2-D4 | **Coordinación con Spec 018 (y 017): cada cancelación emitirá DOS eventos al mismo webhook** (`appointment.cancelled` + `appointment.cancellation_email`). Riesgo anotado para **TC-018-005** (plan 018 §6.1: «1 evento `sent`» de `cancellation_email`), TC-018-007 y TC-018-012, y para los futuros tests de la 017: sus verificaciones deberán **filtrar por `event_type`** (precedente D15 de HU-008, ya aplicado dentro de los propios TC-010-001..007, que por eso **no se rompen**) | Tras esta fase, contar eventos o POSTs de una cancelación sin filtrar daría 2 en vez de 1 → falsos fallos en 017/018 al implementarlos. La adaptación de 018 es **spec-backed** (enmiendas 010 y 007 aprobadas) pero pertenece al plan de la 018; este plan solo documenta el riesgo y la dirección de la solución | *Adaptar el plan 018 desde aquí*: fuera del alcance de esta fase (cada spec planifica sus tests); *no filtrar y aceptar recuentos globales*: frágil y contrario al precedente D15 | RF-8, regresión |
 | F2-D5 | **Sin dependencias ni variables de entorno nuevas**; se reutilizan `AUTOMATION_WEBHOOK_URL`/`AUTOMATION_TIMEOUT_SECONDS`/`AUTOMATION_WEBHOOK_AUTH_HEADER` (mismo webhook; URL vacía → `skipped`) | Mismo canal que HU-007/008/010 (D8 cerrado); constitución #1; cero config nueva | *`CANCELLED_WEBHOOK_URL` propio*: duplica config y secretos sin ganancia | RF-8, RF-10 |
 | F2-D6 | **Sin cambios de esquema**: se reutiliza `automation_events` con su `UNIQUE(event_id)` y su ciclo `pending → sent \| skipped \| failed` | El modelo de fiabilidad pedido por RF-8/RF-10 ya existe; la unicidad en el punto de persistencia es constitución #5 | *Tabla nueva `business_events`*: duplica infraestructura sin requisito | RF-8, RF-10 |
 | F2-D7 | **Rama `feature/hu-010-rf8-10` desde `main`** (baseline 204) | Aislamiento por HU/fase (AGENTS.md); `main` limpia tras el cierre de HU-010 | *Rama desde otra feature*: arrastra pendientes | regresión |
-| F2-D8 | **Numeración de tests: bloque TC-010-101…** (101–111 funciones nuevas; 112 = corrida de suite) | Los TC-010-001..018 están cerrados y referenciados en la evidencia de HU-010; el bloque 019–100 queda reservado para futuras enmiendas del alcance cerrado; el salto a 101 deja colisión imposible | *Continuar en TC-010-019*: correries con enmiendas futuras del alcance cerrado | trazabilidad |
-| F2-D9 | **Los tests nuevos se añaden al final de `tests/test_cancellation_service.py`** (reutilizando `_future_weekday`, `_booking_data`, `_count_events`; nuevo helper `_cancelled_posts()` análogo a `_cancellation_posts()`) | Mismo dominio (cancelación), mismas fixtures y precedente de filtrado; sin duplicar helpers | *Fichero nuevo `test_cancelled_event.py`*: duplicaría helpers y dispersaría el dominio de la cancelación | RF-8..RF-10 |
+| F2-D8 | **Numeración de tests: bloque TC-010-101…** (tras la enmienda 2: funciones 101–118; 119 = corrida de suite — el antiguo 112 «corrida» migra al 119 para ceder el 112 a la función de atomicidad positiva; **ningún ID ya usado se reutiliza**: los 101–110 del plan previo conservan su ID, con redefinición explícita del 110) | Los TC-010-001..018 están cerrados y referenciados en la evidencia de HU-010; el bloque 019–100 queda reservado para futuras enmiendas del alcance cerrado; el salto a 101 deja colisión imposible | *Continuar en TC-010-019*: correries con enmiendas futuras del alcance cerrado. *Reutilizar el 110 sin redefinir*: confundiría la aserción antigua (aislamiento) con la nueva (rollback RF-12) | trazabilidad |
+| F2-D9 | **Los tests se mantienen en `tests/test_cancellation_service.py`** (reutilizando `_future_weekday`, `_booking_data`, `_count_events`, `_cancelled_posts()`; auxiliares nuevos solo si hacen falta para el reproceso, p. ej. un helper que fuerce un estado `failed`) | Mismo dominio (cancelación), mismas fixtures y precedente de filtrado; sin duplicar helpers | *Fichero nuevo `test_cancelled_event.py`*: duplicaría helpers y dispersaría el dominio de la cancelación | RF-8..RF-15 |
 | F2-D10 | **Sin literales nuevos**: `skipped` reutiliza `DETAIL_NOT_CONFIGURED` («Automatización no configurada.») y los `failed` los `DETAIL_*` ya aceptados en HU-007/008/010 | Mismo canal, mismo copy ya probado; el evento no tiene mensajes visibles ni subject (constitución #6 se cumple con los `detail` existentes en español) | *Literal de cancelación nuevo para el `skipped`*: duplicidad textual sin necesidad (el de correo ya tiene el suyo propio en `email_content`) | RF-10 |
+| F2-D13 | **`tests/expected_content.py` sin cambios por la enmienda 2** (decisión de la usuaria 2026-10-23) y **límite de alcance transaccional**: solo `appointment.cancelled` obtiene atomicidad y reproceso; `appointment.cancellation_email` conserva su registro post-commit con su ventana de fallo conocida | Los textos reescritos de la enmienda 2 (RF, contratos, tablas) no alteran literales visibles de correo ni de estados: los valores de `email_content`/`appointment_content` y sus espejos siguen siendo los de HU-010; no existe tarea de sincronización que crear. La atomicidad del correo exigiría tocar `send_cancellation()` (código cerrado de HU-010) sin requisito que lo respalde: la usuaria mantuvo el correo sin cambios | *Sincronizar `expected_content.py` «por si acaso»*: tarea falsa que toca un fichero de tests cerrado sin cambio de requisito. *Extender la transacción al correo de cancelación*: amplía alcance sin spec; la ventana post-commit del correo queda como limitación conocida (spec: duda RESUELTA de la enmienda 2) | RF-8, RF-11, trazabilidad |
 
-### 9.8 Estrategia de tests (fase 2)
+### 9.8 Estrategia de tests (fase 2, enmienda 2)
 
-Ejecución: `python -m pytest -q` (esperado **215 PASS / 0 FAIL** =
-204 previos + 11 funciones nuevas) ·
+Ejecución: `python -m pytest -q` (esperado **222 PASS / 0 FAIL** =
+204 previos + 18 funciones TC-010-101..118) ·
 `python -m pytest tests/test_cancellation_service.py -v`.
-Punto de parcheo único: `automation_service._post_webhook` (mismo patrón que
-HU-007/008/010, hermeticidad). Sin red real, sin `sleep`, BD temporal por
-fixture. **Los TC-010-001..018 cerrados no se modifican**: ya filtran POSTs y
-eventos por `event_id`/`event_type` (D15), verificado sobre el código de
-`tests/test_cancellation_service.py` (helpers `_cancellation_posts()` y
-`_count_events(event_id, …)`) — la suite actual debe permanecer en verde sin
-enmiendas. TC-010-016 solo fija el conjunto de variables `AUTOMATION_*` de
-`Config` (no de `automation_content`), por lo que añadir
-`CANCELLED_EVENT_TYPE`/`_VERSION` no lo afecta.
+Punto de parcheo único del POST: `automation_service._post_webhook` (mismo
+patrón que HU-007/008/010, hermeticidad). Para el caso de **registro
+fallido (RF-12)** se parchea el punto de inserción de la transacción en la
+persistencia (nunca se usa red real). Sin `sleep`, BD temporal por fixture,
+concurrencia simulada de forma determinista (re-entrancia, ver TC-010-117).
 
-#### 9.8.1 Casos de prueba nuevos
+**Estado real de los tests en la rama (tras T19/T20)**: TC-010-101, 102, 103,
+104, 108 y 109 están **implementados y verdes** (210 PASS). Todos ejercitan
+`cancel_appointment()` de extremo a extremo o `build_cancelled_event()`, por lo
+que **no se modifican**: son la red de regresión que debe seguir en verde
+tras el rediseño transaccional de T22–T24. **Los TC-010-001..018 cerrados de
+HU-010 tampoco se modifican** (filtran POSTs y eventos por
+`event_id`/`event_type`, precedente D15; helpers `_cancellation_posts()` y
+`_count_events(event_id, …)`).
 
-| ID | Archivo | Objetivo y resultado esperado | RF |
+**Tests de T19/T20 afectados por el cambio transaccional (verificación
+realizada sobre el código)**:
+
+| TC | ¿Toca el registro? | Efecto del rediseño | Acción |
 |---|---|---|---|
-| TC-010-101 | `test_cancellation_service.py` | Cancelar con webhook y `_post_webhook` parcheado (200) → **1 POST de tipo `appointment.cancelled`** (filtrado), evento `sent` con `sent_at`, cita `cancelled`; el POST de `cancellation_email` también ocurre (1, filtrado por su tipo) | RF-8 |
-| TC-010-102 | `test_cancellation_service.py` | **Allowlist RF-9:** claves raíz exactas `{event_id, event_type, event_version, occurred_at, appointment}`; `event_id == "appointment.cancelled:{id}:v1"`; `event_version == 1`; claves de `appointment` exactas `{id, service, date, time, status}` y `status == "cancelled"`; **sin** `patient_name`, `email`, `phone`, `document_type`, `document_number`, `recipient`, `message` (raíz y `appointment`) | RF-9 |
-| TC-010-103 | `test_cancellation_service.py` | **Independencia del correo:** cita con `email` vacía → evento `appointment.cancelled` **`sent`** (1 POST de su tipo) mientras `appointment.cancellation_email` queda `failed`; la cita queda `cancelled` | RF-8 |
-| TC-010-104 | `test_cancellation_service.py` | **URL vacía:** cancelar sin webhook → evento `appointment.cancelled` `skipped` («Automatización no configurada.»), **0 POST** y cita `cancelled` | RF-8, RF-10 |
-| TC-010-105 | `test_cancellation_service.py` | **URLError** → evento `appointment.cancelled` `failed` «Servicio de automatización no disponible.», **0 excepción** y cita sigue `cancelled` | RF-10 |
-| TC-010-106 | `test_cancellation_service.py` | **TimeoutError** → evento `failed` «Tiempo de espera agotado (timeout).» y cita intacta | RF-10 |
-| TC-010-107 | `test_cancellation_service.py` | **HTTP 500** → evento `failed` «Respuesta no válida del servicio (HTTP 500).» y cita intacta | RF-10 |
-| TC-010-108 | `test_cancellation_service.py` | **Reproceso:** segunda `cancel_appointment()` → `ALREADY_CANCELLED`, **1 fila** con `event_id = appointment.cancelled:{id}:v1` (UNIQUE) y **1 POST** acumulado de ese tipo | RF-8, RF-10 |
-| TC-010-109 | `test_cancellation_service.py` | **Orden F2-D1:** en `post.call_args_list` el POST de `appointment.cancelled` **precede** al de `appointment.cancellation_email` | RF-8 |
-| TC-010-110 | `test_cancellation_service.py` | **Aislamiento:** `insert_event` del repositorio parcheado con `RuntimeError` → `cancel_appointment()` devuelve la `Appointment` `cancelled` sin excepción (ni el evento de negocio ni el correo la afectan) | RF-10 |
-| TC-010-111 | `test_cancellation_service.py` | **Regresión/constitución:** `build_event()` sigue produciendo las 5 claves con `appointment.confirmed` (firma intacta); `automation_content.EVENT_TYPE` inalterado; sin imports de terceros en los módulos tocados; sin variables de entorno nuevas | RF-8, regresión |
-| TC-010-112 | `test_hu_010.py` (corrida, no función) | `python -m pytest -q` → **215 PASS / 0 FAIL** con los **204 previos intactos** | todos, finalización |
+| TC-010-101 | No (solo aserciones de resultado) | Ninguno: el POST y el `sent` siguen tras el commit | Sin cambios; debe seguir verde |
+| TC-010-102 | No (unitario de `build_cancelled_event`) | Ninguno | Sin cambios |
+| TC-010-103 | No | Ninguno | Sin cambios |
+| TC-010-104 | No (consulta `get_by_event_id`) | Ninguno: `publish_cancelled_event()` sigue marcando `skipped` | Sin cambios |
+| TC-010-108 | No | Ninguno: la guarda `confirmed → cancelled` devuelve `ALREADY_CANCELLED` antes de registrar | Sin cambios; **reinterpretado** (ver nota) |
+| TC-010-109 | No | Ninguno (orden negocio → correo preservado) | Sin cambios |
+| TC-010-110 (definición antigua) | Sí (parcheaba `insert_event` esperando cancelación intacta) | **Invertido por RF-12**: un fallo del registro ahora debe producir rollback y cancelación NO confirmada | **Redefinido** (ver tabla) |
+| TC-010-105/106/107 (sin implementar) | No (parchean solo `_post_webhook`) | Son ya el aislamiento RF-10 correcto: fallo de **publicación** tras commit → cita intacta | Se conservan; implementar en T25 |
+| TC-010-009 (HU-010, cerrado) | Parchea `insert_event` del repositorio de eventos | El registro del negocio deja de pasar por `insert_event`; el test solo verifica que la cancelación no se revierte por el correo, así que sigue verde | Sin cambios; verificar en T22 |
 
-> **Nota de recuento**: TC-010-112 es la corrida de la suite; las funciones
-> nuevas son **11** → total esperado **215** (204 + 11). **0 FAIL con los 204
-> previos intactos y sin enmiendas de TC cerrados** es la condición real de
-> cierre.
+> **Nota sobre TC-010-108**: su aserción original (segunda
+> `cancel_appointment()` → `ALREADY_CANCELLED`, 1 fila y 1 POST) se mantiene
+> como cobertura de la **guarda de transición** (RF-14 vía cancelación: no
+> hay reproceso automático). La cobertura del **reproceso real** de un
+> `failed` mediante `reprocess_automation_event()` es de los tests nuevos
+> TC-010-113..118.
+
+#### 9.8.1 Casos de prueba (fase 2)
+
+| ID | Estado | Archivo | Objetivo y resultado esperado | RF/CA |
+|---|---|---|---|---|
+| TC-010-101 | **En rama** | `test_cancellation_service.py` | Cancelar con webhook y `_post_webhook` parcheado (200) → **1 POST de tipo `appointment.cancelled`** (filtrado), evento `sent` con `sent_at`, cita `cancelled`; el POST de `cancellation_email` también ocurre (1, filtrado por su tipo) | RF-8, CA-1 |
+| TC-010-102 | **En rama** | `test_cancellation_service.py` | **Allowlist RF-9:** claves raíz exactas `{event_id, event_type, event_version, occurred_at, appointment}`; `event_id == "appointment.cancelled:{id}:v1"`; `event_version == 1`; claves de `appointment` exactas `{id, service, date, time, status}` y `status == "cancelled"`; **sin** `patient_name`, `email`, `phone`, `document_type`, `document_number`, `recipient`, `message` (raíz y `appointment`) | RF-9, CA-2 |
+| TC-010-103 | **En rama** | `test_cancellation_service.py` | **Independencia del correo:** cita con `email` vacía → evento `appointment.cancelled` **`sent`** (1 POST de su tipo) mientras `appointment.cancellation_email` queda `failed`; la cita queda `cancelled` | RF-8, CA-1 |
+| TC-010-104 | **En rama** | `test_cancellation_service.py` | **URL vacía:** cancelar sin webhook → evento `appointment.cancelled` `skipped` («Automatización no configurada.»), **0 POST** y cita `cancelled` | RF-8, RF-10, CA-3 |
+| TC-010-105 | Por implementar (T25) | `test_cancellation_service.py` | **URLError** (publicación tras commit) → evento `appointment.cancelled` `failed` «Servicio de automatización no disponible.», **0 excepción** y cita sigue `cancelled` | RF-10, CA-4 |
+| TC-010-106 | Por implementar (T25) | `test_cancellation_service.py` | **TimeoutError** → evento `failed` «Tiempo de espera agotado (timeout).» y cita intacta | RF-10, CA-4 |
+| TC-010-107 | Por implementar (T25) | `test_cancellation_service.py` | **HTTP 500** → evento `failed` «Respuesta no válida del servicio (HTTP 500).» y cita intacta | RF-10, CA-4 |
+| TC-010-108 | **En rama** (reinterpretado) | `test_cancellation_service.py` | **Guarda de transición:** segunda `cancel_appointment()` → `ALREADY_CANCELLED`, **1 fila** con `event_id = appointment.cancelled:{id}:v1` (UNIQUE) y **1 POST** acumulado de ese tipo; sin registro nuevo ni emisión derivada | RF-8, RF-14, CA-1/CA-7 |
+| TC-010-109 | **En rama** | `test_cancellation_service.py` | **Orden F2-D1:** en `post.call_args_list` el POST de `appointment.cancelled` **precede** al de `appointment.cancellation_email` | RF-8 |
+| TC-010-110 | **Redefinido** (T23) | `test_cancellation_service.py` | **Atomicidad RF-12:** parchear el punto de inserción del evento dentro de la transacción con `RuntimeError` → `cancel_appointment()` **propaga el error** (no devuelve la cita), la cita **sigue `confirmed`** (rollback), **0 filas** de `appointment.cancelled` y **0 POST** | RF-11, RF-12, CA-5 |
+| TC-010-111 | Por implementar (T25) | `test_cancellation_service.py` | **Regresión/constitución:** `build_event()` sigue produciendo las 5 claves con `appointment.confirmed` (firma intacta); `automation_content.EVENT_TYPE` inalterado; sin imports de terceros en los módulos tocados; sin variables de entorno nuevas; `tests/expected_content.py` sin cambios (F2-D13) | RF-8, regresión |
+| TC-010-112 | **Nuevo** (T23) | `test_cancellation_service.py` | **Atomicidad positiva RF-11:** `_post_webhook` con `side_effect` que, en el momento del POST, verifica en BD que la cita ya es `cancelled` **y** el evento `appointment.cancelled` está `pending` (traza conjunta confirmada antes de publicar); después el POST 200 lo deja `sent` | RF-11, CA-5 |
+| TC-010-113 | **Nuevo** (T25) | `test_cancellation_service.py` | **Reproceso RF-13:** cancelar con `_post_webhook` → `URLError` (evento `failed`); llamar `reprocess_automation_event()` con POST 200 → **exactamente 1 POST del reproceso**, mismo `event_id`, **misma fila** (mismo `id` en `automation_events`), estado final `sent` con `sent_at` | RF-13, CA-6 |
+| TC-010-114 | **Nuevo** (T25) | `test_cancellation_service.py` | **Reproceso con URL vacía (RF-13):** evento `failed` + `reprocess_automation_event()` sin URL → **0 POST**, estado `skipped` con «Automatización no configurada.» (misma semántica de URL vacía que el flujo normal) | RF-13, CA-6 |
+| TC-010-115 | **Nuevo** (T25) | `test_cancellation_service.py` | **Reproceso que vuelve a fallar (RF-13):** `reprocess_automation_event()` con `URLError` → **1 POST**, estado `failed` con el detalle en español, sin excepción propagada | RF-13, CA-6 |
+| TC-010-116 | **Nuevo** (T25) | `test_cancellation_service.py` | **No-op RF-14 (tabla de 4 estados):** sobre un evento `sent`, otro `skipped` y un `pending` huérfano simulado, `reprocess_automation_event()` en los tres → **0 POST** y el registro **sin modificación** (status y detail intactos); el reproceso solo se admite sobre `failed` | RF-14, CA-7 |
+| TC-010-117 | **Nuevo** (T26) | `test_cancellation_service.py` | **Concurrencia RF-15:** evento `failed`; el `side_effect` del `_post_webhook` del primer reproceso invoca **re-entrantemente** un segundo `reprocess_automation_event()` sobre el mismo `event_id` → el segundo es no-op; total **1 POST** y un único cambio de estado (`sent`) | RF-15, CA-8 |
+| TC-010-118 | **Nuevo** (T25) | `test_cancellation_service.py` | **Ámbito del reproceso (RF-13):** `claim_failed_event()`/`reprocess_automation_event()` sobre un evento fallido de **otro tipo** (`appointment.cancellation_email` o `appointment.confirmed`) → no admitido, **0 POST**, registro sin modificación; sobre un `appointment.cancelled` `failed` → admitido | RF-13, RF-14 |
+| TC-010-119 | Corrida, no función | — | `python -m pytest -q` → **222 PASS / 0 FAIL** con los **204 previos** y los **6 TC de la rama** intactos | todos, finalización |
+
+> **Nota de recuento**: TC-010-119 es la corrida de la suite; las funciones
+> del bloque son **18** (TC-010-101..118; 6 ya en la rama + 12 por
+> implementar) → total esperado **222** (204 + 18). **0 FAIL con los 204
+> previos y los 6 TC de T19/T20 sin enmiendas** es la condición real de
+> cierre. La numeración anterior (TC-010-112 como corrida) queda
+> reasignada: el 112 pasa a función (atomicidad positiva) y la corrida
+> migra al 119, sin reutilizar ningún ID ya usado.
 
 #### 9.8.2 Pirámide y evidencia
 
 1. **Unitarias** — `build_cancelled_event()` (allowlist, event_id, versión,
-   sin PII) y `build_event()` intacto. `[RF-9]`
-2. **Integración de servicio** — `cancel_appointment()` con `_post_webhook`
-   parcheado: 2xx→`sent` (ambos eventos), sin URL→`skipped`,
-   `URLError`/`TimeoutError`/no-2xx→`failed`, orden de emisión, independencia
-   del correo, reproceso→0 POST, aislamiento. `[RF-8][RF-10]`
-3. **Regresión** — suite completa 204 previos verdes sin enmiendas. `[todos]`
-4. **Demo manual** — servidor `python app.py` + **receptor local stdlib
+   sin PII), `build_event()` intacto y `claim_failed_event()` (admisión
+   condicionada). `[RF-9][RF-15]`
+2. **Integración de persistencia** — transacción UPDATE+INSERT: registro
+   fallido → rollback (cita sin cancelar, 0 eventos, 0 POST); registro
+   correcto → traza conjunta verificada en el momento del POST.
+   `[RF-11][RF-12]`
+3. **Integración de servicio** — `cancel_appointment()` y
+   `reprocess_automation_event()` con `_post_webhook` parcheado:
+   2xx→`sent`, sin URL→`skipped`, `URLError`/`TimeoutError`/no-2xx→`failed`,
+   orden de emisión, independencia del correo, no-op sobre no-`failed`,
+   reproceso → misma fila, concurrencia re-entrante → 1 intento.
+   `[RF-8][RF-10][RF-13][RF-14][RF-15]`
+4. **Regresión** — suite completa: 204 previos + 6 TC de la rama verdes sin
+   enmiendas. `[todos]`
+5. **Demo manual** — servidor `python app.py` + **receptor local stdlib
    efímero** (patrón HU-010) con `AUTOMATION_WEBHOOK_URL` apuntando a él y
-   `cancel_appointment()` desde un REPL/script: (a) cancelar → receptor
-   captura **2 POST** (`appointment.cancelled` y `appointment.cancellation_email`)
-   y ambos eventos `sent`; (b) **URL vacía** → ambos `skipped`, 0 POST;
+   `cancel_appointment()`/`reprocess_automation_event()` desde un
+   REPL/script: (a) cancelar → receptor captura **2 POST**
+   (`appointment.cancelled` y `appointment.cancellation_email`) y ambos
+   eventos `sent`; (b) **URL vacía** → ambos `skipped`, 0 POST;
    (c) **receptor apagado** → ambos `failed` con motivo y la cita permanece
-   `cancelled`; (d) **reproceso** → `already_cancelled` y 0 POST nuevos;
-   (e) verificar en `automation_events` la fila
+   `cancelled`; (d) **`cancel_appointment()` repetida** → `already_cancelled`
+   y 0 POST nuevos; (e) **`reprocess_automation_event()`** sobre el evento
+   `failed` con el receptor encendido → **1 POST nuevo**, misma fila,
+   estado `sent`; (f) verificar en `automation_events` la fila
    `appointment.cancelled:{id}:v1`. Live n8n opcional solo si la usuaria lo
    indica (con workflow activo y URL de producción; el token solo en entorno).
    Sin cambios visuales → sin capturas 1280/375.
-5. **Informe QA** — `docs/evidencias/hu-010/qa-hu-010-rf8-10.md` (añadido,
+6. **Informe QA** — `docs/evidencias/hu-010/qa-hu-010-rf8-10.md` (añadido,
    sin tocar el `qa-hu-010.md` cerrado) con PASS/FAIL por TC, checkbox de
-   aceptación y trazabilidad RF-8..RF-10 (skill `pytest-qa`). Prohibido
-   eliminar/`skip`/relajar aserciones para pasar.
+   aceptación y trazabilidad **RF-8..RF-15 / CA-1..CA-8** (skill `pytest-qa`).
+   Prohibido eliminar/`skip`/relajar aserciones para pasar.
 
-### 9.9 Secuencia de implementación (fase 2)
+### 9.9 Secuencia de implementación (fase 2, enmienda 2)
 
-0. **Aprobación bloqueante**: este §9 y `task.md` (T16–T25) aprobados por la
-   usuaria. Sin ella, no se toca código.
-1. **Git**: verificar `main` limpia y baseline **204 PASS**; crear
-   **`feature/hu-010-rf8-10` desde `main`** (F2-D7); commit de plan/task.
-2. **Constantes**: `automation_content.py` (+ `CANCELLED_EVENT_TYPE`/
-   `_VERSION`).
-3. **Servicio**: `automation_service.py` (`_build_automation_event`,
-   `build_cancelled_event`, `on_appointment_cancelled`); regresión de
-   HU-007/008 en verde.
-4. **Disparo**: `appointment_service.cancel_appointment()` con el orden
-   F2-D1 (evento de negocio → correo); firma intacta.
-5. **Tests**: TC-010-101..107 y TC-010-108..111 en
-   `test_cancellation_service.py` (TDD: prueba roja por tarea).
-6. **Suite completa** → **215 PASS / 0 FAIL** (TC-010-112).
-7. **Evidencia**: demo §9.8.2 + informe `qa-hu-010-rf8-10.md`.
-8. **Cierre**: commits por fase, push, `MEMORY.md`, aceptación de la usuaria
-   y servidor de revisión en marcha; **registro del pendiente F2-D4** para el
-   coordinador (anotar el filtro por `event_type` en el plan 018 cuando se
-   autorice).
+> Los pasos de código de T16–T20 (constantes, `build_cancelled_event`,
+> disparo inicial) ya están **commiteados en la rama** (hasta `223a43c`)
+> contra el texto previo; la corrección es trabajo nuevo. La secuencia
+> corregida corresponde a las tareas **T21–T27** de `task.md`, agrupadas en
+> **2A = pasos 0–4 (T21–T25)** y **2B = pasos 5–6 (T26–T27)** (división
+> aprobada por la usuaria el 2026-10-23; la 2B se inicia tras cerrar la 2A):
+
+0. **T21 — Reaprobación bloqueante** — **cumplida 2026-10-23** («Apruebo» +
+   «Divide la fase»): reaprobación de este §9 (enmienda 2) y de las tareas
+   T21–T27 por la usuaria; división 2A/2B decidida.
+1. **T22 — Corrección transaccional**: `update_appointment_status_with_pending_event()`
+   (UPDATE cita + INSERT `pending`, misma conexión; rollback ante fallo del
+   registro) en el repositorio + `publish_cancelled_event()` (solo
+   publicación post-commit) en el servicio + `cancel_appointment()` usa la
+   operación transaccional; conservar orden F2-D1 y firmas públicas →
+   TC-010-101..109 verdes sin enmiendas.
+2. **T23 — Tests de atomicidad**: TC-010-110 (redefinido, rollback RF-12) y
+   TC-010-112 (traza conjunta en el momento del POST, RF-11).
+3. **T24 — Reproceso (código)**: `claim_failed_event()` (admisión atómica) +
+   `reprocess_automation_event()`.
+4. **T25 — Tests de reproceso y fallo de publicación**: TC-010-105/106/107
+   (fallos de publicación), TC-010-111 (regresión/constitución) y
+   TC-010-113..116, TC-010-118 (reproceso).
+5. **T26 — Concurrencia y suite completa**: TC-010-117 (re-entrante
+   determinista) → **222 PASS / 0 FAIL** (TC-010-119).
+6. **T27 — Evidencia y cierre**: demo §9.8.2 (incluye el paso del reproceso
+   sobre un `failed`) + informe `qa-hu-010-rf8-10.md`; commits por fase,
+   push, `MEMORY.md`, aceptación de la usuaria y servidor de revisión en
+   marcha; **registro del pendiente F2-D4** para el coordinador (anotar el
+   filtro por `event_type` en el plan 018 cuando se autorice).
 
 ### 9.10 Pendientes y aprobaciones (bloquean declarar COMPLETADO)
 
-- [x] **Aprobación de este plan (§9, F2-D1..F2-D10) por la usuaria** —
-      **aprobada 2026-10-23**; autoriza la implementación de la fase 2.
-- [x] **Aprobación de las tareas T16–T25 de `task.md`** por la usuaria —
-      **aprobada 2026-10-23**.
+- [x] **Aprobación del plan §9 en su versión previa a la enmienda 2
+      (F2-D1..F2-D10) por la usuaria** — aprobada 2026-10-23. **Queda
+      superada** por la reaprobación inferior una vez reescrito §9 contra la
+      enmienda 2.
+- [x] **Aprobación de las tareas T16–T25 de `task.md` en su versión previa**
+      — aprobada 2026-10-23. **Queda superada** por la reaprobación de las
+      tareas redefinidas (T21–T27).
 - [x] Enmienda de la spec 010 con RF-8..RF-10 — **cumplida 2026-10-23**
       (commit `1b63e5a`, aprobada por la usuaria).
-- [x] Baseline de la fase 2 verificado — **2026-10-23: 204 PASS / 0 FAIL**.
-- [x] Rama `feature/hu-010-rf8-10` creada y baseline re-verificado en ella —
-      **cumplida 2026-10-23** (commit `5fad34b`, 204 PASS / 0 FAIL en la rama).
-- [ ] Implementación, tests (215 PASS / 0 FAIL), demo e informe QA
-      `qa-hu-010-rf8-10.md` con PASS.
+- [x] **Enmienda 2 de la spec 010 (RF-8 ajustado, RF-10 reescrito,
+      RF-11..RF-15 nuevos) — APROBADA por la usuaria 2026-10-23.**
+- [x] Baseline de la fase 2 verificado — 2026-10-23: `main` **204 PASS /
+      0 FAIL**; rama `feature/hu-010-rf8-10` **210 PASS / 0 FAIL** tras
+      T18–T20.
+- [x] T16–T20 ejecutadas y commiteadas — hasta `223a43c` (constantes,
+      `build_cancelled_event()`, `on_appointment_cancelled()` post-commit,
+      disparo antes del correo).
+- [x] **Reaprobación por la usuaria de este §9 reescrito (F2-D1..F2-D13) y
+      de las tareas T21–T27 de `task.md`** (T21 de `task.md`) — **aprobada
+      2026-10-23 («Apruebo»)**, junto con la **división de la fase en
+      2A (T21–T25) y 2B (T26–T27)** («Divide la fase»); la 2B queda
+      pendiente del cierre de la 2A. Recuerda: hasta implementar T22 no
+      afirmar que la atomicidad está garantizada por el código (T19/T20
+      quedan desalineadas hasta entonces).
+- [ ] Implementación T22–T27, tests (**222 PASS / 0 FAIL**), demo e informe
+      QA `qa-hu-010-rf8-10.md` con PASS.
 - [ ] Aceptación de la usuaria y cierre (commits, push, `MEMORY.md`,
       servidor de revisión).
 - [ ] **Pendiente del coordinador (fuera de esta fase)**: anotar en

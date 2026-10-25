@@ -115,32 +115,26 @@ def on_appointment_confirmed(
         return
 
 
-def on_appointment_cancelled(
+def publish_cancelled_event(
     appointment: Appointment,
     database_path: str | Path,
     url: str = "",
     timeout: float = 3.0,
     auth: str = "",
 ) -> None:
-    """Register `appointment.cancelled` and best-effort dispatch it (RF-8/RF-10).
-
-    Never raises: the cancellation is already committed when this runs, so an
-    event failure can neither revert nor block it (RF-10). Dedup by
-    UNIQUE(event_id) discards a reprocess before any POST (RF-8).
+    """Publish `appointment.cancelled` AFTER the cancellation commit (RF-8/RF-10).
+    
+    Publication only: the `pending` row already exists — it was registered
+    inside the SAME transaction that cancelled the appointment (RF-11,
+    `update_appointment_status_with_pending_event`). Empty URL marks the event
+    `skipped`; the POST outcome marks it `sent`/`failed` with the existing
+    Spanish DETAIL_* reasons. Never raises: the cancellation is already
+    committed when this runs, so a publication failure can neither revert nor
+    block it (RF-10).
     """
     try:
         event = build_cancelled_event(appointment)
         event_id = str(event["event_id"])
-        created = events_repository.insert_event(
-            event_id,
-            CANCELLED_EVENT_TYPE,
-            CANCELLED_EVENT_VERSION,
-            appointment.id,
-            database_path,
-        )
-        if not created:
-            # cancellation processed again: no duplicate emission (RF-8/RF-10)
-            return
         if not url:
             events_repository.mark_skipped(
                 event_id, DETAIL_NOT_CONFIGURED, database_path
@@ -170,8 +164,79 @@ def on_appointment_cancelled(
                 database_path,
             )
     except Exception:
-        # a business-event failure must never affect the cancellation (RF-10)
+        # a publication failure must never affect the cancellation (RF-10)
         return
+
+
+def reprocess_automation_event(
+    event_id: str,
+    database_path: str | Path,
+    url: str = "",
+    timeout: float = 3.0,
+    auth: str = "",
+) -> None:
+    """
+    Reprocess a failed business event by attempting publication again (RF-13, RF-14, RF-15).
+    
+    Admission is atomic via `claim_failed_event`. If not admitted (not failed, 
+    wrong type, or concurrent claim), it's a no-op.
+    """
+    try:
+        if not events_repository.claim_failed_event(event_id, database_path):
+            return
+
+        event_record = events_repository.get_by_event_id(event_id, database_path)
+        if not event_record:
+            return
+
+        # Retrieve the associated appointment to rebuild the payload
+        from consultorio.persistence import appointments_repository
+        appointment = appointments_repository.get_appointment_by_id(
+            event_record.appointment_id, database_path
+        )
+        if not appointment:
+            events_repository.mark_failed(
+                event_id, "Cita asociada no encontrada.", database_path
+            )
+            return
+
+        # Rebuild payload with the same deterministic ID
+        event = build_cancelled_event(appointment)
+        
+        if not url:
+            events_repository.mark_skipped(
+                event_id, DETAIL_NOT_CONFIGURED, database_path
+            )
+            return
+
+        try:
+            status_code = _post_webhook(url, event, timeout, auth)
+        except TimeoutError:
+            events_repository.mark_failed(event_id, DETAIL_TIMEOUT, database_path)
+            return
+        except urllib.error.URLError:
+            events_repository.mark_failed(
+                event_id, DETAIL_UNAVAILABLE, database_path
+            )
+            return
+        except Exception:
+            events_repository.mark_failed(
+                event_id, DETAIL_UNEXPECTED, database_path
+            )
+            return
+        
+        if 200 <= status_code < 300:
+            events_repository.mark_sent(event_id, database_path)
+        else:
+            events_repository.mark_failed(
+                event_id,
+                DETAIL_INVALID_RESPONSE_TEMPLATE.format(status_code=status_code),
+                database_path,
+            )
+    except Exception:
+        # Best-effort: never propagate exceptions during reprocessing
+        return
+
 
 
 def _post_webhook(

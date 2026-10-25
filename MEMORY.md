@@ -210,6 +210,38 @@ aporte.
   TC-006-013 adaptados** al índice parcial (spec-backed, sin relajar garantías).
   WhatsApp pendiente de Spec 009. **Aceptada por la usuaria 2026-10-13 (T15)**;
   merge a `main` autorizado.
+- **Spec 011 APROBADA** (2026-10-23, `specs/011_visualizar-agenda/spec.md`, enmienda
+  `sdd-clarify` + cierre de dudas en working tree, sin commitear): **agenda diaria
+  del psicólogo**. Dudas cerradas — A: «el día» = fecha actual según servidor (fechas
+  arbitrarias → Spec 012); B: roles autorizados **psicólogo + administrador del
+  sistema**, RF-4 con **literal único compartido** «Consulta de agenda restringida:
+  inicia sesión con una cuenta autorizada.»; C: canceladas se muestran y diferencian,
+  día solo con canceladas = agenda vacía; D: literales «No hay citas para hoy.»,
+  «No disponible», «No pudimos cargar la agenda. Intenta de nuevo.». RF-1..RF-7
+  (RF-5 datos incompletos, RF-6 orden cronológico, RF-7 fallo de persistencia).
+  **Sin plan ni tareas todavía: la planificación NO está autorizada.**
+- **Spec 010 — enmienda 2 (evento `appointment.cancelled`) APROBADA** (2026-10-23, texto
+  por la usuaria): RF-8 ajustado, RF-10 reescrito (garantía acotada a fallos POST-commit),
+  **RF-11..RF-15 nuevos** — (1) `reprocess_automation_event()` solo sobre `failed`, misma
+  fila/`event_id`, no-op sobre `sent`/`skipped`/`pending`, exclusión de concurrencia
+  (transición atómica), 4 estados fijos; (2) **atomicidad**: transición a `cancelled` +
+  registro `pending` en la misma transacción SQLite («sin traza local, sin cancelación
+  confirmada»; rollback si falla el registro); (3) `cancellation_email` sin cambios
+  (ventana post-commit = limitación conocida). **Tres confirmaciones**: `pending` huérfano
+  = no-op con **limitación operativa explícita** (sin vía de recuperación esta fase);
+  desalineación T19/T20 (registro post-commit) aceptada y a corregir en planificación (no
+  es defecto; hasta entonces NO afirmar que la atomicidad está en el código);
+  `tests/expected_content.py` sin cambios. **Plan §9 y tareas T21-T27 REAPROBADOS**
+  (2026-10-23, «Apruebo») con **división 2A (T21-T25) / 2B (T26-T27)** («Divide la
+  fase»; 2B inicia al cerrar 2A). Tests: 18 TC-010-101..118, **222 PASS esperados**.
+  **FASE 2A (T21-T25) CERRADA 2026-10-25**: motor transaccional (T22:
+  `update_appointment_status_with_pending_event()` + `publish_cancelled_event()`),
+  tests de atomicidad oficiales (T23: TC-010-110/112), reproceso sobre `failed`
+  (T24/T25). Verificado en el cierre: **2 PASS** de T23 y suite completa
+  **278 PASS / 0 FAIL**; se eliminó el temporal `tests/test_t22_quickcheck.py`.
+  **2B**: T26 (concurrencia TC-010-117/119) ya cumple; **T27 pendiente** (falta
+  `docs/evidencias/hu-010/qa-hu-010-rf8-10.md`, cierre y push).
+  T16-T20 commiteadas (hasta `223a43c`).
 
 ## Decisiones (y por qué)
 - **Despliegue en Render (2026-10-12)**: `render.yaml` (Blueprint, Python 3.12,
@@ -275,6 +307,16 @@ aporte.
   (solo los 6 hex aprobados).
 
 ## Aprendizajes y errores a evitar
+- **Incidente 2026-10-25 — spec borrada por glob mal construido**: al retomar la Spec
+  017 se buscó `specs/spec-017*` (la carpeta real es `specs/017_cancelar-cita-paciente/`),
+  se concluyó erróneamente que la spec no existía y el `@planificador` la
+  **sobrescribió** con una versión regenerada inferior; la aprobación de la usuaria, la
+  revisión del `@revisor` y el plan/tareas recayeron sobre ese texto equivocado.
+  **Regla**: antes de «crear» un artefacto, comprobar su existencia con
+  `glob specs/*017*/` o `git ls-files specs/`; si git lo tiene trazado, no regenerarlo.
+  Recuperación: `git checkout HEAD -- <archivo>` + reaplicar solo la edición pedida.
+  El plan/tareas generados sobre el texto equivocado deben **regenerarse y volver a
+  aprobarse**.
 - **`instance/` (BD de la versión plana antigua, esquema `citas`) eliminada del
   workspace** el 2026-10-12, con respaldo en
   `C:\Users\Jaz\AppData\Local\Temp\opencode\instance-backup\`; la app vigente usa
@@ -373,9 +415,27 @@ aporte.
   de confirmación con resumen previa; Q4 pantalla de éxito propia; Q5 botón
   «Cancelar cita» en `/citas/confirmada/<id>`; Q6 la cita cancelada muestra
   estado «Cancelada»; Q7 el correo de confirmación llevará **enlace directo** a
-  la cancelación (**enmienda coordinada de la Spec 008** registrada). Pendiente:
-  `plan.md` + `task.md` + rama `feature/hu-017` **tras el merge de HU-010**
-  (reutiliza `cancel_appointment()`).
+  la cancelación (**enmienda coordinada de la Spec 008** registrada).
+- **Spec 017 — plan y tareas APROBADOS, implementación INICIADA** (2026-10-25, rama
+  `feature/hu-017` desde `223a43c`): **incidente corregido** — el coordinador concluyó
+  por error que la spec no existía (glob mal construido) y el `@planificador`
+  sobrescribió la spec aprobada por una versión regenerada de 56 líneas; se restauró
+  la original desde git y se reaplicó **solo** la edición de la usuaria en «Fuera de
+  alcance» (la notificación la coordina el servicio centralizado de la Spec 010).
+  `plan.md` (419 líneas, D1..D13) + `tasks.md` (**10 tareas** T1..T10) regenerados
+  **contra la spec real (RF-1..RF-13)** y **aprobados por la usuaria** con las
+  decisiones **Q-A…Q-F** (rutas `/citas/cancelar/<id>|/confirmar|/exito`, enlace del
+  correo con `url_for(_external=True)` y etiqueta «Cancelar cita», aviso previo en la
+  verificación, «No, volver» → `/citas/confirmada/<id>`, id no numérico → 404, **T8 se
+  pospone si T22 sigue sin commitear**). Trazabilidad RF↔T↔TC-017-001..014 en plan §6-§7.
+  Errata P-2 («documento de documento» en RF-1) **pendiente de decisión de enmienda**.
+  Cambios sin commitear de la **Spec 010/T22** intactos y fuera de alcance.
+  Estado: **T1–T4 commiteadas** (`38d6609` contenido, `d79c1af` verificación+ventana, `ab3c6b3`
+  ejecución delegada, T4 plantillas+guard+CSS); suite **261 PASS**. Sigue T5 (blueprint).
+  **Prueba E2E con n8n acordada para el cierre de la 017** (la cancelación dispara
+  `appointment.cancelled` + `appointment.cancellation_email` de la Spec 010): usar la URL
+  de **producción** del webhook (la de `webhook-test` solo captura la primera llamada) y las
+  variables `AUTOMATION_WEBHOOK_URL`/`AUTOMATION_WEBHOOK_AUTH_HEADER` en el entorno.
 - **Enmienda de la Spec 010 APROBADA** (2026-10-23): título ampliado a
   **«Servicio centralizado de cancelación y notificación de citas»**
   (identificador y ruta intactos). RF-1..RF-4 conservados (trazabilidad con
