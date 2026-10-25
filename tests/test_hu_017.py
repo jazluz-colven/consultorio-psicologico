@@ -9,8 +9,11 @@ office schedule.
 """
 
 import re
-from datetime import datetime, timedelta
+import sqlite3
+import urllib.error
+from datetime import date, datetime, timedelta
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -19,6 +22,7 @@ from consultorio.content import cancellation_content as cc
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import Appointment
+from consultorio.services import automation_service as automation
 from consultorio.services.email_service import format_spanish_date
 
 SERVICE_KEY = "nutrition"
@@ -29,6 +33,9 @@ PATIENT_NAME = "Paciente de prueba"
 PATIENT_EMAIL = "paciente@ejemplo.test"
 PATIENT_PHONE = "3001234567"
 MISSING_ID = 999999
+BOOKING_SLOT = "09:00"
+WEBHOOK_URL = "http://n8n.local/webhook/booking"
+CANCELLATION_EMAIL_EVENT_TYPE = "appointment.cancellation_email"
 
 
 def _database_path(app) -> Path:
@@ -68,6 +75,71 @@ def _article(html: str, cita_id: int) -> str:
         .replace(f"/citas/cancelar/{cita_id}", "/citas/cancelar/ID")
         .replace(f"#{cita_id}", "#ID")
     )
+
+
+def _future_weekday(days_ahead: int = 2) -> str:
+    """A bookable weekday (>= today) far enough away for the 3-hour window.
+
+    Computed from ``date.today()`` and never from a fixed calendar date, so the
+    test does not depend on the clock and the booking rules accept it.
+    """
+    candidate = date.today() + timedelta(days=days_ahead)
+    while candidate.weekday() >= 5:
+        candidate += timedelta(days=1)
+    return candidate.isoformat()
+
+
+def _insert_appointment_on(
+    app, booking_date: str, slot: str = BOOKING_SLOT
+) -> Appointment:
+    """Insert a confirmed appointment on a concrete weekday and slot."""
+    data = {
+        "document_type": "CC",
+        "document_number": DOCUMENT_NUMBER,
+        "patient_name": PATIENT_NAME,
+        "email": PATIENT_EMAIL,
+        "phone": PATIENT_PHONE,
+        "service": SERVICE_KEY,
+        "date": booking_date,
+        "time": slot,
+    }
+    return repository.insert_appointment(data, _database_path(app))
+
+
+def _cancellation_email_event_id(cita_id: int) -> str:
+    return f"{CANCELLATION_EMAIL_EVENT_TYPE}:{cita_id}:v1"
+
+
+def _count_events(app, event_id: str) -> int:
+    connection = sqlite3.connect(str(_database_path(app)))
+    try:
+        return connection.execute(
+            "SELECT COUNT(*) FROM automation_events WHERE event_id = ?",
+            (event_id,),
+        ).fetchone()[0]
+    finally:
+        connection.close()
+
+
+def _event_status(app, event_id: str) -> str | None:
+    connection = sqlite3.connect(str(_database_path(app)))
+    try:
+        row = connection.execute(
+            "SELECT status FROM automation_events WHERE event_id = ?",
+            (event_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    return row[0] if row is not None else None
+
+
+def _cancellation_posts(post: mock.MagicMock) -> list[mock.call]:
+    """Webhook POSTs for the cancellation e-mail (same filter as HU-010)."""
+    return [
+        call
+        for call in post.call_args_list
+        if call[0][1].get("event_type") == CANCELLATION_EMAIL_EVENT_TYPE
+    ]
 
 
 # --- TC-017-001 (RF-1, RF-2) -------------------------------------------------
@@ -255,3 +327,236 @@ def test_tc_017_003_cita_a_seis_horas_muestra_resumen_sin_cambios(
     assert SERVICE_NAME in html
     assert format_spanish_date(created.date) in html
     assert _current(app, created.id) == before
+
+
+# --- T6: execution (POST .../confirmar) and success (GET .../exito) ----------
+
+
+def test_tc_017_004_flujo_completo_cancela_libera_horario_y_permite_rereserva(
+    app, client
+) -> None:
+    """RF-5, RF-6, RF-7: verification -> summary -> confirmation -> success;
+    the row becomes `cancelled`, the slot is free and the re-booking returns
+    303 (TC-017-004)."""
+    booking_date = _future_weekday()
+    created = _insert_appointment_on(app, booking_date)
+
+    # (1) verification -> (2) summary, still read-only.
+    summary = client.post(
+        f"/citas/cancelar/{created.id}",
+        data={"document_number": DOCUMENT_NUMBER},
+    )
+    assert summary.status_code == 200
+    assert cc.CANCEL_CONFIRM_BUTTON in summary.get_data(as_text=True)
+    assert _current(app, created.id).status == appointment_content.STATUS_CONFIRMED
+
+    # Before cancelling, the slot is occupied.
+    before_hours = client.get(
+        "/citas/horarios",
+        query_string={"service": SERVICE_KEY, "date": booking_date},
+    )
+    assert before_hours.status_code == 200
+    assert BOOKING_SLOT in before_hours.get_json()["occupied"]
+    assert BOOKING_SLOT not in before_hours.get_json()["available"]
+
+    # (3) execution -> 303 PRG to the success screen.
+    confirmation = client.post(
+        f"/citas/cancelar/{created.id}/confirmar",
+        data={"document_number": DOCUMENT_NUMBER},
+    )
+    assert confirmation.status_code == 303
+    assert confirmation.headers["Location"].endswith(
+        f"/citas/cancelar/{created.id}/exito"
+    )
+
+    # (4) success screen with the contractual copy, data and reference.
+    success = client.get(f"/citas/cancelar/{created.id}/exito")
+    assert success.status_code == 200
+    html = success.get_data(as_text=True)
+    for literal in (
+        cc.CANCEL_SUCCESS_TITLE,
+        cc.CANCEL_SUCCESS_MESSAGE,
+        appointment_content.STATUS_CANCELLED_LABEL,
+        cc.LABEL_SERVICE,
+        cc.LABEL_DATE,
+        cc.LABEL_TIME,
+        cc.LABEL_STATUS,
+        cc.LABEL_REFERENCE,
+        SERVICE_NAME,
+        format_spanish_date(created.date),
+        created.time,
+        f"#{created.id}",
+    ):
+        assert literal in html, literal
+    # D12: the success screen never exposes personal data.
+    for forbidden in (PATIENT_NAME, PATIENT_EMAIL, PATIENT_PHONE, DOCUMENT_NUMBER):
+        assert forbidden not in html, forbidden
+
+    assert _current(app, created.id).status == appointment_content.STATUS_CANCELLED
+
+    # RF-6: the slot is free again and can be booked once more (303).
+    after_hours = client.get(
+        "/citas/horarios",
+        query_string={"service": SERVICE_KEY, "date": booking_date},
+    )
+    assert after_hours.status_code == 200
+    assert BOOKING_SLOT in after_hours.get_json()["available"]
+    assert BOOKING_SLOT not in after_hours.get_json()["occupied"]
+
+    rebooking = client.post(
+        "/citas",
+        data={
+            "service": SERVICE_KEY,
+            "date": booking_date,
+            "time": BOOKING_SLOT,
+            "document_type": "CC",
+            "document_number": "5555555555",
+            "patient_name": "Otro Paciente",
+            "email": "otro@ejemplo.test",
+            "phone": "3005555555",
+        },
+    )
+    assert rebooking.status_code == 303
+
+
+def test_tc_017_004_exito_sin_cancelacion_redirige_a_verificacion(app, client) -> None:
+    """D2: the success URL only renders after a cancellation; otherwise it
+    redirects (303) to the verification step."""
+    created = _insert_appointment_on(app, _future_weekday())
+
+    confirmed = client.get(f"/citas/cancelar/{created.id}/exito")
+    assert confirmed.status_code == 303
+    assert confirmed.headers["Location"].endswith(f"/citas/cancelar/{created.id}")
+
+    missing = client.get(f"/citas/cancelar/{MISSING_ID}/exito")
+    assert missing.status_code == 303
+    assert missing.headers["Location"].endswith(f"/citas/cancelar/{MISSING_ID}")
+
+
+def test_tc_017_004_confirmar_too_soon_no_cambia_nada(app, client) -> None:
+    """RF-4: inside the 3-hour window the confirmation maps to the restriction
+    literal and writes nothing."""
+    created = _insert_appointment(app, 2)
+    before = _current(app, created.id)
+
+    response = client.post(
+        f"/citas/cancelar/{created.id}/confirmar",
+        data={"document_number": DOCUMENT_NUMBER},
+    )
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert cc.MSG_NOTICE_PERIOD in html
+    assert cc.MSG_VERIFICATION_FAILED not in html
+    assert _current(app, created.id) == before
+
+
+def test_tc_017_004_confirmar_documento_incorrecto_no_cambia_nada(app, client) -> None:
+    """RF-1/RF-2: a wrong document on the confirmation maps to FAILED with no
+    appointment data and no change."""
+    created = _insert_appointment_on(app, _future_weekday())
+    before = _current(app, created.id)
+
+    response = client.post(
+        f"/citas/cancelar/{created.id}/confirmar",
+        data={"document_number": WRONG_DOCUMENT},
+    )
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert cc.MSG_VERIFICATION_FAILED in html
+    assert cc.MSG_ALREADY_CANCELLED not in html
+    assert SERVICE_NAME not in html
+    assert format_spanish_date(created.date) not in html
+    assert _current(app, created.id) == before
+
+
+def test_tc_017_004_confirmar_referencia_inexistente_failed(app, client) -> None:
+    """Plan D7: APPOINTMENT_NOT_FOUND/unknown reference on confirmation maps to
+    the same FAILED literal with 200."""
+    response = client.post(
+        f"/citas/cancelar/{MISSING_ID}/confirmar",
+        data={"document_number": DOCUMENT_NUMBER},
+    )
+
+    assert response.status_code == 200
+    assert cc.MSG_VERIFICATION_FAILED in response.get_data(as_text=True)
+
+
+def test_tc_017_005_primera_cancelacion_exactamente_un_evento(app, client) -> None:
+    """RF-8: the first cancellation from the site emits exactly one
+    `appointment.cancellation_email` event (and one POST)."""
+    app.config["AUTOMATION_WEBHOOK_URL"] = WEBHOOK_URL
+    created = _insert_appointment_on(app, _future_weekday())
+    event_id = _cancellation_email_event_id(created.id)
+
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        response = client.post(
+            f"/citas/cancelar/{created.id}/confirmar",
+            data={"document_number": DOCUMENT_NUMBER},
+        )
+
+    assert response.status_code == 303
+    assert len(_cancellation_posts(post)) == 1
+    assert _count_events(app, event_id) == 1
+    assert _event_status(app, event_id) == "sent"
+    assert _current(app, created.id).status == appointment_content.STATUS_CANCELLED
+
+
+def test_tc_017_005_webhook_caido_evento_failed_y_cancelacion_intacta(
+    app, client
+) -> None:
+    """RF-8 / Spec 010 contract: a down webhook leaves the event `failed` but
+    the cancellation is committed and the 303 is still produced."""
+    app.config["AUTOMATION_WEBHOOK_URL"] = WEBHOOK_URL
+    created = _insert_appointment_on(app, _future_weekday())
+    event_id = _cancellation_email_event_id(created.id)
+
+    with mock.patch.object(
+        automation,
+        "_post_webhook",
+        side_effect=urllib.error.URLError("connection refused"),
+    ):
+        response = client.post(
+            f"/citas/cancelar/{created.id}/confirmar",
+            data={"document_number": DOCUMENT_NUMBER},
+        )
+
+    assert response.status_code == 303
+    assert response.headers["Location"].endswith(
+        f"/citas/cancelar/{created.id}/exito"
+    )
+    assert _current(app, created.id).status == appointment_content.STATUS_CANCELLED
+    assert _count_events(app, event_id) == 1
+    assert _event_status(app, event_id) == "failed"
+
+
+def test_tc_017_006_reenvio_muestra_ya_cancelada_un_evento_cero_posts(
+    app, client
+) -> None:
+    """RF-9/RF-8: resending the confirmation answers «Esta cita ya fue
+    cancelada.», keeps exactly one event row and adds 0 POSTs."""
+    app.config["AUTOMATION_WEBHOOK_URL"] = WEBHOOK_URL
+    created = _insert_appointment_on(app, _future_weekday())
+    event_id = _cancellation_email_event_id(created.id)
+
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        first = client.post(
+            f"/citas/cancelar/{created.id}/confirmar",
+            data={"document_number": DOCUMENT_NUMBER},
+        )
+        assert first.status_code == 303
+        posts_after_first = post.call_count
+
+        second = client.post(
+            f"/citas/cancelar/{created.id}/confirmar",
+            data={"document_number": DOCUMENT_NUMBER},
+        )
+
+    assert second.status_code == 200
+    assert cc.MSG_ALREADY_CANCELLED in second.get_data(as_text=True)
+    assert post.call_count == posts_after_first  # 0 additional POSTs
+    assert len(_cancellation_posts(post)) == 1
+    assert _count_events(app, event_id) == 1
+    assert _event_status(app, event_id) == "sent"
+    assert _current(app, created.id).status == appointment_content.STATUS_CANCELLED
