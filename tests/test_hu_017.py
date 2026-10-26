@@ -25,6 +25,7 @@ from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import Appointment
 from consultorio.services import appointment_service as booking
 from consultorio.services import automation_service as automation
+from consultorio.services import cancellation_flow_service as flow
 from consultorio.services import email_service as email
 from consultorio.services.email_service import format_spanish_date
 
@@ -39,6 +40,12 @@ MISSING_ID = 999999
 BOOKING_SLOT = "09:00"
 WEBHOOK_URL = "http://n8n.local/webhook/booking"
 CANCELLATION_EMAIL_EVENT_TYPE = "appointment.cancellation_email"
+CANCELLED_EVENT_TYPE = "appointment.cancelled"
+MESSAGE_LITERALS = (
+    cc.MSG_VERIFICATION_FAILED,
+    cc.MSG_ALREADY_CANCELLED,
+    cc.MSG_NOTICE_PERIOD,
+)
 
 
 def _database_path(app) -> Path:
@@ -140,6 +147,10 @@ def _cancellation_email_event_id(cita_id: int) -> str:
     return f"{CANCELLATION_EMAIL_EVENT_TYPE}:{cita_id}:v1"
 
 
+def _cancelled_event_id(cita_id: int) -> str:
+    return f"{CANCELLED_EVENT_TYPE}:{cita_id}:v1"
+
+
 def _count_events(app, event_id: str) -> int:
     connection = sqlite3.connect(str(_database_path(app)))
     try:
@@ -170,6 +181,28 @@ def _cancellation_posts(post: mock.MagicMock) -> list[mock.call]:
         for call in post.call_args_list
         if call[0][1].get("event_type") == CANCELLATION_EMAIL_EVENT_TYPE
     ]
+
+
+def _assert_single_alert(response, expected: str) -> None:
+    """RF-2/RF-4/RF-9 + RNF states: the rendered alert is exactly the literal
+    produced by the backend result, with the other conflict literals absent."""
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+
+    alerts = re.findall(
+        r'<p[^>]*role="alert"[^>]*>(.*?)</p>', html, re.DOTALL
+    )
+    assert len(alerts) == 1, alerts
+    shown = alerts[0].strip()
+    assert expected in shown
+
+    for other in MESSAGE_LITERALS:
+        if other != expected:
+            assert other not in shown, other
+            assert other not in html, other
+
+    # The messages are announced through the polite live region (T5).
+    assert 'aria-live="polite"' in html
 
 
 # --- TC-017-001 (RF-1, RF-2) -------------------------------------------------
@@ -592,6 +625,75 @@ def test_tc_017_006_reenvio_muestra_ya_cancelada_un_evento_cero_posts(
     assert _current(app, created.id).status == appointment_content.STATUS_CANCELLED
 
 
+# --- TC-017-007 (RF-10): rendered guard + sequential double POST -------------
+# The summary ships the RF-10 guard (flag + disabled/aria-busy, HU-006
+# pattern) and even if two confirmation POSTs arrive in sequence the second
+# one neither cancels nor notifies again (backend idempotency).
+
+
+def test_tc_017_007_resumen_con_guard_y_doble_post_sin_duplicar(
+    app, client
+) -> None:
+    app.config["AUTOMATION_WEBHOOK_URL"] = WEBHOOK_URL
+    created = _insert_appointment_on(app, _future_weekday())
+    email_event_id = _cancellation_email_event_id(created.id)
+    cancelled_event_id = _cancelled_event_id(created.id)
+
+    # The summary exposes the exact form/button the guard script binds and is
+    # initially enabled; the script adds disabled + aria-busy on submit.
+    summary = client.post(
+        f"/citas/cancelar/{created.id}",
+        data={"document_number": DOCUMENT_NUMBER},
+    )
+    assert summary.status_code == 200
+    html = summary.get_data(as_text=True)
+    assert re.search(
+        r'<script[^>]+src="[^"]*js/cancellation\.js"', html
+    ) is not None
+    assert 'class="cancellation__form"' in html
+    button = re.search(
+        r'<button[^>]*class="cancellation__submit"[^>]*>', html
+    )
+    assert button is not None
+    assert "disabled" not in button.group(0)
+    assert "aria-busy" not in button.group(0)
+    hidden = re.search(
+        r'<input(?=[^>]*\btype="hidden")(?=[^>]*\bname="document_number")[^>]*>',
+        html,
+    )
+    assert hidden is not None
+    assert f'value="{DOCUMENT_NUMBER}"' in hidden.group(0)
+
+    # A double click / double submit reaches the backend twice.
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        with mock.patch.object(
+            flow, "cancel_appointment", wraps=booking.cancel_appointment
+        ) as delegate:
+            first = client.post(
+                f"/citas/cancelar/{created.id}/confirmar",
+                data={"document_number": DOCUMENT_NUMBER},
+            )
+            second = client.post(
+                f"/citas/cancelar/{created.id}/confirmar",
+                data={"document_number": DOCUMENT_NUMBER},
+            )
+
+    assert first.status_code == 303
+    assert second.status_code == 200
+    second_html = second.get_data(as_text=True)
+    assert cc.MSG_ALREADY_CANCELLED in second_html
+    assert cc.MSG_VERIFICATION_FAILED not in second_html
+    assert cc.MSG_NOTICE_PERIOD not in second_html
+
+    # The second POST never reaches the cancellation service again and adds no
+    # notification (neither the business event nor the e-mail).
+    assert delegate.call_count == 1
+    assert len(_cancellation_posts(post)) == 1
+    assert _count_events(app, email_event_id) == 1
+    assert _count_events(app, cancelled_event_id) == 1
+    assert _current(app, created.id).status == appointment_content.STATUS_CANCELLED
+
+
 # --- TC-017-008 (RF-11, RF-12): real status and cancel button ----------------
 # The confirmed-appointment page shows the status read from the database and
 # only offers the cancellation entry point for `confirmed` appointments.
@@ -755,3 +857,111 @@ def test_tc_017_009_enlace_del_correo_en_cita_cancelada_muestra_ya_cancelada(
     assert retry.status_code == 200
     assert cc.MSG_ALREADY_CANCELLED in retry.get_data(as_text=True)
     assert _current(app, cita_id).status == appointment_content.STATUS_CANCELLED
+
+
+# --- TC-017-012 (RNF states): message ↔ backend result ----------------------
+# Each rendered message must be the literal of the real backend outcome, not
+# merely a copy that happens to live in a template; the other conflict
+# literals never leak into the same response.
+
+
+def test_tc_017_012_mensajes_de_verificacion_corresponden_al_resultado(
+    app, client
+) -> None:
+    booking_date = _future_weekday()
+
+    # FAILED: unknown document for an existing appointment.
+    failed = _insert_appointment_on(app, booking_date, "09:00")
+    _assert_single_alert(
+        client.post(
+            f"/citas/cancelar/{failed.id}",
+            data={"document_number": WRONG_DOCUMENT},
+        ),
+        cc.MSG_VERIFICATION_FAILED,
+    )
+
+    # ALREADY_CANCELLED: correct document over a cancelled appointment.
+    already = _insert_appointment_on(app, booking_date, "09:30")
+    _cancel_in_database(app, already.id)
+    _assert_single_alert(
+        client.post(
+            f"/citas/cancelar/{already.id}",
+            data={"document_number": DOCUMENT_NUMBER},
+        ),
+        cc.MSG_ALREADY_CANCELLED,
+    )
+
+    # TOO_SOON: correct document inside the 3-hour window.
+    soon = _insert_appointment(app, 2)
+    _assert_single_alert(
+        client.post(
+            f"/citas/cancelar/{soon.id}",
+            data={"document_number": DOCUMENT_NUMBER},
+        ),
+        cc.MSG_NOTICE_PERIOD,
+    )
+
+    # READY: the summary shows no conflict/error message at all.
+    ready = _insert_appointment_on(app, booking_date, "10:00")
+    summary = client.post(
+        f"/citas/cancelar/{ready.id}",
+        data={"document_number": DOCUMENT_NUMBER},
+    )
+    assert summary.status_code == 200
+    summary_html = summary.get_data(as_text=True)
+    assert 'role="alert"' not in summary_html
+    for message in MESSAGE_LITERALS:
+        assert message not in summary_html, message
+    assert cc.CANCEL_CONFIRM_BUTTON in summary_html
+
+
+def test_tc_017_012_mensajes_de_confirmacion_corresponden_al_resultado(
+    app, client
+) -> None:
+    # No network: this test only checks the result → message mapping.
+    app.config["AUTOMATION_WEBHOOK_URL"] = ""
+    booking_date = _future_weekday()
+
+    # FAILED: wrong document on the confirmation re-verification.
+    failed = _insert_appointment_on(app, booking_date, "09:00")
+    _assert_single_alert(
+        client.post(
+            f"/citas/cancelar/{failed.id}/confirmar",
+            data={"document_number": WRONG_DOCUMENT},
+        ),
+        cc.MSG_VERIFICATION_FAILED,
+    )
+
+    # ALREADY_CANCELLED: the appointment was cancelled before the retry.
+    already = _insert_appointment_on(app, booking_date, "09:30")
+    _cancel_in_database(app, already.id)
+    _assert_single_alert(
+        client.post(
+            f"/citas/cancelar/{already.id}/confirmar",
+            data={"document_number": DOCUMENT_NUMBER},
+        ),
+        cc.MSG_ALREADY_CANCELLED,
+    )
+
+    # TOO_SOON: the window is re-checked at confirmation time.
+    soon = _insert_appointment(app, 2)
+    _assert_single_alert(
+        client.post(
+            f"/citas/cancelar/{soon.id}/confirmar",
+            data={"document_number": DOCUMENT_NUMBER},
+        ),
+        cc.MSG_NOTICE_PERIOD,
+    )
+
+    # SUCCESS: 303 to the success screen, no message rendered.
+    ready = _insert_appointment_on(app, booking_date, "10:00")
+    success = client.post(
+        f"/citas/cancelar/{ready.id}/confirmar",
+        data={"document_number": DOCUMENT_NUMBER},
+    )
+    assert success.status_code == 303
+    assert success.headers["Location"].endswith(
+        f"/citas/cancelar/{ready.id}/exito"
+    )
+    for message in MESSAGE_LITERALS:
+        assert message not in success.get_data(as_text=True), message

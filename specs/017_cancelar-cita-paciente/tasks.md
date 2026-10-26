@@ -36,7 +36,7 @@ Estado: aprobado por la usuaria (2026-10-25, junto con `plan.md`).
 - [x] **T8. Añadir el enlace directo de cancelación al correo de confirmación (parámetro opcional `cancellation_url` al final de `create_booking()`, `send_confirmation()` y `build_confirmation_message()`, URL absoluta con `url_for(_external=True)` en la capa web).** RF-13
   - Hecho cuando: el payload `appointment.confirmation_email` de una reserva hecha por `POST /citas` contiene en texto y HTML el enlace absoluto `…/citas/cancelar/<id>` con la etiqueta «Cancelar cita»; `EMAIL_FOOTER` y los demás literales de la Spec 008 intactos; `python -m pytest -q tests/test_hu_008.py` pasa **sin haber modificado ese fichero de tests**. **Condición previa (plan §8.1): los cambios de la Spec 010/T22 están commiteados; si siguen sin commitear, posponer esta tarea y avisar al coordinador** (única tarea que edita `appointment_service.py`).
 
-- [ ] **T9. Completar la batería de integración y regresión (`tests/test_hu_017.py`) y ejecutar la suite completa.** RF-1..RF-13
+- [x] **T9. Completar la batería de integración y regresión (`tests/test_hu_017.py`) y ejecutar la suite completa.** RF-1..RF-13
   - Hecho cuando: `python -m pytest -q` devuelve **0 FAIL** con la suite previa intacta (cifra baseline registrada al iniciar), los TC-017-001..013 de la matriz del plan §6 quedan en verde y la trazabilidad RF ↔ TC del plan §7 queda completa.
 
 - [ ] **T10. Evidencia QA: demo manual de los criterios de finalización de la spec, informe `docs/evidencias/hu-017/qa-hu-017.md` y servidor de revisión en marcha.** RF-1..RF-13 (criterios de finalización)
