@@ -33,7 +33,7 @@ Estado: aprobado por la usuaria (2026-10-25, junto con `plan.md`).
 - [x] **T7. Actualizar `/citas/confirmada/<id>` (`web/appointments.py` + `templates/appointments/confirmation.html`) para mostrar el estado real y el botón «Cancelar cita» solo en citas confirmadas.** RF-11, RF-12
   - Hecho cuando: los tests TC-017-008 pasan: cita confirmada → etiqueta «Confirmada» y botón «Cancelar cita» que enlaza a `/citas/cancelar/<id>`; cita cancelada → etiqueta «Cancelada» y sin botón; id desconocido → 404.
 
-- [ ] **T8. Añadir el enlace directo de cancelación al correo de confirmación (parámetro opcional `cancellation_url` al final de `create_booking()`, `send_confirmation()` y `build_confirmation_message()`, URL absoluta con `url_for(_external=True)` en la capa web).** RF-13
+- [x] **T8. Añadir el enlace directo de cancelación al correo de confirmación (parámetro opcional `cancellation_url` al final de `create_booking()`, `send_confirmation()` y `build_confirmation_message()`, URL absoluta con `url_for(_external=True)` en la capa web).** RF-13
   - Hecho cuando: el payload `appointment.confirmation_email` de una reserva hecha por `POST /citas` contiene en texto y HTML el enlace absoluto `…/citas/cancelar/<id>` con la etiqueta «Cancelar cita»; `EMAIL_FOOTER` y los demás literales de la Spec 008 intactos; `python -m pytest -q tests/test_hu_008.py` pasa **sin haber modificado ese fichero de tests**. **Condición previa (plan §8.1): los cambios de la Spec 010/T22 están commiteados; si siguen sin commitear, posponer esta tarea y avisar al coordinador** (única tarea que edita `appointment_service.py`).
 
 - [ ] **T9. Completar la batería de integración y regresión (`tests/test_hu_017.py`) y ejecutar la suite completa.** RF-1..RF-13

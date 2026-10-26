@@ -19,10 +19,13 @@ import pytest
 
 from consultorio.content import appointment_content
 from consultorio.content import cancellation_content as cc
+from consultorio.content import email_content
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import Appointment
+from consultorio.services import appointment_service as booking
 from consultorio.services import automation_service as automation
+from consultorio.services import email_service as email
 from consultorio.services.email_service import format_spanish_date
 
 SERVICE_KEY = "nutrition"
@@ -115,6 +118,22 @@ def _insert_appointment_on(
         "time": slot,
     }
     return repository.insert_appointment(data, _database_path(app))
+
+
+def _booking_payload(
+    booking_date: str, slot: str = BOOKING_SLOT
+) -> dict[str, str]:
+    """Valid booking form data for ``POST /citas`` and ``create_booking()``."""
+    return {
+        "document_type": "CC",
+        "document_number": DOCUMENT_NUMBER,
+        "patient_name": PATIENT_NAME,
+        "email": PATIENT_EMAIL,
+        "phone": PATIENT_PHONE,
+        "service": SERVICE_KEY,
+        "date": booking_date,
+        "time": slot,
+    }
 
 
 def _cancellation_email_event_id(cita_id: int) -> str:
@@ -623,3 +642,116 @@ def test_tc_017_008_id_desconocido_404(client) -> None:
     response = client.get(f"/citas/confirmada/{MISSING_ID}")
 
     assert response.status_code == 404
+
+
+# --- TC-017-009 (RF-13, plan D9): cancellation link in the e-mail ------------
+# The confirmation e-mail carries an absolute link to the cancellation of that
+# appointment, in both the plain-text and the HTML parts. The link is built by
+# the web layer with ``url_for(_external=True)`` once the id exists, so the
+# service receives a builder (see the T8 implementation note).
+
+
+def test_tc_017_009_correo_incluye_enlace_absoluto_en_texto_y_html(
+    app, client
+) -> None:
+    """RF-13: a real ``POST /citas`` produces a confirmation e-mail whose text
+    and HTML contain the absolute ``…/citas/cancelar/<id>`` link labelled
+    «Cancelar cita», with ``EMAIL_FOOTER`` untouched."""
+    app.config["AUTOMATION_WEBHOOK_URL"] = WEBHOOK_URL
+    booking_date = _future_weekday()
+
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        response = client.post("/citas", data=_booking_payload(booking_date))
+
+    assert response.status_code == 303
+    cita_id = int(response.headers["Location"].rstrip("/").split("/")[-1])
+    email_posts = [
+        call
+        for call in post.call_args_list
+        if call[0][1].get("event_type") == "appointment.confirmation_email"
+    ]
+    assert len(email_posts) == 1
+    message = email_posts[0][0][1]["message"]
+
+    expected_url = f"http://localhost/citas/cancelar/{cita_id}"
+    for part in (message["text"], message["html"]):
+        assert expected_url in part
+        assert cc.EMAIL_CANCEL_LINK_LABEL in part
+        assert email_content.EMAIL_FOOTER in part
+
+    # The HTML part uses a real anchor with the absolute URL.
+    assert f'href="{expected_url}"' in message["html"]
+
+
+def test_tc_017_009_sin_url_no_anade_fila_ni_enlace(database_path) -> None:
+    """D9: without a builder (old callers/tests) the e-mail keeps exactly the
+    Spec 008 content: no link row and the same footer."""
+    booking_date = _future_weekday()
+
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        appointment = booking.create_booking(
+            _booking_payload(booking_date), database_path, WEBHOOK_URL, 3.0
+        )
+
+    assert isinstance(appointment, Appointment)
+    email_posts = [
+        call
+        for call in post.call_args_list
+        if call[0][1].get("event_type") == "appointment.confirmation_email"
+    ]
+    assert len(email_posts) == 1
+    message = email_posts[0][0][1]["message"]
+
+    direct = email.build_confirmation_message(appointment)
+    for part in (
+        message["text"],
+        message["html"],
+        direct["text"],
+        direct["html"],
+    ):
+        assert cc.EMAIL_CANCEL_LINK_LABEL not in part
+        assert "/citas/cancelar/" not in part
+        assert email_content.EMAIL_FOOTER in part
+
+
+def test_tc_017_009_enlace_del_correo_en_cita_cancelada_muestra_ya_cancelada(
+    app, client
+) -> None:
+    """RF-13 + RF-9: opening the e-mail link on a cancelled appointment and
+    re-submitting the document reuses the T5 flow and shows the conflict
+    literal without cancelling twice."""
+    app.config["AUTOMATION_WEBHOOK_URL"] = WEBHOOK_URL
+    booking_date = _future_weekday()
+
+    with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
+        response = client.post("/citas", data=_booking_payload(booking_date))
+
+        assert response.status_code == 303
+        cita_id = int(response.headers["Location"].rstrip("/").split("/")[-1])
+        email_posts = [
+            call
+            for call in post.call_args_list
+            if call[0][1].get("event_type") == "appointment.confirmation_email"
+        ]
+        assert len(email_posts) == 1
+        message = email_posts[0][0][1]["message"]
+        link_path = f"/citas/cancelar/{cita_id}"
+        assert f"http://localhost{link_path}" in message["text"]
+
+        # Cancel through the site flow first (T6).
+        confirmation = client.post(
+            f"{link_path}/confirmar",
+            data={"document_number": DOCUMENT_NUMBER},
+        )
+        assert confirmation.status_code == 303
+
+    # Opening the e-mail link on the already-cancelled appointment.
+    opened = client.get(link_path)
+    assert opened.status_code == 200
+
+    retry = client.post(
+        link_path, data={"document_number": DOCUMENT_NUMBER}
+    )
+    assert retry.status_code == 200
+    assert cc.MSG_ALREADY_CANCELLED in retry.get_data(as_text=True)
+    assert _current(app, cita_id).status == appointment_content.STATUS_CANCELLED

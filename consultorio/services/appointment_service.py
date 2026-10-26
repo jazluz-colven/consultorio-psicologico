@@ -149,7 +149,16 @@ def create_booking(
     automation_url: str = "",
     automation_timeout: float = 3.0,
     automation_auth_header: str = "",
+    cancellation_url_builder: "Callable[[int], str] | None" = None,
 ) -> Appointment | str:
+    """Validate availability, insert the appointment and notify (HU-004/008).
+
+    ``cancellation_url_builder`` is optional (spec 017 RF-13, plan D9): the
+    web layer passes a callable because the id only exists after the INSERT.
+    It receives the new id and returns the absolute cancellation URL. The
+    annotation stays a forward-reference string on purpose: the Spec 010
+    stdlib-only check (``test_hu_010``) restricts this module's imports.
+    """
     if repository.is_slot_taken(
         data["service"], data["date"], data["time"], database_path
     ):
@@ -172,6 +181,9 @@ def create_booking(
         automation_timeout,
         automation_auth_header,
     )
+    cancellation_url = ""
+    if cancellation_url_builder is not None and appointment.id:
+        cancellation_url = cancellation_url_builder(appointment.id)
     # best-effort confirmation e-mail via n8n (HU-008): never raises either
     email_service.send_confirmation(
         appointment,
@@ -179,6 +191,7 @@ def create_booking(
         automation_url,
         automation_timeout,
         automation_auth_header,
+        cancellation_url=cancellation_url,
     )
     return appointment
 

@@ -31,6 +31,15 @@ EMAIL_FOOTER: str = (
 )
 EMAIL_GREETING_TEMPLATE: str = "Hola {patient_name}:"
 
+# Optional cancellation row (spec 017 RF-13, plan D9). It is rendered only when
+# the confirmation message receives a cancellation URL; both message builders
+# pass an empty string otherwise, so the Spec 008 e-mail stays byte-identical.
+EMAIL_CANCEL_LINK_ROW_TEMPLATE: str = """<tr>
+  <td style="padding:8px 28px 4px 28px;">
+    <a href="{url}" style="display:inline-block; background-color:#3D5A4E; color:#F7F3EA; text-decoration:none; padding:12px 20px; border-radius:6px; font-size:15px; font-weight:600;">{label}</a>
+  </td>
+</tr>"""
+
 # Readable Spanish dates (RNF: clear and legible delivery)
 WEEKDAYS_ES: tuple[str, ...] = (
     "lunes",
@@ -129,7 +138,7 @@ EMAIL_HTML_TEMPLATE: str = """<!DOCTYPE html>
                 </tr>
               </table>
             </td>
-          </tr>
+          </tr>{cancellation_link_row}
           <tr>
             <td style="padding:16px 28px 24px 28px; color:#30454B; font-size:14px;">
               {footer}

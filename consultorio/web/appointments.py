@@ -132,6 +132,11 @@ def index():
         current_app.config["AUTOMATION_WEBHOOK_URL"],
         current_app.config["AUTOMATION_TIMEOUT_SECONDS"],
         current_app.config["AUTOMATION_WEBHOOK_AUTH_HEADER"],
+        cancellation_url_builder=lambda appointment_id: url_for(
+            "cancellation.verify",
+            cita_id=appointment_id,
+            _external=True,
+        ),
     )
     if result == SLOT_TAKEN:
         return _render_form(data, {"time": MSG_SLOT_TAKEN})

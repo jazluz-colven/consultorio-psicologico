@@ -15,6 +15,7 @@ from consultorio.content.appointment_content import (
     STATUS_CANCELLED_LABEL,
     STATUS_CONFIRMED_LABEL,
 )
+from consultorio.content.cancellation_content import EMAIL_CANCEL_LINK_LABEL
 from consultorio.content.email_content import (
     CANCELLATION_EMAIL_BODY_HEADER,
     CANCELLATION_EMAIL_FOOTER,
@@ -27,6 +28,7 @@ from consultorio.content.email_content import (
     DETAIL_UNEXPECTED,
     DETAIL_UNAVAILABLE,
     EMAIL_BODY_HEADER,
+    EMAIL_CANCEL_LINK_ROW_TEMPLATE,
     EMAIL_FOOTER,
     EMAIL_GREETING_TEMPLATE,
     EMAIL_HTML_TEMPLATE,
@@ -63,8 +65,15 @@ def format_spanish_date(iso_date: str) -> str:
     return f"{weekday}, {parsed.day} de {month} de {parsed.year}"
 
 
-def build_confirmation_message(appointment: Appointment) -> dict[str, str]:
-    """Subject, plain text and HTML parts of the confirmation (RF-2)."""
+def build_confirmation_message(
+    appointment: Appointment, cancellation_url: str = ""
+) -> dict[str, str]:
+    """Subject, plain text and HTML parts of the confirmation (RF-2).
+
+    ``cancellation_url`` is optional (spec 017 RF-13, plan D9): when empty the
+    message is exactly the Spec 008 one; when present, a labelled link is added
+    to both the plain-text and the HTML parts.
+    """
     service_name = SERVICES_CATALOG[appointment.service]["name"]
     date_label = format_spanish_date(appointment.date)
     status_label = STATUS_CONFIRMED_LABEL
@@ -75,22 +84,29 @@ def build_confirmation_message(appointment: Appointment) -> dict[str, str]:
     greeting = EMAIL_GREETING_TEMPLATE.format(
         patient_name=appointment.patient_name
     )
-    text = "\n".join(
-        [
-            f"{EMAIL_SENDER_NAME}",
-            "",
-            greeting,
-            EMAIL_BODY_HEADER,
-            "",
-            f"{EMAIL_LABEL_SERVICE}: {service_name}",
-            f"{EMAIL_LABEL_DATE}: {date_label}",
-            f"{EMAIL_LABEL_TIME}: {appointment.time}",
-            f"{EMAIL_LABEL_STATUS}: {status_label}",
-            f"{EMAIL_LABEL_REFERENCE}: #{appointment.id}",
-            "",
-            EMAIL_FOOTER,
-        ]
-    )
+    text_lines = [
+        f"{EMAIL_SENDER_NAME}",
+        "",
+        greeting,
+        EMAIL_BODY_HEADER,
+        "",
+        f"{EMAIL_LABEL_SERVICE}: {service_name}",
+        f"{EMAIL_LABEL_DATE}: {date_label}",
+        f"{EMAIL_LABEL_TIME}: {appointment.time}",
+        f"{EMAIL_LABEL_STATUS}: {status_label}",
+        f"{EMAIL_LABEL_REFERENCE}: #{appointment.id}",
+        "",
+    ]
+    cancellation_link_row = ""
+    if cancellation_url:
+        text_lines.extend(
+            [f"{EMAIL_CANCEL_LINK_LABEL}: {cancellation_url}", ""]
+        )
+        cancellation_link_row = EMAIL_CANCEL_LINK_ROW_TEMPLATE.format(
+            url=cancellation_url, label=EMAIL_CANCEL_LINK_LABEL
+        )
+    text_lines.append(EMAIL_FOOTER)
+    text = "\n".join(text_lines)
     html = EMAIL_HTML_TEMPLATE.format(
         sender_name=EMAIL_SENDER_NAME,
         greeting=greeting,
@@ -105,6 +121,7 @@ def build_confirmation_message(appointment: Appointment) -> dict[str, str]:
         time=appointment.time,
         status=status_label,
         appointment_id=appointment.id,
+        cancellation_link_row=cancellation_link_row,
         footer=EMAIL_FOOTER,
     )
     return {"subject": subject, "text": text, "html": html}
@@ -152,12 +169,15 @@ def build_cancellation_message(appointment: Appointment) -> dict[str, str]:
         time=appointment.time,
         status=status_label,
         appointment_id=appointment.id,
+        cancellation_link_row="",
         footer=CANCELLATION_EMAIL_FOOTER,
     )
     return {"subject": subject, "text": text, "html": html}
 
 
-def build_event(appointment: Appointment) -> dict[str, object]:
+def build_event(
+    appointment: Appointment, cancellation_url: str = ""
+) -> dict[str, object]:
     """Payload allowlist of spec 008: recipient + message, no document/phone."""
     return {
         "event_id": f"{EVENT_TYPE}:{appointment.id}:v{EVENT_VERSION}",
@@ -168,7 +188,9 @@ def build_event(appointment: Appointment) -> dict[str, object]:
             "to": appointment.email,
             "patient_name": appointment.patient_name,
         },
-        "message": build_confirmation_message(appointment),
+        "message": build_confirmation_message(
+            appointment, cancellation_url=cancellation_url
+        ),
         "appointment": {
             "id": appointment.id,
             "service": appointment.service,
@@ -210,6 +232,7 @@ def send_confirmation(
     webhook_url: str = "",
     timeout_seconds: float = 3.0,
     auth_header: str = "",
+    cancellation_url: str = "",
 ) -> None:
     """Register the e-mail event and best-effort dispatch it; never raises."""
     try:
@@ -233,7 +256,7 @@ def send_confirmation(
                     event_id, DETAIL_INVALID_RECIPIENT, database_path
                 )
             return
-        event = build_event(appointment)
+        event = build_event(appointment, cancellation_url=cancellation_url)
         created = events_repository.insert_event(
             event_id, EVENT_TYPE, EVENT_VERSION, appointment.id, database_path
         )
