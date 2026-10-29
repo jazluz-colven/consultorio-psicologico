@@ -39,5 +39,5 @@ Estado: aprobado por la usuaria (2026-10-25, junto con `plan.md`).
 - [x] **T9. Completar la batería de integración y regresión (`tests/test_hu_017.py`) y ejecutar la suite completa.** RF-1..RF-13
   - Hecho cuando: `python -m pytest -q` devuelve **0 FAIL** con la suite previa intacta (cifra baseline registrada al iniciar), los TC-017-001..013 de la matriz del plan §6 quedan en verde y la trazabilidad RF ↔ TC del plan §7 queda completa.
 
-- [ ] **T10. Evidencia QA: demo manual de los criterios de finalización de la spec, informe `docs/evidencias/hu-017/qa-hu-017.md` y servidor de revisión en marcha.** RF-1..RF-13 (criterios de finalización)
+- [x] **T10. Evidencia QA: demo manual de los criterios de finalización de la spec, informe `docs/evidencias/hu-017/qa-hu-017.md` y servidor de revisión en marcha.** RF-1..RF-13 (criterios de finalización)
   - Hecho cuando: el informe publica PASS/FAIL por TC-017-001..013 con checkbox de aceptación, incluye la demo completa de la spec (reserva → apertura desde el correo → verificación con documento → resumen → «Cancelada» → hueco libre → re-reserva → correo de notificación; reintentos, referencia inexistente, documento incorrecto y restricción de 3 h), revisa consola/red y adjunta capturas CDP de 1280 y 375 sin desbordamientos; `python app.py` queda ejecutándose y la URL de revisión queda comunicada.
