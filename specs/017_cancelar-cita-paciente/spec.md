@@ -25,7 +25,7 @@ aprobada (Spec 010) sin reescribirla.
 ## Requisitos funcionales (criterios de aceptación en EARS)
 - RF-1: CUANDO el paciente solicite cancelar una cita, EL SISTEMA verificará
   que la cita exista y que el número de referencia y el número de documento
-  de documento correspondan a esa cita antes de realizar cualquier cambio.
+  correspondan a esa cita antes de realizar cualquier cambio.
 - RF-2: SI la cita no existe, ya fue cancelada o los datos de identificación
   no coinciden, ENTONCES EL SISTEMA no realizará ningún cambio y mostrará un
   mensaje claro en español, sin revelar datos de la cita.
