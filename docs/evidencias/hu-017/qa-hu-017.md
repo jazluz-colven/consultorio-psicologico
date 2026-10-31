@@ -104,7 +104,8 @@ informe técnico.
       real → apertura del enlace desde el cliente de correo → verificación con
       documento → resumen → «Cancelada» → hueco libre → re-reserva → correo de
       notificación.
-- [ ] **Aceptación funcional de la usuaria** (fuera del alcance del QA técnico).
+- [x] **Aceptación funcional de la usuaria** — **ACEPTADA el 2026-11-01** (fuera del
+      alcance del QA técnico; registrada tras el veredicto `APROBADO`).
 
 ---
 

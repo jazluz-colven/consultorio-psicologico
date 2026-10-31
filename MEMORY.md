@@ -484,5 +484,13 @@ aporte.
   `DETAIL_INVALID_RESPONSE_PREFIX` documentado como ancla de prueba; TC-D010-17
   (readmisión de `DETAIL_UNEXPECTED`) y TC-D010-18 (`claim_failed_event` sin
   patrones); suite **302 passed**. **Aceptación funcional de la usuaria: 2026-10-30**
-  (estado `CORREGIDO — ACEPTADO FUNCIONALMENTE`). Árbol limpio; el merge a `main`
-  se hará al finalizar la spec. `MEMORY.md` sigue siendo demasiado largo: compactar.
+  (estado `CORREGIDO — ACEPTADO FUNCIONALMENTE`). Árbol limpio; merge a `main`
+  realizado el 2026-11-01 (sin push). `MEMORY.md` sigue siendo demasiado largo: compactar.
+
+- **HU-017 ACEPTADA Y MERGEADA a `main` sin push** (2026-11-01): la usuaria aceptó la
+  funcionalidad tras el veredicto `APROBADO` (registrado en `qa-hu-017.md`). Merge
+  fast-forward de `feature/hu-017` → `main` (Spec 010 fase 2 RF-8…RF-16 + HU-017 +
+  D-010-01); **sin push** por decisión de la usuaria (un push a `main` redespliega
+  Render y vacía la BD). Pendiente de aprobación posterior: merge de
+  `chore/proyecto-docs` (AGENTS.md, `.opencode/`, skill `sdd`, enmiendas 011/018).
+  Siguiente: **HU-018** (primero las specs de cancelación); P4/P5 (011/012) después.
