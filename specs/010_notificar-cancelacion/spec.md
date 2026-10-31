@@ -33,6 +33,15 @@
 > en «Nota de enmienda 2 — 2026-10-23 (precisiones RF-8..RF-15)»
 > (final del documento).
 
+> **Enmienda 3 (2026-10-30) — APROBADA por la usuaria (2026-10-30, DP-06):**
+> incorpora **RF-16** sobre la clasificación de las respuestas HTTP no-2xx y la
+> no reintentabilidad de los rechazos 4xx permanentes en el reproceso. Se
+> conserva el literal vigente «Respuesta no válida del servicio (HTTP {code}).»
+> (DP-01) y no se modifican las Specs/planes 007/008 ni
+> `tests/expected_content.py`. Alcance completo en «Nota de enmienda 3 —
+> 2026-10-30 (DP-06)» (final del documento) y en `docs/defectos/D-010-01.md`
+> §11.
+
 ## Contexto y objetivo
 Cuando una cita cambia a estado Cancelada, el paciente necesita conocer
 oportunamente la modificación para evitar desplazamientos innecesarios y
@@ -91,7 +100,10 @@ la automatización (aún pendiente de implementación).
 > las tareas, hasta que el plan y las tareas alineados estén aprobados.
 > Trazabilidad: RF-8..RF-15 pertenecen a
 > **H3** (evento de negocio por cancelación confirmada, bajo decisión del
-> administrador — incluido su reproceso).
+> administrador — incluido su reproceso). **RF-16** se añade por la enmienda 3
+> **aprobada (2026-10-30, DP-06)**; su comportamiento está implementado en el
+> alcance de D-010-01 y pendiente de validación independiente
+> (`CORREGIDO — PENDIENTE DE VALIDACIÓN`).
 
 - RF-8 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO una cancelación quede confirmada en la base de datos, EL SISTEMA registrará y emitirá el evento de negocio `appointment.cancelled` (versión 1), independientemente del resultado del envío del correo de cancelación y de que dicho envío corresponda o no. El evento tendrá un identificador determinista con formato `appointment.cancelled:{id}:v1`, protegido por una restricción UNIQUE, y un payload versionado sin datos personales innecesarios. Este evento representará la cancelación confirmada y no el envío de una notificación.
 - RF-9 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO se emita el evento `appointment.cancelled`, EL SISTEMA incluirá como campos obligatorios `event_id`, `event_type`, `event_version` (1), `occurred_at` y `appointment` con `id`, `service`, `date`, `time` y `status` (`"cancelled"`); quedarán excluidos `patient_name`, `email`, `phone`, `document_type` y `document_number`.
@@ -101,6 +113,7 @@ la automatización (aún pendiente de implementación).
 - RF-13 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO el administrador solicite reprocesar un evento `appointment.cancelled` cuyo estado sea fallido, EL SISTEMA reintentará su publicación conservando el mismo `event_id` y el mismo registro existente, sin crear una segunda fila ni cambiar el identificador determinista, y actualizará el estado y el detalle del resultado de forma trazable: `sent` si el POST tiene éxito, `skipped` si en ese momento la URL del webhook está vacía, o `failed` con el motivo en español si vuelve a fallar. No habrá reintentos automáticos: el nuevo intento solo ocurre por decisión explícita del administrador.
 - RF-14 [PENDIENTE DE IMPLEMENTACIÓN]: SI se solicita reprocesar un evento `appointment.cancelled` cuyo estado no sea fallido (`sent`, `skipped` o `pending`), ENTONCES EL SISTEMA no realizará ningún intento de publicación, no enviará ninguna petición y no modificará el registro; el comportamiento detallado por estado se describe en «Contrato de idempotencia y reproceso (RF-13..RF-15)».
 - RF-15 [PENDIENTE DE IMPLEMENTACIÓN]: MIENTRAS dos o más solicitudes de reproceso compitan sobre el mismo evento `appointment.cancelled`, EL SISTEMA permitirá que únicamente una de ellas realice el intento de publicación; las demás no producirán un intento adicional ni modificarán el registro. La exclusión se garantiza mediante una transición atómica condicionada al estado actual del evento (el diseño concreto corresponde al plan).
+- RF-16 [APROBADO 2026-10-30 — DP-06]: CUANDO la publicación de un evento de automatización reciba una respuesta HTTP no-2xx, EL SISTEMA registrará el evento como `failed` con el detalle «Respuesta no válida del servicio (HTTP {code}).», donde `{code}` es el código recibido. Este detalle se aplicará de forma idéntica en la publicación inicial del evento de negocio, en su reproceso y en los eventos de correo. Un evento `appointment.cancelled` con ese detalle solo será admitido por `reprocess_automation_event()` cuando el código sea transitorio (429 o 5xx); los códigos 4xx permanentes (400, 401, 403, 404, 405, 409, 422, entre otros) no serán readmitidos. Los fallos por timeout, por error de conexión (`URLError` sin `HTTPError`) o por excepción inesperada conservarán sus detalles actuales y seguirán siendo readmitidos.
 
 ## Requisitos no funcionales
 - Protección de datos personales.
@@ -109,6 +122,7 @@ la automatización (aún pendiente de implementación).
 - Minimización de datos en el evento de negocio `appointment.cancelled`: payload sin datos personales innecesarios (RF-9).
 - Trazabilidad y reintentabilidad de la publicación del evento de negocio: estado y motivo registrados, reintentable sin duplicados vía reproceso explícito y sin infraestructura de colas (RF-8, RF-10, RF-13..RF-15).
 - Atomicidad de la cancelación y su traza local: sin el registro `pending` del evento `appointment.cancelled` no hay cancelación confirmada (RF-11, RF-12).
+- Clasificación por código HTTP y no reintentabilidad de los rechazos 4xx permanentes: el `detail` persistido es el único criterio, sin columnas, tablas, índices ni migraciones nuevas (RF-16; DP-02, DP-05).
 
 ## Casos límite
 - Cita ya cancelada.
@@ -132,6 +146,7 @@ la automatización (aún pendiente de implementación).
 - Reintentos automáticos de la notificación fallida o de la publicación del evento de negocio, y cualquier infraestructura de colas o workers: el único reproceso posible es el explícito del administrador mediante `reprocess_automation_event()` sobre eventos en estado fallido (RF-13).
 - Recuperación de eventos `appointment.cancelled` en estado `pending` (incluidos los huérfanos) y promoción de eventos `skipped` a un nuevo intento de publicación: fuera del alcance de `reprocess_automation_event()` y de esta enmienda (posible enmienda futura solo si el diseño demuestra la necesidad; ver «Contrato de idempotencia y reproceso»). **Limitación operativa aceptada**: un evento `pending` huérfano puede permanecer en `pending` indefinidamente, sin vía de recuperación con el mecanismo actual de esta fase.
 - Borrado del evento en Google Calendar y manejo del `calendar_event_id`: corresponden a la Spec 007 en un paso posterior; esta spec no los define.
+- Cambios del literal de respuesta no-2xx o de `tests/expected_content.py` por la enmienda 3: DP-01 conserva «Respuesta no válida del servicio (HTTP {code}).» y no se modifican las Specs/planes 007/008 (RF-16).
 
 ## Contratos fijados (enmienda 2026-10-13)
 
@@ -257,6 +272,9 @@ esta spec queda con esos RF abiertos (la enmienda 1 que introduce RF-8..RF-10
 fue aprobada por la usuaria el 2026-10-23; la enmienda 2 que ajusta RF-8/RF-10
 y añade RF-11..RF-15 fue **aprobada por la usuaria el 2026-10-23**, y el
 `plan.md` §9 y las tareas quedan pendientes de reaprobación alineados a ella).
+RF-16 (enmienda 3, aprobada 2026-10-30, DP-06): implementado en el alcance de
+D-010-01 y pendiente de validación independiente; sus criterios de aceptación
+son CA-D010-01..CA-D010-14 del registro `docs/defectos/D-010-01.md` §5.
 
 ### Criterios de aceptación de la enmienda 2 (RF-8..RF-15)
 - CA-1: Cancelación confirmada ⇒ existe un registro `appointment.cancelled` (v1) con `event_id` determinista `appointment.cancelled:{id}:v1` y se emite el POST correspondiente, con independencia del resultado del correo de cancelación (RF-8).
@@ -268,6 +286,16 @@ y añade RF-11..RF-15 fue **aprobada por la usuaria el 2026-10-23**, y el
 - CA-7: `reprocess_automation_event()` sobre un evento `sent`, `skipped` o `pending` ⇒ cero POST y registro sin modificación (RF-14).
 - CA-8: Dos reprocesos concurrentes del mismo evento ⇒ un único intento de publicación y un único cambio de estado (RF-15).
 
+### Criterios de aceptación de la enmienda 3 (RF-16)
+
+| RF | Criterios de aceptación (contenido completo en `docs/defectos/D-010-01.md` §5) |
+|---|---|
+| RF-16 | CA-D010-01, CA-D010-02, CA-D010-03, CA-D010-04, CA-D010-05, CA-D010-06, CA-D010-07, CA-D010-08, CA-D010-09, CA-D010-10, CA-D010-11, CA-D010-12, CA-D010-13, CA-D010-14 |
+
+> Referencia cruzada de trazabilidad: **RF-16 → CA-D010-01…CA-D010-14**. No se
+> duplica aquí el contenido de los criterios; el registro del defecto es su
+> fuente y contiene la evidencia asociada.
+
 ## Dudas abiertas
 - [RESUELTA — Q2] Confirmar si debe notificarse siempre por ambos canales o según preferencias del paciente → fijado en «Contratos fijados» (correo vía webhook; WhatsApp pendiente de Spec 009; «cuando corresponda» = canal implementado y configurado).
 - [RESUELTA — Q3] Definir el contenido exacto del aviso de cancelación → fijado en «Contratos fijados» (asunto «Cita cancelada», estado «Cancelada», pie de reagendado, literales contractuales).
@@ -276,6 +304,7 @@ y añade RF-11..RF-15 fue **aprobada por la usuaria el 2026-10-23**, y el
 - [RESUELTA — 2026-10-23, enmienda 2 aprobada] Contradicción sobre el reproceso del evento fallido («choca en el INSERT y se descarta» vs. «reintento posterior sin duplicados» vs. «el reproceso lo decide el administrador») → resuelta por la enmienda 2: el reproceso explícito del administrador es la función de servicio `reprocess_automation_event()` sobre eventos `failed` (RF-13..RF-15 y «Contrato de idempotencia y reproceso»); el `UNIQUE(event_id)` garantiza la unicidad del registro y el reproceso reutiliza la fila existente sin crear duplicados.
 - [RESUELTA — 2026-10-23, enmienda 2 aprobada] Atomicidad del registro de `appointment.cancelled` con la cancelación → resuelta por la enmienda 2: «sin traza local, sin cancelación confirmada»; transición y registro `pending` en la misma transacción (RF-11, RF-12 y matriz de fallos). La ventana de fallo del registro del evento de **correo** (`appointment.cancellation_email`, post-commit) no se modifica y queda como limitación técnica conocida para documentar en `plan.md` en fase posterior.
 - [RESUELTA — 2026-10-23, decisión conservadora de la enmienda 2, aprobada] Reproceso de eventos en estado `pending` (incluidos huérfanos), `sent` y `skipped` → **fuera del alcance** de `reprocess_automation_event()` (no-op, RF-14): solo se reprocesa `failed`. Se eligió la opción conservadora porque un `pending` puede estar aún en curso y reprocesarlo duplicaría la publicación; los cuatro estados aprobados (`pending`, `sent`, `skipped`, `failed`) se mantienen sin añadir ninguno nuevo hasta que el diseño demuestre la necesidad. La usuaria reconoció y aceptó la consecuencia: un `pending` huérfano puede permanecer `pending` indefinidamente, sin vía de recuperación en esta fase (limitación explícita en el contrato de idempotencia, en los casos límite y en «Fuera de alcance»).
+- [RESUELTA — 2026-10-30, DP-06] ¿Debe el mapeo HTTP por código vivir solo en `plan.md`? → **no**: se incorpora RF-16 a esta spec (enmienda 3 aprobada) para que la clasificación de respuestas no-2xx y la no reintentabilidad de los 4xx permanentes sean requisito trazable; el diseño concreto sigue en `plan.md` §9.3/§9.5/§9.8.1 y en `docs/defectos/D-010-01.md`.
 
 ## Nota de enmienda 2026-10-23
 
@@ -373,3 +402,25 @@ cambios** por esta enmienda (decisión de la usuaria, 2026-10-23). Ninguna
 carpeta se renombra: el
 identificador `010` y la ruta `specs/010_notificar-cancelacion/` se
 mantienen.
+
+## Nota de enmienda 3 — 2026-10-30 (DP-06)
+
+**APROBADA por la usuaria (2026-10-30, DP-06).** Enmienda redactada en
+`docs/defectos/D-010-01.md` §11 y aprobada por el coordinador para incorporarla
+a esta spec. Añade **RF-16** y no modifica ningún literal visible ni
+`tests/expected_content.py`.
+
+**Texto aprobado:** RF-16 (arriba, «Requisitos funcionales»), con el literal
+vigente de DP-01.
+
+**Nota de la enmienda:**
+
+- El `detail` persistido es el único criterio de clasificación; no se añaden columnas, tablas, índices, estados ni migraciones.
+- La comprobación se aplica dentro del `UPDATE` atómico de admisión del reproceso, no mediante un `SELECT` previo, preservando la exclusión de concurrencia de RF-15.
+- El literal «Respuesta no válida del servicio (HTTP {code}).» es el vigente y no cambia; no se modifican las Specs/planes 007/008 ni `tests/expected_content.py`.
+- La clasificación por código es: 2xx → `sent`; 4xx permanentes (excepto 429) → `failed` no reintentable; 429 y 5xx → `failed` transitorio y reintentable mediante reproceso explícito; timeout, `URLError` y excepción inesperada → `failed` transitorio y reintentable.
+- No se introducen reintentos automáticos, colas ni workers.
+
+**Consecuencias:** se añade RF-16 a la Spec 010 y se actualizan `plan.md`
+§9.3/§9.5/§9.8.1; no cambia ningún literal visible ni
+`tests/expected_content.py`.

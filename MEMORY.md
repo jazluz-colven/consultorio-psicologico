@@ -465,3 +465,24 @@ aporte.
   aprobaciones posteriores. Secuencia del ciclo completada: 010 ✓ → 017/018 ✓
   → 007 ✓. **Pendiente**: commit de la enmienda 007 y decisión de push (un
   push a `main` despliega en Render y vacía la BD).
+
+- **D-010-01 (Spec 010, enmienda 3 / RF-16) `CORREGIDO — VALIDADO TÉCNICAMENTE (QA APROBADO)`**
+  (2026-10-30, rama `feature/hu-017`, commits `f32030b`, `4706862`, `97c40b9`, `cb8abe9`,
+  `52a3557`, `2f65207`, `acd2a91`, `acb17fe`): causa raíz = `HTTPError` es subclase de
+  `URLError` y se capturaba antes, así que 4xx/5xx reales se registraban como «Servicio de
+  automatización no disponible.». Corrección: captura ordenada
+  `TimeoutError → HTTPError → URLError → Exception` con helper único
+  `_register_publication_failure()` en los **cinco** flujos (`publish_cancelled_event`,
+  `reprocess_automation_event`, `on_appointment_confirmed`, `send_confirmation`,
+  `send_cancellation`) + exclusión atómica de 4xx permanentes en `claim_failed_event()`
+  (`detail IS NULL OR detail NOT LIKE <4xx> OR detail LIKE <429>`, sin `SELECT` previo ni
+  migraciones). Literal vigente intacto (DP-01); sin cambios en `_post_webhook`,
+  `tests/expected_content.py` ni specs 007/008. Suite **300 passed / 0 FAIL**; revisor
+  independiente **APROBADO** (RF-8…RF-16 y CA-D010-01…14 CUMPLE; no vacuidad comprobada en
+  worktree temporal). Evidencia: `docs/evidencias/hu-010/qa-hu-010-rf8-10.md`.
+  Recomendaciones opcionales del revisor **aplicadas** (`a74269f`):
+  `DETAIL_INVALID_RESPONSE_PREFIX` documentado como ancla de prueba; TC-D010-17
+  (readmisión de `DETAIL_UNEXPECTED`) y TC-D010-18 (`claim_failed_event` sin
+  patrones); suite **302 passed**. **Aceptación funcional de la usuaria: 2026-10-30**
+  (estado `CORREGIDO — ACEPTADO FUNCIONALMENTE`). Árbol limpio; el merge a `main`
+  se hará al finalizar la spec. `MEMORY.md` sigue siendo demasiado largo: compactar.
