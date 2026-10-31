@@ -107,22 +107,42 @@ def mark_failed(
 
 
 def claim_failed_event(
-    event_id: str, database_path: str | Path
+    event_id: str,
+    database_path: str | Path,
+    permanent_pattern: str | None = None,
+    retryable_pattern: str | None = None,
 ) -> bool:
     """
     Atomically move an event from 'failed' to 'pending' for reprocessing.
     Only applies to 'appointment.cancelled' events.
     Returns True if the event was claimed, False otherwise.
+
+    D-010-01 (DP-02): when both `LIKE` patterns are supplied, a `failed` event
+    whose persisted `detail` is a PERMANENT HTTP rejection (4xx except 429) is
+    excluded inside this same atomic `UPDATE` (no prior `SELECT`). The patterns
+    are derived from the content literal and passed by the service, so the
+    retryability policy does not live in the persistence layer. 5xx, 429,
+    timeout, `URLError` and `NULL` details stay claimable. Omitting the patterns
+    keeps the previous behaviour (claim any `failed` event).
     """
+    query = """
+        UPDATE automation_events
+        SET status = 'pending', detail = NULL
+        WHERE event_id = ?
+          AND status = 'failed'
+          AND event_type = 'appointment.cancelled'
+    """
+    params: list[object] = [event_id]
+    if permanent_pattern is not None and retryable_pattern is not None:
+        query += """
+          AND (
+            detail IS NULL
+            OR detail NOT LIKE ?
+            OR detail LIKE ?
+          )
+        """
+        params.extend([permanent_pattern, retryable_pattern])
+
     with get_connection(database_path) as connection:
-        cursor = connection.execute(
-            """
-            UPDATE automation_events
-            SET status = 'pending', detail = NULL
-            WHERE event_id = ?
-              AND status = 'failed'
-              AND event_type = 'appointment.cancelled'
-            """,
-            (event_id,),
-        )
+        cursor = connection.execute(query, tuple(params))
         return cursor.rowcount == 1

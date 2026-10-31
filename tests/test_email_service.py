@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
+from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import Appointment
 from consultorio.services import appointment_service as booking
 from consultorio.services import automation_service as automation
@@ -288,6 +289,72 @@ def test_tc_008_009_email_invalido_failed_sin_post(database_path: Path) -> None:
             _event_id(appointment.id), email.EVENT_TYPE, 1, appointment.id,
             str(database_path),
         )
+
+
+def test_tc_d010_13_send_confirmation_http_error_400_failed_cita_intacta(
+    database_path: Path,
+) -> None:
+    """TC-D010-13 (D-010-01, RF-10, DP-04): el correo de confirmación debe
+    clasificar un `HTTPError` 400 real y dejar la reserva intacta."""
+    booking_date = _future_weekday()
+    appointment = repository.insert_appointment(
+        _booking_data(booking_date), database_path
+    )
+    http_error = urllib.error.HTTPError(
+        WEBHOOK_URL, 400, "Bad Request", hdrs=None, fp=None
+    )
+    with mock.patch.object(
+        automation, "_post_webhook", side_effect=http_error
+    ):
+        email.send_confirmation(
+            appointment, str(database_path), WEBHOOK_URL, TIMEOUT
+        )
+
+    stored = repository.get_appointment_by_id(appointment.id, database_path)
+    assert stored is not None
+    assert stored.status == "confirmed"
+    event = email.events_repository.get_by_event_id(
+        _event_id(appointment.id), database_path
+    )
+    assert event is not None
+    assert event.status == "failed"
+    assert event.detail == "Respuesta no válida del servicio (HTTP 400)."
+
+
+def test_tc_d010_14_send_cancellation_http_error_400_failed_cancelacion_intacta(
+    database_path: Path,
+) -> None:
+    """TC-D010-14 (D-010-01, RF-10, DP-04): el correo de cancelación debe
+    clasificar un `HTTPError` 400 real y no revertir la cancelación."""
+    booking_date = _future_weekday()
+    appointment = repository.insert_appointment(
+        _booking_data(booking_date), database_path
+    )
+    cancelled = repository.update_appointment_status(
+        appointment.id, "cancelled", database_path
+    )
+    assert cancelled is not None
+    assert cancelled.status == "cancelled"
+
+    http_error = urllib.error.HTTPError(
+        WEBHOOK_URL, 400, "Bad Request", hdrs=None, fp=None
+    )
+    with mock.patch.object(
+        automation, "_post_webhook", side_effect=http_error
+    ):
+        email.send_cancellation(
+            cancelled, str(database_path), WEBHOOK_URL, TIMEOUT
+        )
+
+    stored = repository.get_appointment_by_id(appointment.id, database_path)
+    assert stored is not None
+    assert stored.status == "cancelled"
+    event = email.events_repository.get_by_event_id(
+        f"appointment.cancellation_email:{appointment.id}:v1", database_path
+    )
+    assert event is not None
+    assert event.status == "failed"
+    assert event.detail == "Respuesta no válida del servicio (HTTP 400)."
 
 
 def test_tc_008_010_payload_allowlist_event_id_determinista(

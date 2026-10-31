@@ -7,6 +7,7 @@ from unittest import mock
 
 import pytest
 
+from consultorio.persistence import appointments_repository as repository
 from consultorio.services import automation_service as automation
 from consultorio.services import appointment_service as booking
 
@@ -254,6 +255,72 @@ def test_tc_007_009_timeout_a_nivel_urllib(database_path: Path) -> None:
     assert event is not None
     assert event.status == "failed"
     assert event.detail == "Tiempo de espera agotado (timeout)."
+
+
+@pytest.mark.parametrize("status_code", [400, 500])
+def test_tc_d010_05_post_webhook_propaga_httperror_de_urlopen(
+    status_code: int,
+) -> None:
+    """TC-D010-05 (D-010-01, RF-10): contrato real de `_post_webhook` ante 4xx/5xx.
+
+    `urllib.request.urlopen()` NO devuelve un código para respuestas 4xx/5xx:
+    eleva `urllib.error.HTTPError`, que es subclase de `URLError`. Aquí se
+    parchea `urlopen` —no `_post_webhook`— para documentar ese contrato real:
+    `_post_webhook` no captura la excepción y la propaga conservando `code`.
+
+    Constancia explícita: el montaje `mock.patch.object(automation,
+    "_post_webhook", return_value=500)` usado por TC-007-006 (y por
+    TC-010-107/115) NO reproduce el comportamiento real de `urlopen`, porque
+    evita la excepción y entra artificialmente en la rama `else` de respuesta
+    no-2xx. Por eso el defecto D-010-01 (un 400 real registrado como
+    «Servicio de automatización no disponible.») pasó inadvertido.
+    """
+    payload = {"event_id": "appointment.cancelled:1:v1"}
+    http_error = urllib.error.HTTPError(
+        WEBHOOK_URL, status_code, "Bad Request", hdrs=None, fp=None
+    )
+    with mock.patch.object(
+        automation.urllib.request, "urlopen", side_effect=http_error
+    ):
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            automation._post_webhook(WEBHOOK_URL, payload, TIMEOUT)
+
+    assert excinfo.value is http_error
+    assert excinfo.value.code == status_code
+    # `HTTPError` es subclase de `URLError`: capturar `URLError` antes de mirar
+    # el código es lo que convertía el 4xx/5xx en «servicio no disponible».
+    assert isinstance(excinfo.value, urllib.error.URLError)
+
+
+def test_tc_d010_12_on_appointment_confirmed_http_error_400_failed_cita_intacta(
+    database_path: Path,
+) -> None:
+    """TC-D010-12 (D-010-01, RF-10, DP-04): un `HTTPError` 400 real debe
+    clasificarse como respuesta no válida, no como servicio no disponible, y la
+    reserva ya confirmada debe permanecer intacta."""
+    booking_date = _future_weekday()
+    appointment = repository.insert_appointment(
+        _booking_data(booking_date), database_path
+    )
+    http_error = urllib.error.HTTPError(
+        WEBHOOK_URL, 400, "Bad Request", hdrs=None, fp=None
+    )
+    with mock.patch.object(
+        automation, "_post_webhook", side_effect=http_error
+    ):
+        automation.on_appointment_confirmed(
+            appointment, database_path, WEBHOOK_URL, TIMEOUT
+        )
+
+    stored = repository.get_appointment_by_id(appointment.id, database_path)
+    assert stored is not None
+    assert stored.status == "confirmed"
+    event = automation.events_repository.get_by_event_id(
+        _event_id(appointment.id), database_path
+    )
+    assert event is not None
+    assert event.status == "failed"
+    assert event.detail == "Respuesta no válida del servicio (HTTP 400)."
 
 
 def test_tc_007_014_cabecera_auth_opcional_en_el_post() -> None:

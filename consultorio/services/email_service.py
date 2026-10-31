@@ -24,9 +24,6 @@ from consultorio.content.email_content import (
     DETAIL_EMAIL_NOT_CONFIGURED,
     DETAIL_INVALID_RECIPIENT,
     DETAIL_INVALID_RESPONSE_TEMPLATE,
-    DETAIL_TIMEOUT,
-    DETAIL_UNEXPECTED,
-    DETAIL_UNAVAILABLE,
     EMAIL_BODY_HEADER,
     EMAIL_CANCEL_LINK_ROW_TEMPLATE,
     EMAIL_FOOTER,
@@ -273,17 +270,26 @@ def send_confirmation(
             status_code = automation_service._post_webhook(
                 webhook_url, event, timeout_seconds, auth_header
             )
-        except TimeoutError:
-            events_repository.mark_failed(event_id, DETAIL_TIMEOUT, database_path)
-            return
-        except urllib.error.URLError:
-            events_repository.mark_failed(
-                event_id, DETAIL_UNAVAILABLE, database_path
+        except TimeoutError as error:
+            # same single classification point as the business events (D-010-01)
+            automation_service._register_publication_failure(
+                event_id, error, database_path
             )
             return
-        except Exception:
-            events_repository.mark_failed(
-                event_id, DETAIL_UNEXPECTED, database_path
+        except urllib.error.HTTPError as error:
+            # must come BEFORE URLError: HTTPError is a URLError subclass
+            automation_service._register_publication_failure(
+                event_id, error, database_path
+            )
+            return
+        except urllib.error.URLError as error:
+            automation_service._register_publication_failure(
+                event_id, error, database_path
+            )
+            return
+        except Exception as error:
+            automation_service._register_publication_failure(
+                event_id, error, database_path
             )
             return
         if 200 <= status_code < 300:
@@ -362,17 +368,26 @@ def send_cancellation(
             status_code = automation_service._post_webhook(
                 webhook_url, event, timeout_seconds, auth_header
             )
-        except TimeoutError:
-            events_repository.mark_failed(event_id, DETAIL_TIMEOUT, database_path)
-            return
-        except urllib.error.URLError:
-            events_repository.mark_failed(
-                event_id, DETAIL_UNAVAILABLE, database_path
+        except TimeoutError as error:
+            # same single classification point as the business events (D-010-01)
+            automation_service._register_publication_failure(
+                event_id, error, database_path
             )
             return
-        except Exception:
-            events_repository.mark_failed(
-                event_id, DETAIL_UNEXPECTED, database_path
+        except urllib.error.HTTPError as error:
+            # must come BEFORE URLError: HTTPError is a URLError subclass
+            automation_service._register_publication_failure(
+                event_id, error, database_path
+            )
+            return
+        except urllib.error.URLError as error:
+            automation_service._register_publication_failure(
+                event_id, error, database_path
+            )
+            return
+        except Exception as error:
+            automation_service._register_publication_failure(
+                event_id, error, database_path
             )
             return
         if 200 <= status_code < 300:
