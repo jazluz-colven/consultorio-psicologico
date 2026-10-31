@@ -53,7 +53,7 @@
   Hecho cuando: `python -c "from consultorio.content.appointment_content import STATUS_CANCELLED as s, STATUS_CANCELLED_LABEL as l; from consultorio.content.email_content import CANCELLATION_EMAIL_SUBJECT_TEMPLATE as t; import tests.expected_content as e; assert s == 'cancelled' and l == 'Cancelada' and 'Cita cancelada' in t and t == e.CANCELLATION_EMAIL_SUBJECT_TEMPLATE"` → exit 0.
   **Cumplido 2026-10-13 (suite 187/187).**
 
-- [ ] **T6 — Persistencia: SCHEMA/migración + `update_appointment_status()` + disponibilidad sin `cancelled` (plan §8.5, §2.1, D4/D5)** `[RF-1][RF-4][RNF-2]`
+- [x] **T6 — Persistencia: SCHEMA/migración + `update_appointment_status()` + disponibilidad sin `cancelled` (plan §8.5, §2.1, D4/D5)** `[RF-1][RF-4][RNF-2]`
   `appointments` sin `UNIQUE` inline + índice parcial
   `ux_appointments_slot_open … WHERE status <> 'cancelled'`; migración
   idempotente con respaldo `.bak-<timestamp>` y aborto si hay duplicados entre
@@ -78,7 +78,7 @@
   (suite **188**).
   **Cumplido 2026-10-13 (1 PASS; suite completa 188/188).**
 
-- [ ] **T8 — Servicio: `send_cancellation()` en `email_service.py` (plan §8.6, §3, D2/D7/D10/D14)** `[RF-1][RF-2][RF-3][RF-4][CL-1][CL-2][CL-3][RNF-1]`
+- [x] **T8 — Servicio: `send_cancellation()` en `email_service.py` (plan §8.6, §3, D2/D7/D10/D14)** `[RF-1][RF-2][RF-3][RF-4][CL-1][CL-2][CL-3][RNF-1]`
   `CANCELLATION_EVENT_TYPE`/`EVENT_VERSION`, `build_cancellation_message()`
   («Cita cancelada», «Estado: Cancelada», fecha legible), `build_cancellation_event()`
   (allowlist `recipient`/`message`, `appointment.status='cancelled'`, sin
@@ -90,7 +90,7 @@
   y `python -m pytest -q` → **0 FAIL**.
   **Cumplido 2026-10-13 (verificación fuente OK; suite 188/188).**
 
-- [ ] **T9 — Disparo: `cancel_appointment()` en `appointment_service.py` (plan §8.7, §3, D1/D6/D7)** `[RF-1][RF-3][RF-4][CL-1]`
+- [x] **T9 — Disparo: `cancel_appointment()` en `appointment_service.py` (plan §8.7, §3, D1/D6/D7)** `[RF-1][RF-3][RF-4][CL-1]`
   `APPOINTMENT_NOT_FOUND`/`ALREADY_CANCELLED`, transición atómica
   `confirmed → cancelled` y, solo si cambió, `send_cancellation()`
   best-effort; `create_booking()` y `web/` sin cambios de firma ni contrato.
@@ -98,7 +98,7 @@
   y `python -m pytest tests/test_appointment_routes.py tests/test_double_booking_routes.py -q` → **0 FAIL**.
   **Cumplido 2026-10-13 (fuente OK; rutas 14/14; suite 188/188).**
 
-- [ ] **T10 — Tests de servicio: TC-010-001..012 (plan §6.1, §8.6–8.7)** `[RF-1..RF-4][CL-1..CL-4][RNF-1][Q4]`
+- [x] **T10 — Tests de servicio: TC-010-001..012 (plan §6.1, §8.6–8.7)** `[RF-1..RF-4][CL-1..CL-4][RNF-1][Q4]`
   `test_cancellation_service.py` con `_post_webhook` parcheado: envío 2xx →
   `sent` + 1 POST; mensaje (paleta, sin remotos, sin PII extra); URL vacía →
   `skipped` 0 POST; `URLError`/`TimeoutError` → `failed` + cita intacta;
@@ -111,7 +111,7 @@
   `cancel_appointment()` (plan §6.1 manda sobre §8.5).
   **Cumplido 2026-10-13 (12/12; suite 200/200).**
 
-- [ ] **T11 — Tests de HU: TC-010-013/015/016/017 (plan §6.1, §8.8)** `[RF-2][RF-3][RF-4][regresión]`
+- [x] **T11 — Tests de HU: TC-010-013/015/016/017 (plan §6.1, §8.8)** `[RF-2][RF-3][RF-4][regresión]`
   Re-reserva del slot cancelado → 303 + fila nueva (TC-013); HTTP
   `/citas/horarios` y `/citas/disponibilidad` reabren la hora tras cancelar
   (TC-015); espejo + sin variables de entorno nuevas (TC-016); regresión
@@ -127,7 +127,7 @@
   intactos más los **17 nuevos** (**204 en total**).
   **Cumplido 2026-10-13 (204 passed / 0 failed).**
 
-- [ ] **T13 — Evidencia QA y demo manual (plan §6.2/§6.3)** `[RF-1][RF-2][RF-3][RF-4][CL-2][Q4][finalización]`
+- [x] **T13 — Evidencia QA y demo manual (plan §6.2/§6.3)** `[RF-1][RF-2][RF-3][RF-4][CL-2][Q4][finalización]`
   Servidor + **receptor local stdlib** (JSON sobre el webhook) y
   `cancel_appointment()` desde un REPL/script: (a) cancelar → `cancelled` y
   **1 POST** con subject/text/html de §2.2; (b) evento `sent`; (c) repetir →

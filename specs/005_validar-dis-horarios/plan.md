@@ -427,13 +427,16 @@ Evidencia visual: docs/evidencias/hu-005/escritorio-1280.png, movil-375.png
       (`available` + `occupied`) y de `/citas/disponibilidad` — **realizada el
       2026-10-09 con aprobación y petición explícita de la usuaria**.
 - [x] Creación de `feature/hu-005` desde `main` (Q4) — **2026-10-09**.
-- [ ] Implementar módulos, JS, plantilla y CSS (§1–§5).
-- [ ] Tests (§6) y `python -m pytest -q` en verde (102 actuales + ~16 nuevos).
-- [ ] Evidencia QA (`qa-hu-005.md`, veredicto PASS) y evidencia visual
+- [x] Implementar módulos, JS, plantilla y CSS (§1–§5) — **2026-10-09**.
+- [x] Tests (§6) y `python -m pytest -q` en verde (102 actuales + ~16 nuevos)
+      — **2026-10-09**: **118 PASS / 0 FAIL**.
+- [x] Evidencia QA (`qa-hu-005.md`, veredicto PASS) y evidencia visual
       (`escritorio-1280.png`, `movil-375.png`) con demo sobre el servidor
-      (cambio de fecha/servicio, reserva + reconsulta, fecha sin horarios).
-- [ ] Commit/Push por fases y actualización de `MEMORY.md`.
-- [ ] Aceptación de la HU (checkbox del informe QA).
+      (cambio de fecha/servicio, reserva + reconsulta, fecha sin horarios)
+      — **2026-10-09**.
+- [x] Commit/Push por fases y actualización de `MEMORY.md` — **2026-10-09**
+      (`e92112b`…`accb304` + `de2bdf4`).
+- [x] Aceptación de la HU (checkbox del informe QA) — **2026-10-09**.
 
 ---
 

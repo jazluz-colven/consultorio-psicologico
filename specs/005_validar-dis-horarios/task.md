@@ -164,6 +164,9 @@
   `de2bdf4`; rama publicada `origin/feature/hu-005` con HEAD = remoto; `MEMORY.md`
   actualizado (bloque HU-005, decisiones y aprendizajes).
 
-- [ ] **T18 — Aceptación de la HU (usuaria)** `[cierre]`
+- [x] **T18 — Aceptación de la HU (usuaria)** `[cierre]`
   Hecho cuando: el checkbox de aceptación de `docs/evidencias/hu-005/qa-hu-005.md`
   está marcado con fecha y la §7.2 del plan queda íntegramente en `[x]`.
+  **Cumplido 2026-10-09** (`qa-hu-005.md` §«Aceptación de la HU»: «ACEPTADA
+  2026-10-09»; §7.2 del plan cerrada el 2026-10-30 al corregir esta
+  inconsistencia documental).
