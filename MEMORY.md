@@ -490,8 +490,8 @@ aporte.
 - **HU-017 ACEPTADA Y MERGEADA a `main` sin push** (2026-11-01): la usuaria aceptó la
   funcionalidad tras el veredicto `APROBADO` (registrado en `qa-hu-017.md`). Merge
   fast-forward de `feature/hu-017` → `main` (Spec 010 fase 2 RF-8…RF-16 + HU-017 +
-  D-010-01); **sin push** por decisión de la usuaria (un push a `main` redespliega
-  Render y vacía la BD). Pendiente de aprobación posterior: merge de
+  D-010-01); **sin push** en ese momento por decisión de la usuaria; subida finalmente
+  el 2026-11-04 en `9bfdbef` (Render redesplegado). Pendiente de aprobación posterior: merge de
   `chore/proyecto-docs` (AGENTS.md, `.opencode/`, skill `sdd`, enmiendas 011/018).
   Siguiente: **HU-018** (primero las specs de cancelación); P4/P5 (011/012) después.
 
@@ -506,8 +506,25 @@ aporte.
   credenciales OAuth2 de Google en nodos HTTP Request; (2) el nodo
   `googleCalendar` oculta el código HTTP; (3) `events.get` devuelve eventos
   borrados con `status: "cancelled"` → el discriminador correcto es el estado,
-  no la existencia. Defecto `D-007-01` en `CORREGIDO — PENDIENTE DE VALIDACIÓN`.
+  no la existencia. Defecto `D-007-01` en `CORREGIDO — ACEPTADO
+  FUNCIONALMENTE (2026-11-04)`.
   Evidencia y QA en `docs/evidencias/hu-007/enmienda-2026-11-01/`. Revisor:
-  `CAMBIOS NECESARIOS` solo por documentación; huecos cerrados. Pendiente:
-  aceptación funcional de la usuaria y push (se hará en el cierre). Las cinco
+  `CAMBIOS NECESARIOS` solo por documentación; huecos cerrados. Aceptación
+  funcional de la usuaria y push: **2026-11-04**. Las cinco
   versiones del JSON (v1–v5) están conservadas en `docs/workflows/hu-007/`.
+
+- **Cierre de sesión 2026-11-04 (estado de Git)**: `main` = `origin/main` =
+  `9bfdbef`; push realizado (23 commits, incluidos HU-017/Spec 010 fase 2 y la
+  enmienda 007); Render redesplegado. `D-007-01` en `CORREGIDO — ACEPTADO
+  FUNCIONALMENTE (2026-11-04)`. Sin ramas locales pendientes de integrar.
+  `chore/proyecto-docs` (.opencode, `.agents/skills/sdd`, enmiendas 011/018)
+  sigue sin merge; `.opencode/` y `.agents/skills/sdd/` sin versionar.
+- **SIGUIENTE — HU-018 (inicio limpio)**: `specs/018_cancelar-reprogramar-citas/`
+  tiene `spec.md` (RF-1..RF-7; token `CONSULTORIO_ADMIN_TOKEN`, resumen previo
+  de la cita, reprogramar = cancelar + reservar reutilizando Specs 004/005/006
+  y el servicio de cancelación de la 010) y `plan.md` (D2 entrega del token por
+  esquema híbrido, Q1/Q2 aprobadas 2026-10-13, plan APROBADO 2026-10-13), pero
+  **no existe `task.md`**. Primer paso: pedir a `@planificador` el `task.md`
+  (numeración fija, dependencias, criterios verificables) y obtener su
+  aprobación **antes** de implementar. Antes de tocar código: `git status`,
+  rama nueva `feature/hu-018`.
