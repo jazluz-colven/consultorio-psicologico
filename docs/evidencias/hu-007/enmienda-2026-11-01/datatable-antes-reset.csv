@@ -1,0 +1,17 @@
+﻿event_id,event_version,event_type,appointment_id,service,appointment_date,appointment_time,appointment_status,processing_status,occurred_at,calendar_event_id,email_processing_status,cancellation_status,cancellation_detail
+appointment.confirmed:28:v1,1,none,28,psychology_integral,2026-10-27,14:00,confirmed,cancelled,2026-10-26 21:35:11,ffia5sdqg7kt19nbsi89m9ieq4,," cancellation_status",
+appointment.confirmation_email:28:v1,1,appointment.confirmation_email,28,psychology_integral,2026-10-27,14:00,confirmed,received,2026-10-26 21:35:12,,completed,,
+appointment.cancellation_email:28:v1,1,appointment.cancellation_email,28,psychology_integral,2026-10-27,14:00,cancelled,received,2026-10-26 21:36:10,,completed,,
+appointment.confirmed:29:v1,1,appointment.confirmed,29,nutrition,2026-10-30,14:30,confirmed,cancelled,2026-10-30 00:28:15,1ehun3b5gi4jlrga0i9ae772nk,,,
+appointment.confirmation_email:29:v1,1,appointment.confirmation_email,29,nutrition,2026-10-30,14:30,confirmed,completed,2026-10-30 00:28:15,,completed,,
+appointment.cancelled:29:v1,1,appointment.cancelled,29,nutrition,2026-10-30,14:30,cancelled,completed,2026-10-30 00:29:56,,,,
+appointment.cancellation_email:29:v1,1,appointment.cancellation_email,29,nutrition,2026-10-30,14:30,cancelled,completed,2026-10-30 00:29:57,,completed,,
+appointment.cancelled:28:v1,1,appointment.cancelled,28,psychology_integral,2026-10-27,14:00,cancelled,completed,2026-10-30 00:38:57,,,,
+appointment.confirmed:30:v1,1,appointment.confirmed,30,psychology_integral,2026-11-03,09:00,confirmed,completed,2026-11-02 19:14:09,,,completed,
+appointment.confirmation_email:30:v1,1,appointment.confirmation_email,30,psychology_integral,2026-11-03,09:00,confirmed,completed,2026-11-02 19:14:10,,completed,,
+appointment.cancelled:30:v1,1,appointment.cancelled,30,psychology_integral,2026-11-03,09:00,cancelled,completed,2026-11-02 19:14:52,,,,
+appointment.cancellation_email:30:v1,1,appointment.cancellation_email,30,psychology_integral,2026-11-03,09:00,cancelled,completed,2026-11-02 19:14:53,,completed,,
+appointment.confirmed:31:v1,1,appointment.confirmed,31,psychology_integral,2026-11-04,10:00,confirmed,completed,2026-11-02 19:24:45,4qh5h55r8sbki6jl2927c4fb64,,failed,http_error_unknown
+appointment.confirmation_email:31:v1,1,appointment.confirmation_email,31,psychology_integral,2026-11-04,10:00,confirmed,completed,2026-11-02 19:24:46,,completed,,
+appointment.cancelled:31:v1,1,appointment.cancelled,31,psychology_integral,2026-11-04,10:00,cancelled,failed,2026-11-02 19:32:16,,,,
+appointment.cancellation_email:31:v1,1,appointment.cancellation_email,31,psychology_integral,2026-11-04,10:00,cancelled,completed,2026-11-02 19:32:17,,completed,,

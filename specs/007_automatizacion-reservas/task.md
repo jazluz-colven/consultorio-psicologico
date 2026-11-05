@@ -164,3 +164,350 @@
   **147 PASS / 0 FAIL**; prueba live contra `webhook-test/hu-007-cita-creada`
   con la cabecera → **HTTP 200** «Workflow was started»; evidencia en
   `qa-hu-007.md` (sección enmienda 2).
+
+---
+
+## Enmienda 2026-11-01 — Tareas RF-8..RF-13: borrado del evento de Google Calendar en n8n
+
+> **Estado: `IMPLEMENTADO — VALIDADO TÉCNICAMENTE; PENDIENTE DE ACEPTACIÓN
+> FUNCIONAL` (2026-11-04).** La spec 007 está aprobada (enmienda 2026-10-23) y
+> RF-8..RF-13 quedan implementados en el workflow **v5**; el plan §9 y estas
+> tareas T16–T22 fueron aprobados y ejecutados. **T16–T21 cerradas**; **T22
+> cerrada salvo la aceptación funcional de la usuaria**. Trazabilidad:
+> **HU-007 → Spec 007 RF-8..RF-13 → `plan.md` §9 → estas tareas → workflow n8n →
+> evidencia E2E → commit**. Las tareas T1–T15 quedan **cerradas y sin reabrir**.
+> Cada tarea dura **20–30 min**, se ejecuta **en orden** y su `Hecho cuando:` es
+> verificable con un comando o una observación concreta. **Sin marcar una tarea
+> no se empieza la siguiente.**
+> **Roles**: `[usuaria]` (UI de n8n/data table), `[implementador]` (JSON),
+> `[coordinador]` (pre-check, E2E, evidencia, memoria). El backend **no cambia**:
+> no se toca código ni tests de la app. La fase suma **7 tareas** (T16–T22, ≤10;
+> no requiere división adicional).
+> Evidencia de la fase en `docs/evidencias/hu-007/enmienda-2026-11-01/`; artefacto
+> del workflow en `docs/workflows/hu-007/` (plan §9.9). Sin secretos ni datos de
+> pacientes.
+> **Nota de corrección 2026-11-02 (corrección 3, sustituye a las correcciones
+> 1 y 2 en la rama de error; **aprobada 2026-11-04, superada en la verificación
+> por la corrección 4**):** el nodo
+> `googleCalendar` **oculta el código HTTP**: el error es
+> `Your request is invalid or could not be processed by the service`, sin 4xx/5xx
+> en los campos ni en la serialización (`calendar_http_code: null`). Interpretar
+> el texto no permite distinguir 404 de 400/403, así que el JSON v3 tampoco
+> cumple RF-10. Decisión aprobada por la usuaria (2026-11-02): **verificar la
+> existencia del evento** tras un borrado fallido (`Verificar evento` +
+> `Preparar borrado fallido` + `Preparar no encontrado`, plan §9.5.6 / D-E13).
+> **T18** generó el JSON **v4** (47 nodos, `Clasificar resultado de Calendar` sin
+> cambios) y **T20-B se repite sobre la cita 32** verificando las dos ramas.
+> Ni la ejecución 13 ni los intentos con los JSON v2/v3 cuentan como PASS.
+> **Histórico: sustituido por el v5 (48 nodos) de la corrección 4.**
+> **Nota de corrección 4 (2026-11-02; aprobada 2026-11-04, sustituye a la
+> corrección 3 en la verificación):** el JSON v4 tampoco cumple RF-10.
+> Con el evento borrado a mano (cita 32), `Verificar evento` (`events.get`)
+> **devuelve el evento** con `status: "cancelled"` y el mismo `id`: Google lo
+> marca como cancelado **antes de purgarlo**, aunque ya no aparezca en el
+> calendario visual. La **mera existencia no basta**: se añade
+> `¿Evento cancelado?` (`n8n-nodes-base.if` 2.4, `combinator: "or"`, dos
+> `string equals` sobre
+> `={{ ($json.status ?? '').toString().toLowerCase() }}` frente a `cancelled` y
+> `canceled`): true → `Preparar no encontrado`; false → `Preparar borrado
+> fallido`; `Verificar evento` error → `Preparar no encontrado` (sin cambios).
+> **T18** genera el JSON **v5** (**48 nodos**); **T19** espera **48 nodos**;
+> **T20-B** verifica las **tres ramas** (evento cancelado → `not_found`; error
+> 404 → `not_found`; evento confirmado → `failed`). Estado: **PASS sobre el v5**.
+> Registro: `docs/defectos/D-007-01.md` (`CORREGIDO — PENDIENTE DE VALIDACIÓN`).
+
+- [x] **T16 — Pre-check: el export entregado es el workflow activo en producción** `[base][RF-8]` `[coordinador]`
+  Depende de: aprobación del plan §9 y de las tareas T16–T22; T15 cerrada.
+  Verificar en la **UI de n8n** que el workflow `HU-007 - Integración de citas
+  con n8n` (id `v0WykUcKCzccxfyI`) está **activo** y recibe el webhook de
+  producción `POST /webhook/hu-007-cita-creada`. Descargar un export **fresco**
+  y compararlo con el archivo entregado (`C:\Users\Jaz\Downloads\HU-007 -
+  Integración de citas con n8n.json`): 42 nodos, conexiones, data table
+  `t4GENwUkjVodM5cg`, `webhookId 8889e9dd-ca30-4548-9505-95336cc04b51` y
+  referencias de credenciales. Registrar `versionId` y la hora del export.
+  **`active:false` en el export no prueba inactividad**: es un artefacto de la
+  serialización. Si hay diferencias, el export entregado está desactualizado →
+  usar el export fresco como base de T18 y decirlo en la nota.
+  Hecho cuando: la nota de T16 registra workflow id, `versionId`, 42 nodos,
+  confirmación de «activo» en la UI y el resultado de la comparación
+  (sin diferencias / export fresco adjunto).
+  Evidencia esperada: `precheck.md` en la carpeta de evidencia + el export
+  fresco (o su hash si es idéntico).
+  **Hecho 2026-11-04:** `precheck.md` **PASS estructural** (2026-11-01):
+  workflow `v0WykUcKCzccxfyI`, `versionId 279f3ea1-f444-410a-afc8-24f492ca18dc`,
+  42 nodos, export vigente confirmado en la UI y sin secretos ni PII. La UI
+  confirmó el workflow **desactivado** durante las modificaciones, con el export
+  del 2026-10-30 como base válida para T18.
+
+- [x] **T17 — Crear en la data table las columnas `cancellation_status` y `cancellation_detail`** `[RF-12][RF-8][RF-11]` `[usuaria]`
+  Depende de: T16.
+  En n8n → **Data tables** → `HU007EventosProcesados` (id `t4GENwUkjVodM5cg`),
+  siguiendo el checklist exacto del plan §9.4.3:
+  1. `cancellation_status` — **String/Texto**, default **`none`**, no obligatoria.
+  2. `cancellation_detail` — **String/Texto**, default **vacío**, no obligatoria.
+  3. Nombres exactos (minúsculas y guion bajo); no renombrar, borrar ni cambiar
+     el tipo de las 12 columnas existentes.
+  4. Filas existentes: `none` / vacío (si la UI no aplica el default, el vacío
+     se interpreta como `none`).
+  5. Exportar el CSV de la data table y comprobar que las cabeceras incluyen las
+     dos columnas nuevas.
+  Hecho cuando: las dos columnas existen con nombre, tipo y default exactos; el
+  CSV exportado incluye ambas cabeceras; ninguna columna existente cambió.
+  Evidencia esperada: `datatable-antes.csv` en la carpeta de evidencia + captura
+  opcional de la configuración de columnas.
+  **Hecho 2026-11-04:** data table `HU007EventosProcesados` con **14 columnas**
+  (12 existentes + `cancellation_status` + `cancellation_detail`), verificadas en
+  los CSV del v5 (`datatable-e2e-A-B-v5-2026-11-04.csv` y
+  `datatable-e2e-D-E-v5-2026-11-04.csv`, cabeceras con ambas columnas) y en el
+  informe QA §1. `datatable-antes-reset.csv` **no** se usa como evidencia
+  (export inválido por caché; QA §5.7).
+
+- [x] **T18 — Generar el JSON parcheado del workflow (sin secretos)** `[RF-8][RF-9][RF-10][RF-11][RF-12][RF-13]` `[implementador]`
+  Depende de: T16 (export base) y plan §9 aprobado.
+  Generar el JSON según plan §9.5, **preservando** `id`, `type`, `typeVersion`,
+  `position`, `parameters` no afectados, `credentials` y `webhookId` de los
+  nodos existentes; nodos nuevos con **UUID nuevos** (también los `id` internos
+  de condiciones/asignaciones). Cambios obligatorios:
+  - Entrada común: `Enrutar acciones tras registro` [3] y `Enrutar reintento por
+    tipo` [2] → `Preparar cancelación`; `Preparar cancelación` → `Consulta`.
+  - Nodos nuevos: `Preparar cancelación`, `¿Fila de creación encontrada?`,
+    `Marcar sin fila de creación`, `¿Cancelación ya completada?`,
+    `Marcar sin calendar_event_id - creación`, `Marcar sin calendar_event_id -
+    evento`, `Clasificar resultado de Calendar` (código del plan §9.5.5),
+    `¿Borrado o ya eliminado?`, `Marcar cancelación fallida - creación`.
+  - Repurposición: `Update row(s)2` quita `processing_status` del `columns.schema`
+    (`removed:true`) y escribe `cancellation_status='completed'`, `cancellation_detail` y
+    `calendar_event_id=''`; `Update row(s)3` y `Marcar cancelación completada`
+    filtran por `$('Preparar cancelación').first().json.event_row_id`;
+    `Marcar cancelación completada`, `Marcar sin fila de creación` y `Marcar sin
+    calendar_event_id - evento` con `onError: continueErrorOutput` →
+    `Update row(s)3`.
+  - **Corrección D-007-02 (2026-11-02, sustituye a D-007-01):** `Elimina cita`
+    se mantiene como **`n8n-nodes-base.googleCalendar`** con la configuración
+    del nodo v1 de
+    `docs/workflows/hu-007/n8n-hu-007-integracion-citas-2026-11-01.json`
+    (`typeVersion: 1.3`, `operation: delete`, `calendar` como resource locator
+    `ingjazar@gmail.com` / `mode: list` / `cachedResultName: ingjazar@gmail.com`,
+    `eventId: ={{ $json.calendar_event_id }}`, `options: {}`), `credentials`
+    intactas (`googleCalendarOAuth2Api`, id `Jzc9xfMvMH5AeRBN`, nombre
+    `Google Calendar account`), `onError: continueErrorOutput` y
+    `retryOnFail: false`. Motivo: n8n Cloud prohíbe usar la credencial OAuth2 de
+    Google Calendar en nodos HTTP Request/GraphQL
+    (`This credential is configured to prevent use within an HTTP Request or
+    GraphQL node`); la opción A **no es viable**.
+  - **Corrección 3 (2026-11-02, D-E13; superada en la conexión de éxito por la
+    corrección 4):** añadir los **tres nodos de
+    verificación de existencia** y recablear la salida de error de `Elimina cita`
+    (plan §9.5.6):
+    - `Verificar evento` (`n8n-nodes-base.googleCalendar`, `typeVersion: 1.3`):
+      `operation: get`, `calendar` como resource locator `ingjazar@gmail.com` /
+      `mode: list` / `cachedResultName: ingjazar@gmail.com`,
+      `eventId: ={{ $json.calendar_event_id }}`, `options: {}`, `credentials`
+      `googleCalendarOAuth2Api` (id `Jzc9xfMvMH5AeRBN`, nombre
+      `Google Calendar account`), `onError: continueErrorOutput`,
+      `retryOnFail: false`; `position` libre a la derecha de `Elimina cita`.
+    - `Preparar borrado fallido` (`n8n-nodes-base.set`, tv 3.5,
+      `includeOtherFields: true`): `calendar_ok=false`,
+      `calendar_http_code=null`, `cancellation_detail="http_error_unknown"`.
+    - `Preparar no encontrado` (`n8n-nodes-base.set`, tv 3.5,
+      `includeOtherFields: true`): `calendar_ok=true`, `calendar_http_code=null`,
+      `cancellation_detail="not_found"`.
+    - **Retirar** la conexión `Elimina cita` salida 1 → `Clasificar resultado de
+      Calendar` y **añadir** las cinco del plan §9.5.2:
+      `Elimina cita` (error) → `Verificar evento`;
+      `Verificar evento` (éxito) → `Preparar borrado fallido`;
+      `Preparar borrado fallido` → `Marcar cancelación fallida - creación`;
+      `Verificar evento` (error) → `Preparar no encontrado`;
+      `Preparar no encontrado` → `¿Borrado o ya eliminado?`.
+    - `Clasificar resultado de Calendar` **no cambia** y solo recibe la salida 0
+      (éxito) de `Elimina cita`.
+  - **Corrección 4 (2026-11-02, D-E14):** añadir `¿Evento cancelado?`
+    (`n8n-nodes-base.if`, `typeVersion: 2.4`) con `combinator: "or"` y **dos**
+    condiciones `string equals`:
+    `leftValue: ={{ ($json.status ?? '').toString().toLowerCase() }}` frente a
+    `cancelled` y frente a `canceled`; `options: {}`. Recablear:
+    - **Retirar** `Verificar evento` (éxito) → `Preparar borrado fallido`.
+    - **Añadir** `Verificar evento` (éxito) → `¿Evento cancelado?`;
+      `¿Evento cancelado?` true → `Preparar no encontrado`;
+      `¿Evento cancelado?` false → `Preparar borrado fallido`.
+    - `Verificar evento` (error) → `Preparar no encontrado` **sin cambios**.
+  - `Clasificar resultado de Calendar` usa el `jsCode` **literal** del plan
+    §9.5.5 (lecturas estructuradas + string legacy + error serializado), sin
+    modificaciones.
+  - Eliminar los 7 nodos de la rama de reintento duplicada: `Get row(s)1`,
+    `¿Cita ya cancelada?`, `¿Existe evento de Calendar en reintento?`,
+    `Elimina cita - Reintento`, `Actualizar cita cancelada - Reintento`,
+    `Marcar cancelación completada - Reintento`, `Marcar cancelación fallida -
+    Reintento` (y sus conexiones).
+  - En cada nodo data table que escriba `cancellation_status`/
+    `cancellation_detail`, añadir la entrada correspondiente en `columns.schema`
+    con `removed:false`.
+  - Archivo final: `active:false`, `pinData` vacío, sin tokens/cabeceras de
+    autenticación; **nueva versión**
+    `docs/workflows/hu-007/n8n-hu-007-integracion-citas-2026-11-02-v5.json`
+    (se conservan `...-v4.json`, `...-v3.json`, `...-2026-11-02.json` y
+    `...-2026-11-01.json` como histórico; ninguno de los anteriores se activa).
+  Hecho cuando: el JSON parsea; tiene **48 nodos** (42 − 7 + 9 + 3 + 1); los 7
+  nodos eliminados no aparecen; los 13 nuevos tienen UUID únicos; toda conexión
+  apunta a un nodo existente; `Elimina cita` es `googleCalendar` `typeVersion 1.3`
+  con los parámetros del v1, `onError: continueErrorOutput` y
+  `retryOnFail: false`; **`Verificar evento` es `googleCalendar` `operation: get`**
+  con `eventId: ={{ $json.calendar_event_id }}`, `onError: continueErrorOutput` y
+  `retryOnFail: false`; **`¿Evento cancelado?` es `n8n-nodes-base.if`
+  `typeVersion: 2.4`** con `combinator: "or"` y las **dos** condiciones
+  `string equals` sobre `={{ ($json.status ?? '').toString().toLowerCase() }}`
+  (`cancelled` / `canceled`); `Preparar borrado fallido` y `Preparar no
+  encontrado` son `set` tv 3.5 con `includeOtherFields: true` y los tres campos
+  exactos; `Verificar evento` salida 0 apunta a `¿Evento cancelado?`, sus salidas
+  true/false apuntan a `Preparar no encontrado` / `Preparar borrado fallido`, y
+  `Verificar evento` salida 1 apunta a `Preparar no encontrado`;
+  `Elimina cita` salida 1 apunta a `Verificar evento` y **no** a
+  `Clasificar resultado de Calendar`; `Clasificar resultado de Calendar`
+  conserva el `jsCode` idéntico al plan §9.5.5 **sin cambios**; los nodos que
+  escriben las columnas nuevas las incluyen en `schema`; `active` es `false`; no
+  hay `pinData` ni secretos; el resumen de cambios coincide con plan
+  §9.5.1–§9.5.2 y §9.5.6.
+  Evidencia esperada: el JSON versionado + salida de validación estructural
+  (recuento de nodos, ids, conexiones, tipo/config de `Elimina cita` y ausencia
+  de secretos) + resumen del diff.
+  **Hecho 2026-11-04:** JSON **v5**
+  (`docs/workflows/hu-007/n8n-hu-007-integracion-citas-2026-11-02-v5.json`) con
+  **48 nodos** y sha256
+  `8918306709c0e13132861cea04cc2d7ff98dded6d7f005c94e4f5e02f3dfb766`;
+  `Elimina cita` `googleCalendar` 1.3, `Verificar evento` `get`,
+  `¿Evento cancelado?` If 2.4 con las dos condiciones, `active:false`, sin
+  `pinData` ni secretos. Las cinco versiones (v1–v5) están conservadas en
+  `docs/workflows/hu-007/` con sus sha256 en el informe QA §1.
+
+- [x] **T19 — Importar el workflow inactivo y revisar mapeos y credenciales** `[trazabilidad][RF-8..RF-13]` `[usuaria][implementador]`
+  Depende de: T17 y T18.
+  Importar el JSON de T18 **como workflow nuevo** (no sobrescribir el activo).
+  Comprobar: inactivo; **48 nodos**; data table `HU007EventosProcesados`; las
+  credenciales `Header Auth account`, `SMTP account` y `Google Calendar account`
+  resuelven sin avisos; `cancellation_status`/`cancellation_detail` aparecen en
+  los nodos data table que las escriben; expresiones sin errores; path
+  `hu-007-cita-creada` y `webhookId` conservados. **No activar todavía.**
+  Hecho cuando: el workflow importado está inactivo, con **48 nodos**, 0 avisos
+  de credencial faltante, columnas nuevas visibles en los mapeos y una nota con
+  el resultado (y captura opcional).
+  Evidencia esperada: nota de importación/revisión + captura opcional del
+  workflow importado y de los mapeos.
+  **Hecho 2026-11-04:** importado inactivo y activado en n8n Cloud; **48 nodos**;
+  data table y credenciales resueltas; columnas nuevas visibles en los mapeos.
+  Validación registrada en `D-007-01` §8 (T19) y en `ejecuciones.md`.
+
+- [x] **T20 — Activar (swap) y E2E: cancelación normal, ya eliminado y reintento tras completar** `[RF-8][RF-9][RF-10][RF-13]` `[coordinador][usuaria]`
+  Depende de: T19.
+  Precondiciones: backend **local** (`python app.py`) con
+  `AUTOMATION_WEBHOOK_URL` apuntando a la URL de **producción**
+  (`/webhook/hu-007-cita-creada`, no `webhook-test`) y
+  `AUTOMATION_WEBHOOK_AUTH_HEADER` tomada del entorno (nunca en la evidencia);
+  sin tocar Render ni `DATABASE_PATH`. Desactivar el workflow anterior y
+  activar la copia importada (solo uno activo con el mismo path).
+  Ejecutar los escenarios A–C de plan §9.6/§9.7.2:
+  - **A** cancelación normal: el evento se borra de Calendar; C queda
+    `cancellation_status='completed'`, detalle vacío, `calendar_event_id=''`,
+    `processing_status` de creación intacto; X `completed`.
+  - **B** «ya eliminado»: borrar a mano el evento en Calendar antes de cancelar →
+    `Elimina cita` (`googleCalendar`, `typeVersion 1.3`) entra en error;
+    `Verificar evento` (plan §9.5.6) devuelve el evento con
+    `status: "cancelled"` (o falla con 404 si ya no lo devuelve) →
+    `¿Evento cancelado?` true → `Preparar no encontrado` → `completed` +
+    `not_found`, sin `failed`; `calendar_event_id=''`. No se exige código HTTP en
+    el error (el nodo lo oculta: `calendar_http_code: null`).
+    **B se repite tras la corrección 4:** se ejecuta sobre la **cita 32** (filas
+    ya existentes en estado `failed`) reenviando
+    `appointment.cancelled:32:v1`, lo que valida el E2E-B y la rama de reintento
+    a la vez, y debe comprobar **las tres ramas**:
+    - **(a) evento cancelado**: `Verificar evento` devuelve el evento con
+      `status: cancelled` → `¿Evento cancelado?` true → C queda `completed` +
+      `not_found` + `calendar_event_id=''`.
+    - **(b) error 404**: `Verificar evento` falla sin devolver evento →
+      `Preparar no encontrado` → C queda `completed` + `not_found` +
+      `calendar_event_id=''`.
+    - **(c) evento confirmado**: el borrado falla dejando el evento `confirmed` →
+      `Verificar evento` lo devuelve → `¿Evento cancelado?` false →
+      `Preparar borrado fallido` → C queda `failed` + `http_error_unknown` y
+      `calendar_event_id` sin cambios.
+    Ni la ejecución n8n **13** (D-007-01), ni los intentos con los JSON **v2**
+    (HTTP Request), **v3** (error genérico) ni **v4** (existencia) cuentan como
+    PASS; el PASS válido es la ejecución con el JSON **v5** (corrección 4, T18).
+  - **C** reintento tras completar: poner la fila X de una cita de prueba en
+    `failed` y reenviar el mismo payload → la guarda `¿Cancelación ya
+    completada?` cierra X en `completed` y **no** se ejecuta `Elimina cita`.
+  Comprobar RF-13: la rama de `appointment.cancellation_email` no invoca
+  `Elimina cita`.
+  Hecho cuando: A, B (repetido sobre la cita 32 con el JSON v5, con las **tres
+  ramas** (a), (b) y (c)) y C dan PASS con estados de §9.6, IDs de ejecución de
+  n8n registrados (el de B con el JSON v5, posterior a la corrección) y evidencia
+  del calendario (A/B: evento ausente o cancelado; C: sin borrado nuevo). Si (a)
+  o (b) devuelven `failed`, o (c) devuelve `not_found`/`completed`, **no se
+  declara PASS**: se revisan `Verificar evento`/`¿Evento cancelado?` y se repite.
+  Evidencia esperada: `datatable-despues.csv`, `ejecuciones.md` con IDs de A/B/C
+  (incluido el B con el JSON v5 sobre la cita 32 y sus ramas (a)/(b)/(c)) y el
+  detalle de la fila X/C por escenario.
+  **Hecho 2026-11-04:** **A, B y C PASS** sobre el v5 (B sobre la cita 32:
+  evento ya borrado → `status: cancelled` → `completed` / `not_found` / id
+  vacío; C: guard sin llamada a Calendar). `ejecuciones.md` registra la serie del
+  2026-11-04 (02:00:58–02:19:30) y los CSV
+  `datatable-e2e-A-B-v5-2026-11-04.csv` y `datatable-e2e-B-fallido.csv`.
+
+- [x] **T21 — E2E de los casos `skipped` (RF-11): sin fila de creación y sin `calendar_event_id`** `[RF-11][RF-12]` `[coordinador][usuaria]`
+  Depende de: T20 (workflow activo y cadena verificada).
+  - **D — sin fila de creación**: enviar a mano a la URL de producción un
+    payload válido `appointment.cancelled:999999:v1` (id inexistente, 10 campos
+    del contrato, sin PII) con la cabecera de auth del entorno. Esperado: 202,
+    fila X insertada, `cancellation_status='skipped'` +
+    `cancellation_detail='no_creation_record'`, `processing_status='completed'`,
+    **0 llamadas a Calendar** y **el caso no queda en `received`**.
+  - **E — sin `calendar_event_id`**: elegir una cita de prueba cuya fila C tenga
+    `calendar_event_id` vacío (o vaciarlo en una fila de prueba) y cancelarla.
+    Esperado: C `skipped` + `missing_calendar_event_id`; X `completed`;
+    **0 llamadas a Calendar**; nunca `failed` ni «eliminado».
+  Hecho cuando: D y E dan PASS con estados de §9.6, IDs de ejecución y 0
+  llamadas a Google Calendar; ambos casos quedan registrados y localizables por
+  `cancellation_status='skipped'`.
+  Evidencia esperada: filas de D/E en `datatable-despues.csv` + IDs de
+  ejecución en `ejecuciones.md`.
+  **Hecho 2026-11-04:** **D y E PASS** sobre el v5: D
+  (`appointment.cancelled:999:v1`) → `skipped` / `no_creation_record`; E (cita
+  34, creación sin `calendar_event_id`) → `skipped` /
+  `missing_calendar_event_id`; ambas con **0 llamadas a Calendar**, registradas
+  en `datatable-e2e-D-E-v5-2026-11-04.csv` y `ejecuciones.md` (02:13:32 y
+  02:19:29).
+
+- [ ] **T22 — Regresión, evidencia QA, versionado y `MEMORY.md`** `[finalización][trazabilidad]` `[coordinador]`
+  Depende de: T20 y T21.
+  Ejecutar `python -m pytest -q` (backend sin cambios; registrar el conteo real
+  y compararlo con el baseline de `MEMORY.md`, 302 PASS tras D-010-01) y
+  `git diff --name-only main...HEAD` (sin archivos de `consultorio/` ni `tests/`).
+  Crear `docs/evidencias/hu-007/enmienda-2026-11-01/qa-hu-007-enmienda-2026-11-01.md`
+  con: matriz RF-8..RF-13, escenarios A–E (y F si se ejecutó) con PASS/FAIL, IDs de ejecución,
+  enlaces a `datatable-antes.csv`/`datatable-despues.csv`, decisiones D1–D4,
+  cuestiones abiertas OQ-1..OQ-6 y veredicto (`PASS` / `PARCIAL` / `FAIL`).
+  Versionar el JSON en `docs/workflows/hu-007/` (plan §9.9), actualizar
+  `MEMORY.md` (estado de la enmienda, decisiones, pendientes) y hacer commits de
+  docs/artefactos que citen HU-007 enmienda 2026-11-01 / RF-8..RF-13.
+  **Coordinar el push**: un push a `main` redeploya Render y vacía la BD; esta
+  enmienda no requiere despliegue de la app.
+  Hecho cuando: existe el informe QA con veredicto y matriz completa, la
+  evidencia CSV + IDs está en la carpeta indicada, el JSON está versionado,
+  `MEMORY.md` refleja el estado, `git status` está limpio y el diff no incluye
+  código de la app ni tests.
+  Evidencia esperada: informe QA + CSV + `ejecuciones.md` + JSON versionado +
+  registro de `MEMORY.md` y del commit.
+  **Hecho 2026-11-04 (todo salvo la aceptación funcional):**
+  - [x] Regresión `python -m pytest -q` → **302 passed / 0 FAIL**; sin cambios
+        en `consultorio/` ni `tests/`.
+  - [x] Informe QA `qa-hu-007-enmienda-2026-11-01.md` con matriz RF-8..RF-13,
+        escenarios A–E PASS, CA-8..CA-13 marcados y veredicto **PASS funcional
+        (5/5)**.
+  - [x] Evidencia CSV + `ejecuciones.md` + `precheck.md` en
+        `docs/evidencias/hu-007/enmienda-2026-11-01/`.
+  - [x] JSON **v5** versionado (48 nodos, sha256 `89183067…`); v1–v4
+        conservadas.
+  - [x] `MEMORY.md` actualizado (enmienda implementada y validada, 2026-11-04);
+        `D-007-01` en `CORREGIDO — PENDIENTE DE VALIDACIÓN`.
+  - [x] Commit de cierre de docs/artefactos con HU-007 enmienda 2026-11-01 /
+        RF-8..RF-13; push coordinado (no requiere despliegue de la app).
+  - [ ] **Aceptación funcional de la usuaria** (pendiente único).

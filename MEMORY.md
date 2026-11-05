@@ -494,3 +494,20 @@ aporte.
   Render y vacía la BD). Pendiente de aprobación posterior: merge de
   `chore/proyecto-docs` (AGENTS.md, `.opencode/`, skill `sdd`, enmiendas 011/018).
   Siguiente: **HU-018** (primero las specs de cancelación); P4/P5 (011/012) después.
+
+- **Enmienda 2026-11-01 de la Spec 007 IMPLEMENTADA Y VALIDADA (2026-11-04)**:
+  workflow de n8n `HU-007 - Integración de citas con n8n` con 48 nodos
+  (`docs/workflows/hu-007/n8n-hu-007-integracion-citas-2026-11-02-v5.json`,
+  sha256 `89183067…`). Cinco escenarios E2E con PASS: A borrado real
+  (`completed`/detalle vacío), B evento ya borrado (`not_found` + id limpio),
+  C guard de reintento sin llamar a Calendar, D sin fila de creación y E sin
+  `calendar_event_id` (ambos `skipped` con motivo). RF-8..RF-13 cubiertos.
+  Aprendizajes de plataforma que costaron 4 ciclos: (1) n8n Cloud prohíbe
+  credenciales OAuth2 de Google en nodos HTTP Request; (2) el nodo
+  `googleCalendar` oculta el código HTTP; (3) `events.get` devuelve eventos
+  borrados con `status: "cancelled"` → el discriminador correcto es el estado,
+  no la existencia. Defecto `D-007-01` en `CORREGIDO — PENDIENTE DE VALIDACIÓN`.
+  Evidencia y QA en `docs/evidencias/hu-007/enmienda-2026-11-01/`. Revisor:
+  `CAMBIOS NECESARIOS` solo por documentación; huecos cerrados. Pendiente:
+  aceptación funcional de la usuaria y push (se hará en el cierre). Las cinco
+  versiones del JSON (v1–v5) están conservadas en `docs/workflows/hu-007/`.
