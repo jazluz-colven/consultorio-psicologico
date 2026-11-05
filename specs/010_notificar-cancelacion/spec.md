@@ -6,7 +6,7 @@
 > **no cambian**). Los identificadores RF-1..RF-4 se conservan; los
 > comportamientos que solo estaban descritos en «Contratos fijados (enmienda
 > 2026-10-13)» se consolidan como RF-5..RF-7; y se añaden RF-8..RF-10
-> **[PENDIENTE DE IMPLEMENTACIÓN]** para el evento de negocio
+> **[IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]** para el evento de negocio
 > `appointment.cancelled`. Alcance completo en «Nota de enmienda 2026-10-23»
 > (final del documento).
 
@@ -52,7 +52,7 @@ funcionalidad concentra el servicio centralizado de cancelación: cambia el
 estado de la cita a Cancelada una sola vez, libera el horario para que pueda
 volver a reservarse, coordina la notificación por los canales aprobados y — con
 la presente enmienda — define el evento de negocio `appointment.cancelled` para
-la automatización (aún pendiente de implementación).
+la automatización (implementada y aceptada el 2026-10-30).
 
 ## Usuarios / actores
 - Paciente: destinatario de la notificación de cancelación.
@@ -88,31 +88,25 @@ la automatización (aún pendiente de implementación).
 - RF-6: CUANDO una cita pase al estado Cancelada, EL SISTEMA liberará su horario: el horario cancelado dejará de contarse como ocupado en la disponibilidad y podrá reservarse de nuevo, manteniendo la protección de doble reserva entre citas no canceladas.
 - RF-7: SI la notificación de cancelación no puede enviarse (fallo del canal, respuesta no válida o datos de contacto inválidos), ENTONCES EL SISTEMA mantendrá la cancelación confirmada, sin revertirla ni bloquearla.
 
-### Requisitos nuevos — **[PENDIENTE DE IMPLEMENTACIÓN]**
+### Requisitos nuevos — **[IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]**
 
-> Evento de negocio `appointment.cancelled` (v1). Sigue **[PENDIENTE DE
-> IMPLEMENTACIÓN]** hasta su cierre (validación y aceptación); el plan y las
-> tareas de la fase 2 existen, con las tareas del evento **pendientes de
-> redefinición y reaprobación** tras la aprobación de la enmienda 2
-> (2026-10-23). RF-8 y RF-10 se ajustan y RF-11..
-> RF-15 se añaden por la enmienda 2 **aprobada (2026-10-23)**; no deben
-> implementarse cambios no respaldados por el texto enmendado, ni reanudarse
-> las tareas, hasta que el plan y las tareas alineados estén aprobados.
+> Evento de negocio `appointment.cancelled` (v1). **[IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]**; el plan y las
+> tareas de la fase 2 están aprobados y ejecutados (HU-017). RF-8 y RF-10 se ajustan y RF-11..
+> RF-15 se añaden por la enmienda 2 **aprobada (2026-10-23)**.
 > Trazabilidad: RF-8..RF-15 pertenecen a
 > **H3** (evento de negocio por cancelación confirmada, bajo decisión del
 > administrador — incluido su reproceso). **RF-16** se añade por la enmienda 3
-> **aprobada (2026-10-30, DP-06)**; su comportamiento está implementado en el
-> alcance de D-010-01 y pendiente de validación independiente
-> (`CORREGIDO — PENDIENTE DE VALIDACIÓN`).
+> **aprobada (2026-10-30, DP-06)**; implementado en el alcance de D-010-01 y
+> aceptado funcionalmente el 2026-10-30.
 
-- RF-8 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO una cancelación quede confirmada en la base de datos, EL SISTEMA registrará y emitirá el evento de negocio `appointment.cancelled` (versión 1), independientemente del resultado del envío del correo de cancelación y de que dicho envío corresponda o no. El evento tendrá un identificador determinista con formato `appointment.cancelled:{id}:v1`, protegido por una restricción UNIQUE, y un payload versionado sin datos personales innecesarios. Este evento representará la cancelación confirmada y no el envío de una notificación.
-- RF-9 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO se emita el evento `appointment.cancelled`, EL SISTEMA incluirá como campos obligatorios `event_id`, `event_type`, `event_version` (1), `occurred_at` y `appointment` con `id`, `service`, `date`, `time` y `status` (`"cancelled"`); quedarán excluidos `patient_name`, `email`, `phone`, `document_type` y `document_number`.
-- RF-10 [PENDIENTE DE IMPLEMENTACIÓN]: SI la publicación del evento `appointment.cancelled` falla por un motivo técnico después de confirmada la cancelación, ENTONCES EL SISTEMA dejará el evento trazado con estado fallido y el motivo en español y la cancelación confirmada permanecerá intacta; esta garantía aplica a los fallos de publicación **posteriores** al commit, no al registro previo del evento (ver RF-11 y RF-12). No habrá reintentos automáticos y el reproceso posterior, si el administrador lo solicita, se regirá por RF-13, RF-14 y RF-15 sin producir duplicados.
-- RF-11 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO una cita cambie al estado Cancelada, EL SISTEMA confirmará la transición de estado y el registro del evento `appointment.cancelled` en estado `pending` de manera conjunta, como partes de una única transacción de persistencia sobre la misma conexión: o ambas quedan confirmadas o ninguna («sin traza local, sin cancelación confirmada»). El evento se registrará en estado `pending` como parte de esa transacción; la publicación se realizará después del commit (RF-8, RF-10).
-- RF-12 [PENDIENTE DE IMPLEMENTACIÓN]: SI el registro del evento `appointment.cancelled` en estado `pending` falla antes de confirmar la cancelación, ENTONCES EL SISTEMA revertirá la operación completa: la cita no quedará en estado Cancelada, no se emitirá ningún evento ni notificación derivada de esa operación, y el estado observable de la cita será el anterior a la solicitud.
-- RF-13 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO el administrador solicite reprocesar un evento `appointment.cancelled` cuyo estado sea fallido, EL SISTEMA reintentará su publicación conservando el mismo `event_id` y el mismo registro existente, sin crear una segunda fila ni cambiar el identificador determinista, y actualizará el estado y el detalle del resultado de forma trazable: `sent` si el POST tiene éxito, `skipped` si en ese momento la URL del webhook está vacía, o `failed` con el motivo en español si vuelve a fallar. No habrá reintentos automáticos: el nuevo intento solo ocurre por decisión explícita del administrador.
-- RF-14 [PENDIENTE DE IMPLEMENTACIÓN]: SI se solicita reprocesar un evento `appointment.cancelled` cuyo estado no sea fallido (`sent`, `skipped` o `pending`), ENTONCES EL SISTEMA no realizará ningún intento de publicación, no enviará ninguna petición y no modificará el registro; el comportamiento detallado por estado se describe en «Contrato de idempotencia y reproceso (RF-13..RF-15)».
-- RF-15 [PENDIENTE DE IMPLEMENTACIÓN]: MIENTRAS dos o más solicitudes de reproceso compitan sobre el mismo evento `appointment.cancelled`, EL SISTEMA permitirá que únicamente una de ellas realice el intento de publicación; las demás no producirán un intento adicional ni modificarán el registro. La exclusión se garantiza mediante una transición atómica condicionada al estado actual del evento (el diseño concreto corresponde al plan).
+- RF-8 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: CUANDO una cancelación quede confirmada en la base de datos, EL SISTEMA registrará y emitirá el evento de negocio `appointment.cancelled` (versión 1), independientemente del resultado del envío del correo de cancelación y de que dicho envío corresponda o no. El evento tendrá un identificador determinista con formato `appointment.cancelled:{id}:v1`, protegido por una restricción UNIQUE, y un payload versionado sin datos personales innecesarios. Este evento representará la cancelación confirmada y no el envío de una notificación.
+- RF-9 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: CUANDO se emita el evento `appointment.cancelled`, EL SISTEMA incluirá como campos obligatorios `event_id`, `event_type`, `event_version` (1), `occurred_at` y `appointment` con `id`, `service`, `date`, `time` y `status` (`"cancelled"`); quedarán excluidos `patient_name`, `email`, `phone`, `document_type` y `document_number`.
+- RF-10 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: SI la publicación del evento `appointment.cancelled` falla por un motivo técnico después de confirmada la cancelación, ENTONCES EL SISTEMA dejará el evento trazado con estado fallido y el motivo en español y la cancelación confirmada permanecerá intacta; esta garantía aplica a los fallos de publicación **posteriores** al commit, no al registro previo del evento (ver RF-11 y RF-12). No habrá reintentos automáticos y el reproceso posterior, si el administrador lo solicita, se regirá por RF-13, RF-14 y RF-15 sin producir duplicados.
+- RF-11 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: CUANDO una cita cambie al estado Cancelada, EL SISTEMA confirmará la transición de estado y el registro del evento `appointment.cancelled` en estado `pending` de manera conjunta, como partes de una única transacción de persistencia sobre la misma conexión: o ambas quedan confirmadas o ninguna («sin traza local, sin cancelación confirmada»). El evento se registrará en estado `pending` como parte de esa transacción; la publicación se realizará después del commit (RF-8, RF-10).
+- RF-12 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: SI el registro del evento `appointment.cancelled` en estado `pending` falla antes de confirmar la cancelación, ENTONCES EL SISTEMA revertirá la operación completa: la cita no quedará en estado Cancelada, no se emitirá ningún evento ni notificación derivada de esa operación, y el estado observable de la cita será el anterior a la solicitud.
+- RF-13 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: CUANDO el administrador solicite reprocesar un evento `appointment.cancelled` cuyo estado sea fallido, EL SISTEMA reintentará su publicación conservando el mismo `event_id` y el mismo registro existente, sin crear una segunda fila ni cambiar el identificador determinista, y actualizará el estado y el detalle del resultado de forma trazable: `sent` si el POST tiene éxito, `skipped` si en ese momento la URL del webhook está vacía, o `failed` con el motivo en español si vuelve a fallar. No habrá reintentos automáticos: el nuevo intento solo ocurre por decisión explícita del administrador.
+- RF-14 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: SI se solicita reprocesar un evento `appointment.cancelled` cuyo estado no sea fallido (`sent`, `skipped` o `pending`), ENTONCES EL SISTEMA no realizará ningún intento de publicación, no enviará ninguna petición y no modificará el registro; el comportamiento detallado por estado se describe en «Contrato de idempotencia y reproceso (RF-13..RF-15)».
+- RF-15 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: MIENTRAS dos o más solicitudes de reproceso compitan sobre el mismo evento `appointment.cancelled`, EL SISTEMA permitirá que únicamente una de ellas realice el intento de publicación; las demás no producirán un intento adicional ni modificarán el registro. La exclusión se garantiza mediante una transición atómica condicionada al estado actual del evento (el diseño concreto corresponde al plan).
 - RF-16 [APROBADO 2026-10-30 — DP-06]: CUANDO la publicación de un evento de automatización reciba una respuesta HTTP no-2xx, EL SISTEMA registrará el evento como `failed` con el detalle «Respuesta no válida del servicio (HTTP {code}).», donde `{code}` es el código recibido. Este detalle se aplicará de forma idéntica en la publicación inicial del evento de negocio, en su reproceso y en los eventos de correo. Un evento `appointment.cancelled` con ese detalle solo será admitido por `reprocess_automation_event()` cuando el código sea transitorio (429 o 5xx); los códigos 4xx permanentes (400, 401, 403, 404, 405, 409, 422, entre otros) no serán readmitidos. Los fallos por timeout, por error de conexión (`URLError` sin `HTTPError`) o por excepción inesperada conservarán sus detalles actuales y seguirán siendo readmitidos.
 
 ## Requisitos no funcionales
@@ -201,14 +195,13 @@ consolidados como RF-5 (transición), RF-6 (liberación del horario) y RF-7
 - La unicidad de `servicio + fecha + hora` se mantiene **entre citas no canceladas**: se sustituye el `UNIQUE` de la tabla por un **índice único parcial** `WHERE status <> 'cancelled'`, con migración idempotente de las bases existentes, respaldo previo del fichero y aborto si existieran duplicados entre citas no canceladas.
 - La protección contra doble reserva de las citas no canceladas permanece intacta.
 
-## Contratos fijados — evento de negocio `appointment.cancelled` (enmienda 2026-10-23, pendiente de implementación)
+## Contratos fijados — evento de negocio `appointment.cancelled` (enmienda 2026-10-23, implementado — aceptado funcionalmente 2026-10-30)
 
 Fija el mecanismo aprobado por la usuaria para RF-8..RF-10 y, con la
 enmienda 2 (2026-10-23), para RF-11..RF-15 (atomicidad y reproceso). Mismo
-modelo de fiabilidad que las automatizaciones existentes (HU-007/008/010);
-**esta sección describe contrato, no implementación**: los RF siguen
-**[PENDIENTE DE IMPLEMENTACIÓN]** hasta su cierre (plan, tareas, tests,
-evidencia y aceptación).
+modelo de fiabilidad que las automatizaciones existentes (HU-007/008/010).
+Los RF están **[IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]**, con plan,
+tareas, tests, evidencia y aceptación (HU-017).
 
 ### Atomicidad del registro con la cancelación (RF-11, RF-12)
 - **Principio: «sin traza local, sin cancelación confirmada».** La transición de la cita al estado `cancelled` y el registro del evento `appointment.cancelled` en estado `pending` se confirman **o se revierten de manera conjunta**, utilizando la misma conexión y transacción de persistencia de SQLite. No puede existir una cancelación confirmada sin su evento `pending` correspondiente.
@@ -266,14 +259,13 @@ evidencia y aceptación).
 RF-1..RF-7 (consolidados) con test en verde y demo manual de cancelación con
 notificación por los canales disponibles; esos comportamientos ya están
 implementados y validados con HU-010 (aceptada y cerrada el 2026-10-13).
-RF-8..RF-15 [PENDIENTE DE IMPLEMENTACIÓN]: se considerarán al cerrar su
-implementación (plan, tareas, tests, evidencia y aceptación); hasta entonces
-esta spec queda con esos RF abiertos (la enmienda 1 que introduce RF-8..RF-10
+RF-8..RF-15 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]: cerrados con
+plan, tareas, tests, evidencia y aceptación (HU-017). La enmienda 1 que introduce RF-8..RF-10
 fue aprobada por la usuaria el 2026-10-23; la enmienda 2 que ajusta RF-8/RF-10
 y añade RF-11..RF-15 fue **aprobada por la usuaria el 2026-10-23**, y el
-`plan.md` §9 y las tareas quedan pendientes de reaprobación alineados a ella).
+`plan.md` §9 y las tareas se reaprobaron y ejecutaron alineados a ella.
 RF-16 (enmienda 3, aprobada 2026-10-30, DP-06): implementado en el alcance de
-D-010-01 y pendiente de validación independiente; sus criterios de aceptación
+D-010-01 y validado (aceptado funcionalmente el 2026-10-30); sus criterios de aceptación
 son CA-D010-01..CA-D010-14 del registro `docs/defectos/D-010-01.md` §5.
 
 ### Criterios de aceptación de la enmienda 2 (RF-8..RF-15)
@@ -300,7 +292,7 @@ son CA-D010-01..CA-D010-14 del registro `docs/defectos/D-010-01.md` §5.
 - [RESUELTA — Q2] Confirmar si debe notificarse siempre por ambos canales o según preferencias del paciente → fijado en «Contratos fijados» (correo vía webhook; WhatsApp pendiente de Spec 009; «cuando corresponda» = canal implementado y configurado).
 - [RESUELTA — Q3] Definir el contenido exacto del aviso de cancelación → fijado en «Contratos fijados» (asunto «Cita cancelada», estado «Cancelada», pie de reagendado, literales contractuales).
 - [RESUELTA — 2026-10-23] ¿Renumerar los RF tras consolidar los «Contratos fijados»? → **no**: se conservan RF-1..RF-4 para mantener la trazabilidad con `plan.md`, los tests `TC-010-*` y la evidencia de HU-010 ya cerrada; los RF consolidados y nuevos se añaden con números libres (RF-5..RF-10).
-- [RESUELTA — 2026-10-23] Enmienda de esta spec (título ampliado, RF-5..RF-7 consolidados y RF-8..RF-10 nuevos) → **aprobada por la usuaria el 2026-10-23**. El comportamiento vigente es RF-1..RF-7 (implementados); RF-8..RF-10 quedan [PENDIENTE DE IMPLEMENTACIÓN] y no deben implementarse hasta autorización de la fase de planificación.
+- [RESUELTA — 2026-10-23] Enmienda de esta spec (título ampliado, RF-5..RF-7 consolidados y RF-8..RF-10 nuevos) → **aprobada por la usuaria el 2026-10-23**. El comportamiento vigente es RF-1..RF-10 (implementados y aceptados).
 - [RESUELTA — 2026-10-23, enmienda 2 aprobada] Contradicción sobre el reproceso del evento fallido («choca en el INSERT y se descarta» vs. «reintento posterior sin duplicados» vs. «el reproceso lo decide el administrador») → resuelta por la enmienda 2: el reproceso explícito del administrador es la función de servicio `reprocess_automation_event()` sobre eventos `failed` (RF-13..RF-15 y «Contrato de idempotencia y reproceso»); el `UNIQUE(event_id)` garantiza la unicidad del registro y el reproceso reutiliza la fila existente sin crear duplicados.
 - [RESUELTA — 2026-10-23, enmienda 2 aprobada] Atomicidad del registro de `appointment.cancelled` con la cancelación → resuelta por la enmienda 2: «sin traza local, sin cancelación confirmada»; transición y registro `pending` en la misma transacción (RF-11, RF-12 y matriz de fallos). La ventana de fallo del registro del evento de **correo** (`appointment.cancellation_email`, post-commit) no se modifica y queda como limitación técnica conocida para documentar en `plan.md` en fase posterior.
 - [RESUELTA — 2026-10-23, decisión conservadora de la enmienda 2, aprobada] Reproceso de eventos en estado `pending` (incluidos huérfanos), `sent` y `skipped` → **fuera del alcance** de `reprocess_automation_event()` (no-op, RF-14): solo se reprocesa `failed`. Se eligió la opción conservadora porque un `pending` puede estar aún en curso y reprocesarlo duplicaría la publicación; los cuatro estados aprobados (`pending`, `sent`, `skipped`, `failed`) se mantienen sin añadir ninguno nuevo hasta que el diseño demuestre la necesidad. La usuaria reconoció y aceptó la consecuencia: un `pending` huérfano puede permanecer `pending` indefinidamente, sin vía de recuperación en esta fase (limitación explícita en el contrato de idempotencia, en los casos límite y en «Fuera de alcance»).
@@ -325,8 +317,8 @@ Enmienda redactada por el planificador, revisada por el coordinador y
    La notificación posterior a la confirmación del cambio (RF-1) y la
    prevención de duplicados de la notificación (RF-4) ya eran RF y se conservan
    sin debilitar garantías.
-3. **Nuevo requisito pendiente**: el evento de negocio `appointment.cancelled`
-   (v1) en RF-8..RF-10, marcados **[PENDIENTE DE IMPLEMENTACIÓN]**. El texto
+3. **Nuevo requisito (histórico de la enmienda 1)**: el evento de negocio `appointment.cancelled`
+   (v1) en RF-8..RF-10, implementados y aceptados el 2026-10-30. El texto
    propuesto por la usuaria se reparte en tres requisitos verificables por
    separado — RF-8 (emisión e identificador determinista), RF-9 (campos
    obligatorios del payload sin datos personales) y RF-10 (fallo trazado con

@@ -1414,22 +1414,22 @@ histórico/referencia y tampoco se activan. Ninguna versión histórica se borra
 
 **Checklist de validación del v5 (T18/T19):**
 
-- [ ] El JSON parsea y `active` es `false`; `pinData` vacío; sin tokens ni
+- [x] El JSON parsea y `active` es `false`; `pinData` vacío; sin tokens ni
       cabeceras de autenticación.
-- [ ] **48 nodos** en total (42 − 7 + 9 + 3 de la corrección 3 + 1 de la
+- [x] **48 nodos** en total (42 − 7 + 9 + 3 de la corrección 3 + 1 de la
       corrección 4).
-- [ ] `¿Evento cancelado?` es `n8n-nodes-base.if` `typeVersion: 2.4`, con
+- [x] `¿Evento cancelado?` es `n8n-nodes-base.if` `typeVersion: 2.4`, con
       `combinator: "or"` y **dos** condiciones `string equals`:
       `leftValue: ={{ ($json.status ?? '').toString().toLowerCase() }}` frente a
       `cancelled` y frente a `canceled`.
-- [ ] `Verificar evento` salida 0 → `¿Evento cancelado?`; salida 1 →
+- [x] `Verificar evento` salida 0 → `¿Evento cancelado?`; salida 1 →
       `Preparar no encontrado`.
-- [ ] `¿Evento cancelado?` salida 0 (`true`) → `Preparar no encontrado`;
+- [x] `¿Evento cancelado?` salida 0 (`true`) → `Preparar no encontrado`;
       salida 1 (`false`) → `Preparar borrado fallido`.
-- [ ] `Elimina cita` sigue siendo `googleCalendar` 1.3 (`delete`) con
+- [x] `Elimina cita` sigue siendo `googleCalendar` 1.3 (`delete`) con
       `onError: continueErrorOutput` y `retryOnFail: false`; `Clasificar resultado
       de Calendar` conserva el `jsCode` de §9.5.5 y solo recibe la salida 0.
-- [ ] Toda conexión apunta a un nodo existente y los 13 nodos nuevos de la
+- [x] Toda conexión apunta a un nodo existente y los 13 nodos nuevos de la
       enmienda (9 + 3 de la corrección 3 + `¿Evento cancelado?`) tienen UUID
       únicos.
 

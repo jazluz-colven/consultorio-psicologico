@@ -1,7 +1,7 @@
 # Spec 007 — Automatización de reservas mediante n8n
 
 > **Enmienda 2026-10-23 — APROBADA por la usuaria (2026-10-23):**
-> se añaden RF-8..RF-13 **[PENDIENTE DE IMPLEMENTACIÓN]** y la sección
+> se añaden RF-8..RF-13 **[IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]** y la sección
 > «Contratos fijados — borrado de Google Calendar (enmienda 2026-10-23)» para
 > fijar el contrato de consumo del evento de negocio `appointment.cancelled`
 > (Spec 010) y el borrado del evento de Google Calendar a cargo de n8n.
@@ -31,23 +31,22 @@ Después de confirmar una reserva existen tareas administrativas que pueden requ
 - RF-6: CUANDO exista un evento válido, EL SISTEMA permitirá ejecutar las automatizaciones administrativas configuradas.
 - RF-7: EL SISTEMA mantendrá las funcionalidades de agendamiento, disponibilidad y protección contra doble reserva operativas independientemente de la automatización.
 
-### Requisitos nuevos — borrado de Google Calendar (enmienda 2026-10-23) — [PENDIENTE DE IMPLEMENTACIÓN]
+### Requisitos nuevos — borrado de Google Calendar (enmienda 2026-10-23) — [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]
 
 > La cancelación de citas pasa por el servicio centralizado de la Spec 010, que
 > (tras su enmienda aprobada el 2026-10-23) emitirá el evento de negocio
-> `appointment.cancelled` (RF-8..RF-10 de la 010, aún pendientes de
-> implementación). Estos requisitos definen el **contrato de consumo** de ese
+> `appointment.cancelled` (RF-8..RF-10 de la 010, implementados el 2026-10-30). Estos requisitos definen el **contrato de consumo** de ese
 > evento en el flujo de n8n de la Spec 007. La implementación (data table en
 > n8n, workflow y, en su caso, backend) requerirá plan, tareas y PRs
 > posteriores con sus propias aprobaciones: la Spec 007 no implementa la
 > emisión del evento de la Spec 010, solo define cómo consume su resultado.
 
-- RF-8 [PENDIENTE DE IMPLEMENTACIÓN]: CUANDO el flujo de automatización reciba el evento de negocio `appointment.cancelled` emitido por el backend al confirmarse la cancelación de una cita (Spec 010), EL SISTEMA identificará la cita original mediante su `appointment_id`, recuperará el `calendar_event_id` guardado en el registro de creación correspondiente y eliminará el evento asociado de Google Calendar, registrando el resultado del borrado para trazabilidad.
-- RF-9 [PENDIENTE DE IMPLEMENTACIÓN]: EL SISTEMA conservará, en el registro de creación del data table, tanto `appointment_id` como `calendar_event_id`, y localizará el evento de Google Calendar mediante esa correspondencia (búsqueda por `appointment_id`); el `event_id` de un evento de cancelación o de correo (p. ej. `appointment.cancelled:{id}:v1` o `appointment.cancellation_email:{id}:v1`) no servirá para localizar directamente el evento de Google Calendar.
-- RF-10 [PENDIENTE DE IMPLEMENTACIÓN]: SI un reintento del borrado detecta que el evento de Google Calendar ya fue eliminado, ENTONCES EL SISTEMA reconocerá esa situación como borrado ya completado y no la tratará como una nueva eliminación exitosa susceptible de repetirse indefinidamente.
-- RF-11 [PENDIENTE DE IMPLEMENTACIÓN]: SI una cita cancelada no tiene un `calendar_event_id` asociado (p. ej. creada antes de que el flujo guardara el ID) o su `appointment_id` no tiene fila de creación registrada, ENTONCES EL SISTEMA registrará el caso y lo gestionará de forma controlada, sin registrar ni dar por hecho que el evento de Google Calendar fue eliminado.
-- RF-12 [PENDIENTE DE IMPLEMENTACIÓN]: EL SISTEMA registrará el estado del procesamiento de la cancelación (borrado de Google Calendar) de manera separada del estado histórico de creación y del estado del correo de cancelación, manteniendo tres estados independientes y no fusionados.
-- RF-13 [PENDIENTE DE IMPLEMENTACIÓN]: EL SISTEMA distinguirá el evento de negocio `appointment.cancelled` («la cita fue cancelada», Spec 010) de la acción técnica `appointment.cancellation_email` («enviar correo de cancelación», Spec 010): serán dos eventos distintos con `event_id` distintos, y el borrado de Google Calendar se activará únicamente por el evento de negocio.
+- RF-8 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]: CUANDO el flujo de automatización reciba el evento de negocio `appointment.cancelled` emitido por el backend al confirmarse la cancelación de una cita (Spec 010), EL SISTEMA identificará la cita original mediante su `appointment_id`, recuperará el `calendar_event_id` guardado en el registro de creación correspondiente y eliminará el evento asociado de Google Calendar, registrando el resultado del borrado para trazabilidad.
+- RF-9 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]: EL SISTEMA conservará, en el registro de creación del data table, tanto `appointment_id` como `calendar_event_id`, y localizará el evento de Google Calendar mediante esa correspondencia (búsqueda por `appointment_id`); el `event_id` de un evento de cancelación o de correo (p. ej. `appointment.cancelled:{id}:v1` o `appointment.cancellation_email:{id}:v1`) no servirá para localizar directamente el evento de Google Calendar.
+- RF-10 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]: SI un reintento del borrado detecta que el evento de Google Calendar ya fue eliminado, ENTONCES EL SISTEMA reconocerá esa situación como borrado ya completado y no la tratará como una nueva eliminación exitosa susceptible de repetirse indefinidamente.
+- RF-11 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]: SI una cita cancelada no tiene un `calendar_event_id` asociado (p. ej. creada antes de que el flujo guardara el ID) o su `appointment_id` no tiene fila de creación registrada, ENTONCES EL SISTEMA registrará el caso y lo gestionará de forma controlada, sin registrar ni dar por hecho que el evento de Google Calendar fue eliminado.
+- RF-12 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]: EL SISTEMA registrará el estado del procesamiento de la cancelación (borrado de Google Calendar) de manera separada del estado histórico de creación y del estado del correo de cancelación, manteniendo tres estados independientes y no fusionados.
+- RF-13 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]: EL SISTEMA distinguirá el evento de negocio `appointment.cancelled` («la cita fue cancelada», Spec 010) de la acción técnica `appointment.cancellation_email` («enviar correo de cancelación», Spec 010): serán dos eventos distintos con `event_id` distintos, y el borrado de Google Calendar se activará únicamente por el evento de negocio.
 
 ## Requisitos no funcionales
 - Seguridad y minimización de datos compartidos.
@@ -76,7 +75,7 @@ Después de confirmar una reserva existen tareas administrativas que pueden requ
 
 ## Criterios de finalización
 - RF-1..RF-7 (enmienda 2026-10-10): todos con test en verde, incluyendo indisponibilidad, errores, reintentos y duplicados, más demo manual de una automatización posterior a una reserva confirmada — ya cumplidos con HU-007 (aceptada y cerrada el 2026-10-10).
-- RF-8..RF-13 [PENDIENTE DE IMPLEMENTACIÓN] (enmienda 2026-10-23, aprobada por la usuaria): se considerarán al cerrar su implementación (plan, tareas, tests, evidencia y aceptación). Hasta entonces esta spec queda con esos RF abiertos; la implementación del borrado de Google Calendar exige, además de esta enmienda aprobada, la autorización explícita de la fase de planificación.
+- RF-8..RF-13 [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04] (enmienda 2026-10-23, aprobada por la usuaria): cerrados con plan, tareas, tests, evidencia y aceptación (T16–T22).
 
 ## Dudas abiertas (CERRADAS por enmienda 2026-10-10)
 - ~~[NECESITA ACLARACIÓN] Definir cuáles serán las automatizaciones administrativas incluidas en el primer incremento.~~ → **CERRADA (Q1)**: webhook genérico `appointment.confirmed` hacia n8n; los flujos concretos se configuran en n8n (§Contratos fijados).
@@ -156,11 +155,11 @@ Tabla `automation_events` con `UNIQUE (event_id)` en el punto de persistencia:
 
 Fija el contrato operativo aprobado por la usuaria (2026-10-23) para el
 borrado del evento de Google Calendar cuando una cita se cancela. Estos
-textos son contrato (AGENTS.md «Textos contractuales»); cambian junto con sus
-pruebas en el mismo PR cuando se implementen. **Esta sección describe
-contrato, no implementación**: no hay plan, tareas ni tests todavía, y la
-emisión del evento `appointment.cancelled` depende de los RF-8..RF-10 de la
-Spec 010, aún [PENDIENTE DE IMPLEMENTACIÓN].
+textos son contrato (AGENTS.md «Textos contractuales»); cambiaron junto con sus
+pruebas en el PR de implementación. El diseño técnico está en `plan.md` §9 y la
+ejecución en `task.md` T16–T22; la emisión del evento `appointment.cancelled`
+depende de los RF-8..RF-10 de la Spec 010, implementados y aceptados (HU-017,
+2026-10-30).
 
 ### Flujo backend → n8n (RF-8)
 1. **Backend (Spec 010)** confirma la cancelación de la cita (transición a
@@ -221,7 +220,7 @@ Spec 010, aún [PENDIENTE DE IMPLEMENTACIÓN].
   en su caso, backend) requerirá plan, tareas y PRs posteriores con sus
   propias aprobaciones.
 - La emisión del evento `appointment.cancelled` depende de los RF-8..RF-10 de
-  la Spec 010, aún pendientes de implementación: la Spec 007 no los
+  la Spec 010, implementados y aceptados (HU-017): la Spec 007 no los
   implementa, solo define el contrato de consumo.
 - Orden de trabajo del ciclo acordado: 010 (hecho) → referencias 017/018
   (hecho) → 007 (esta enmienda); la implementación del borrado en Google
@@ -236,7 +235,7 @@ tareas, código ni tests. El identificador `007` y la ruta
 
 **Alcance del cambio:**
 
-1. **RF-8..RF-13 nuevos, marcados [PENDIENTE DE IMPLEMENTACIÓN]**: contrato de
+1. **RF-8..RF-13 nuevos, marcados [IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-11-04]** (cerrado el 2026-11-04): contrato de
    consumo del evento de negocio `appointment.cancelled` y borrado del evento
    de Google Calendar por n8n — RF-8 (flujo de borrado tras recibir el evento),
    RF-9 (fila de creación con `appointment_id` + `calendar_event_id` y búsqueda

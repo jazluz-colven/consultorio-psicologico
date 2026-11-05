@@ -476,7 +476,7 @@
   en `datatable-e2e-D-E-v5-2026-11-04.csv` y `ejecuciones.md` (02:13:32 y
   02:19:29).
 
-- [ ] **T22 — Regresión, evidencia QA, versionado y `MEMORY.md`** `[finalización][trazabilidad]` `[coordinador]`
+- [x] **T22 — Regresión, evidencia QA, versionado y `MEMORY.md`** `[finalización][trazabilidad]` `[coordinador]`
   Depende de: T20 y T21.
   Ejecutar `python -m pytest -q` (backend sin cambios; registrar el conteo real
   y compararlo con el baseline de `MEMORY.md`, 302 PASS tras D-010-01) y
@@ -510,4 +510,5 @@
         `D-007-01` en `CORREGIDO — PENDIENTE DE VALIDACIÓN`.
   - [x] Commit de cierre de docs/artefactos con HU-007 enmienda 2026-11-01 /
         RF-8..RF-13; push coordinado (no requiere despliegue de la app).
-  - [ ] **Aceptación funcional de la usuaria** (pendiente único).
+  - [x] **Aceptación funcional de la usuaria** (2026-11-04).
+  **Commit de cierre:** `f59f6d1` en la rama `feature/hu-007-enmienda-borrado-calendario`.
