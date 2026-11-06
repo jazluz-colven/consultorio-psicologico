@@ -1,13 +1,15 @@
 # Spec 018 — Cancelar y reprogramar citas por el consultorio
 
 ## Contexto y objetivo
-La cancelación y reprogramación de citas hoy solo existen como capa de
-servicio sin interfaz (Spec 010) o desde la iniciativa del paciente (Spec
-017). El consultorio necesita cancelar o reprogramar citas por iniciativa
-propia (p. ej. cuando el paciente avisa por teléfono). Esta funcionalidad
-ofrece una interfaz interna mínima que reutiliza la cancelación, la
-liberación de horario y las notificaciones ya aprobadas (Specs 004 y 010)
-sin reescribirlas: reprogramar = cancelar la cita actual + reservar la nueva.
+La cancelación existe ya como capa de servicio sin interfaz (Spec 010) y la
+cancelación por el paciente está cubierta por la Spec 017; la reprogramación
+administrativa aún no existe. El consultorio necesita cancelar o reprogramar
+citas por iniciativa propia (p. ej. cuando el paciente avisa por teléfono).
+Esta funcionalidad ofrece una interfaz interna mínima que reutiliza la
+cancelación y la liberación de horario de la Spec 010, las reglas de reserva y
+disponibilidad de las Specs 004/005/006 y las notificaciones de las Specs
+008/010, sin reescribirlas: reprogramar = cancelar la cita actual + reservar la
+nueva.
 
 ## Usuarios / actores
 - Psicóloga / consultorio (actor principal, con acceso protegido por token).
@@ -21,8 +23,9 @@ sin reescribirlas: reprogramar = cancelar la cita actual + reservar la nueva.
 ## Requisitos funcionales (criterios de aceptación en EARS)
 - RF-1: CUANDO se acceda a cualquier funcionalidad de esta spec, EL SISTEMA
   exigirá el token de acceso definido en la variable de entorno
-  `CONSULTORIO_ADMIN_TOKEN`; SIN él (o con uno incorrecto) no se mostrará ni
-  procesará nada.
+  `CONSULTORIO_ADMIN_TOKEN`; SIN él (o con uno incorrecto) no se mostrará
+  información de la cita ni se procesará la funcionalidad, y la respuesta
+  mostrará únicamente el mensaje de acceso denegado.
 - RF-2: CUANDO el consultorio solicite gestionar una cita, EL SISTEMA
   mostrará primero un resumen de la cita (paciente, servicio, fecha, hora,
   estado) antes de permitir cancelar o reprogramar.
@@ -46,8 +49,10 @@ sin reescribirlas: reprogramar = cancelar la cita actual + reservar la nueva.
 - RF-8: SI la cita no existe, ya está cancelada o el token es inválido,
   ENTONCES EL SISTEMA mostrará un mensaje claro en español sin revelar datos
   de otras citas.
-- RF-9: El consultorio no está sujeto a la restricción de 3 horas de la
-  Spec 017: puede cancelar o reprogramar citas del mismo día y pasadas.
+- RF-9: EL SISTEMA permitirá al consultorio cancelar o reprogramar citas del
+  mismo día y pasadas, sin aplicar la restricción de 3 horas de la Spec 017.
+  En una reprogramación, la fecha nueva seguirá las reglas de la Spec 004
+  (lunes a viernes y no anterior a hoy).
 
 ## Requisitos no funcionales
 - El token vive solo en la variable de entorno `CONSULTORIO_ADMIN_TOKEN`
@@ -96,6 +101,7 @@ Viven en `consultorio/content/` y se espejan en `tests/expected_content.py`.
 | Éxito de reprogramación | Cita reprogramada. Nueva cita #{id}. |
 | Acceso denegado | No tienes acceso a la gestión de citas. |
 | Cita no encontrada | No encontramos esa cita. Revisa la referencia. |
+| Cita ya cancelada | La cita ya estaba cancelada. |
 | Horario no disponible | Ese horario ya está ocupado. Elige otro. |
 
 El mecanismo de entrega exacto del token en cada request (cabecera o campo
@@ -112,3 +118,23 @@ usuaria.
 - [RESUELTA — Q1] Variable de entorno del token → **`CONSULTORIO_ADMIN_TOKEN`**
   (propuesta aprobada por la usuaria 2026-10-13); la entrega exacta
   (cabecera vs campo) se fija en el plan.
+
+## Enmienda 2026-11-05
+
+Enmienda mínima autorizada por la usuaria el 2026-11-05. Aplica cuatro cambios:
+
+1. **Contexto y objetivo**: la reprogramación deja de atribuirse a la Spec 010;
+   se reutilizan la cancelación y la liberación de horario de la Spec 010, las
+   reglas de reserva y disponibilidad de las Specs 004/005/006 y las
+   notificaciones de las Specs 008/010.
+2. **Tabla de textos de interfaz**: se añade el literal «Cita ya cancelada» con
+   el texto «La cita ya estaba cancelada.».
+3. **RF-9**: se explicita que la fecha nueva de una reprogramación sigue las
+   reglas de la Spec 004 (lunes a viernes y no anterior a hoy).
+4. **RF-1**: se explicita que, sin token válido, no se muestra información de la
+   cita ni se procesa la funcionalidad y la respuesta muestra únicamente el
+   mensaje de acceso denegado.
+
+Esta enmienda no altera el modelo A (cancelar primero y después registrar la
+nueva, sin reversión) ni los requisitos RF-3, RF-4, RF-5 y RF-6. El literal «ya
+cancelada» es el Q2 aprobado el 2026-10-13.
