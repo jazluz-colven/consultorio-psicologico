@@ -282,7 +282,7 @@ TC-018-018.
     `python -m pytest -q` → **313 passed / 0 failed**. No se cierra por
     inspección estática: los 4 TC de esta tarea deben estar en verde.
 
-- [ ] **T5. Escribir `tests/test_hu_018.py` (TC-018-005, TC-018-007, TC-018-009, TC-018-010, TC-018-011, TC-018-017 y TC-018-018; 7 funciones) y ejecutar la suite completa (TC-018-016).**
+- [x] **T5. Escribir `tests/test_hu_018.py` (TC-018-005, TC-018-007, TC-018-009, TC-018-010, TC-018-011, TC-018-017 y TC-018-018; 7 funciones) y ejecutar la suite completa (TC-018-016).**
   RF-3, RF-4, RF-5, RF-6, RF-9
   - Alcance: receptor de webhook parcheado (`automation_service._post_webhook`) y
     **filtro por `event_type`** en todos los recuentos. TC-018-005: cancelar →
