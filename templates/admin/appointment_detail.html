@@ -34,6 +34,8 @@
     </section>
 
     {% if not is_cancelled %}
+    {% set submitted = values|default({}, true) %}
+    {% set field_errors = errors|default({}, true) %}
     <section aria-labelledby="admin-cancel-title">
         <h2 class="appointment__panel-title" id="admin-cancel-title">{{ cancel_title }}</h2>
 
@@ -52,22 +54,25 @@
         <h2 class="appointment__panel-title" id="admin-reschedule-title">{{ reschedule_title }}</h2>
 
         <form class="appointment__form admin__form admin__reschedule-form" method="post"
-              action="/admin/citas/{{ appointment.id }}/reprogramar">
+              action="{{ url_for('admin.reschedule', cita_id=appointment.id) }}">
             <p class="cancellation__notice">{{ reschedule_notice }}</p>
             <input type="hidden" name="admin_token" value="{{ admin_token }}">
 
-            <p class="appointment__field">
+            <p class="appointment__field{% if field_errors.get('service') %} appointment__field--error{% endif %}">
                 <label class="appointment__label" for="admin-service">{{ label_service }}</label>
                 <select class="appointment__input" id="admin-service" name="service" required>
                     {% for key, item in services.items() %}
-                    <option value="{{ key }}" {% if key == appointment.service %}selected{% endif %}>{{ item.name }}</option>
+                    <option value="{{ key }}" {% if key == submitted.get('service', appointment.service) %}selected{% endif %}>{{ item.name }}</option>
                     {% endfor %}
                 </select>
+                {% if field_errors.get('service') %}<span class="appointment__error">{{ field_errors['service'] }}</span>{% endif %}
             </p>
 
-            <p class="appointment__field">
+            <p class="appointment__field{% if field_errors.get('date') %} appointment__field--error{% endif %}">
                 <label class="appointment__label" for="admin-date">{{ label_new_date }}</label>
-                <input class="appointment__input" id="admin-date" name="date" type="date" required>
+                <input class="appointment__input" id="admin-date" name="date" type="date"
+                       value="{{ submitted.get('date', '') }}" required>
+                {% if field_errors.get('date') %}<span class="appointment__error">{{ field_errors['date'] }}</span>{% endif %}
             </p>
 
             <fieldset class="appointment__hours-block">
@@ -75,7 +80,8 @@
                 <div class="appointment__hours-list">
                     {% for hour in booking_hours if hour < "12:00" %}
                     <label class="appointment__hour">
-                        <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}" required>
+                        <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}"
+                               {% if submitted.get('time') == hour %}checked{% endif %} required>
                         <span>{{ hour }}</span>
                     </label>
                     {% endfor %}
@@ -87,12 +93,14 @@
                 <div class="appointment__hours-list">
                     {% for hour in booking_hours if hour >= "12:00" %}
                     <label class="appointment__hour">
-                        <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}" required>
+                        <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}"
+                               {% if submitted.get('time') == hour %}checked{% endif %} required>
                         <span>{{ hour }}</span>
                     </label>
                     {% endfor %}
                 </div>
             </fieldset>
+            {% if field_errors.get('time') %}<span class="appointment__error">{{ field_errors['time'] }}</span>{% endif %}
 
             <p class="appointment__actions">
                 <button class="appointment__submit admin__submit" type="submit">{{ reschedule_button }}</button>

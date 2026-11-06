@@ -1,8 +1,8 @@
 """Admin appointment management routes (HU-018, spec 018).
 
 Minimal internal surface protected by a shared token: the detail view with the
-mandatory summary and both forms (RF-2) and the delegated cancellation
-(RF-3). Rescheduling is T4.
+mandatory summary and both forms (RF-2), the delegated cancellation (RF-3)
+and the reschedule flow built on the Spec 010/017 services (RF-4..RF-6).
 
 Plan decisions applied here:
 
@@ -16,6 +16,10 @@ Plan decisions applied here:
 - **D3**: cancel loads the row first (404 when missing); an already cancelled
   row answers the Q2 literal without calling the service; otherwise the
   cancellation is delegated verbatim to ``cancel_appointment()``.
+- **D4/D5**: reschedule stops on an already cancelled row, copies the five
+  real patient fields, validates in the server, checks the new slot, cancels
+  the old row and only then delegates creation to ``create_booking()`` with the
+  cancellation URL builder. A cancellation is never reverted.
 - **D7/D8**: available/processing/success/conflict/error map to the detail,
   the rendered result and the literals; no copy lives in this module.
 - **D12**: neither the token nor personal data are logged.
@@ -44,7 +48,9 @@ from consultorio.content.admin_content import (
     ADMIN_PAGE_TITLE,
     ADMIN_RESCHEDULE_BUTTON,
     ADMIN_RESCHEDULE_NOTICE,
+    ADMIN_RESCHEDULE_SUCCESS_TEMPLATE,
     ADMIN_RESCHEDULE_TITLE,
+    ADMIN_SLOT_TAKEN,
 )
 from consultorio.content.appointment_content import (
     BOOKING_BLOCK_AFTERNOON,
@@ -56,11 +62,15 @@ from consultorio.content.appointment_content import (
 )
 from consultorio.content.cancellation_content import LABEL_DATE
 from consultorio.content.services_catalog import SERVICES_CATALOG
+from consultorio.persistence import appointments_repository as repository
 from consultorio.persistence.appointments_repository import get_appointment_by_id
 from consultorio.services.appointment_service import (
     ALREADY_CANCELLED,
     APPOINTMENT_NOT_FOUND,
+    SLOT_TAKEN,
     cancel_appointment,
+    create_booking,
+    validate_booking,
 )
 from consultorio.services.email_service import format_spanish_date
 from consultorio.services.home_service import get_home_view
@@ -126,19 +136,12 @@ def _render_result(message: str, status: int = 200):
     )
 
 
-@bp.get("/citas/<int:cita_id>")
-def detail(cita_id: int):
-    """Summary plus both forms (RF-2); no operative forms when cancelled."""
-    if not _check_token():
-        return _render_result(ADMIN_ACCESS_DENIED, 403)
-
-    appointment = get_appointment_by_id(cita_id, _database_path())
-    if appointment is None:
-        return _render_result(ADMIN_APPOINTMENT_NOT_FOUND, 404)
-
+def _render_detail(appointment, errors=None, values=None, status: int = 200):
+    """Render the detail screen, optionally with validation feedback (D4/D7)."""
     is_cancelled = appointment.status == STATUS_CANCELLED
     return _render_admin(
         "admin/appointment_detail.html",
+        status,
         page_title=ADMIN_PAGE_TITLE,
         appointment=appointment,
         service_name=str(SERVICES_CATALOG[appointment.service]["name"]),
@@ -147,6 +150,8 @@ def detail(cita_id: int):
             STATUS_CANCELLED_LABEL if is_cancelled else STATUS_CONFIRMED_LABEL
         ),
         is_cancelled=is_cancelled,
+        errors=errors,
+        values=values,
         admin_token=current_app.config["CONSULTORIO_ADMIN_TOKEN"],
         services=SERVICES_CATALOG,
         booking_hours=BOOKING_HOURS,
@@ -166,6 +171,19 @@ def detail(cita_id: int):
         label_status=ADMIN_LABEL_STATUS,
         summary_title=ADMIN_LABEL_SUMMARY,
     )
+
+
+@bp.get("/citas/<int:cita_id>")
+def detail(cita_id: int):
+    """Summary plus both forms (RF-2); no operative forms when cancelled."""
+    if not _check_token():
+        return _render_result(ADMIN_ACCESS_DENIED, 403)
+
+    appointment = get_appointment_by_id(cita_id, _database_path())
+    if appointment is None:
+        return _render_result(ADMIN_APPOINTMENT_NOT_FOUND, 404)
+
+    return _render_detail(appointment)
 
 
 @bp.post("/citas/<int:cita_id>/cancelar")
@@ -198,3 +216,77 @@ def cancel(cita_id: int):
     if result == ALREADY_CANCELLED:
         return _render_result(ADMIN_MSG_ALREADY_CANCELLED, 200)
     return _render_result(ADMIN_CANCEL_SUCCESS, 200)
+
+
+@bp.post("/citas/<int:cita_id>/reprogramar")
+def reschedule(cita_id: int):
+    """Cancel the current appointment and register a new one (RF-4..RF-6).
+
+    The order follows plan D4: guards → already-cancelled short circuit →
+    build data (D5) → server validation → availability check → cancel →
+    create. A cancellation is never reverted (RF-6).
+    """
+    if not _check_token():
+        return _render_result(ADMIN_ACCESS_DENIED, 403)
+
+    appointment = get_appointment_by_id(cita_id, _database_path())
+    if appointment is None:
+        return _render_result(ADMIN_APPOINTMENT_NOT_FOUND, 404)
+
+    if appointment.status == STATUS_CANCELLED:
+        # Stop before validating, checking the slot or cancelling anything (D4).
+        return _render_result(ADMIN_MSG_ALREADY_CANCELLED, 200)
+
+    data = {
+        "document_type": appointment.document_type,
+        "document_number": appointment.document_number,
+        "patient_name": appointment.patient_name,
+        "email": appointment.email,
+        "phone": appointment.phone,
+        "service": request.form.get("service", ""),
+        "date": request.form.get("date", ""),
+        "time": request.form.get("time", ""),
+    }
+
+    errors = validate_booking(data)
+    if errors:
+        # Server-side Spec 004 validation; nothing is cancelled (D4).
+        return _render_detail(appointment, errors=errors, values=data)
+
+    if repository.is_slot_taken(
+        data["service"], data["date"], data["time"], _database_path()
+    ):
+        return _render_result(ADMIN_SLOT_TAKEN, 200)
+
+    automation_url, automation_timeout, automation_auth_header = (
+        _automation_settings()
+    )
+    result = cancel_appointment(
+        cita_id,
+        _database_path(),
+        automation_url,
+        automation_timeout,
+        automation_auth_header,
+    )
+    if result == APPOINTMENT_NOT_FOUND:
+        return _render_result(ADMIN_APPOINTMENT_NOT_FOUND, 404)
+    if result == ALREADY_CANCELLED:
+        return _render_result(ADMIN_MSG_ALREADY_CANCELLED, 200)
+
+    new_appointment = create_booking(
+        data,
+        _database_path(),
+        automation_url,
+        automation_timeout,
+        automation_auth_header,
+        cancellation_url_builder=lambda new_id: url_for(
+            "cancellation.verify", cita_id=new_id, _external=True
+        ),
+    )
+    if new_appointment == SLOT_TAKEN:
+        # Race lost after cancelling: the earlier cancellation remains (RF-6).
+        return _render_result(ADMIN_SLOT_TAKEN, 200)
+
+    return _render_result(
+        ADMIN_RESCHEDULE_SUCCESS_TEMPLATE.format(id=new_appointment.id), 200
+    )

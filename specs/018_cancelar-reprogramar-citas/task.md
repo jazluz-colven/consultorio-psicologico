@@ -247,7 +247,7 @@ TC-018-018.
     `python -m pytest -q` → **309 passed / 0 failed**. No se cierra por
     inspección estática: los 5 TC de esta tarea deben estar en verde.
 
-- [ ] **T4. Implementar `POST /admin/citas/<int:cita_id>/reprogramar` y escribir los 4 tests de rutas de esta tarea (TC-018-006, 008, 012 y 019).**
+- [x] **T4. Implementar `POST /admin/citas/<int:cita_id>/reprogramar` y escribir los 4 tests de rutas de esta tarea (TC-018-006, 008, 012 y 019).**
   RF-4, RF-5, RF-6, RF-8, RF-9
   - Alcance web: cargar la cita vieja (404 si no existe); **si `status ==
     cancelled`, responder `ADMIN_MSG_ALREADY_CANCELLED` sin validar, sin
