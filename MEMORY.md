@@ -513,18 +513,26 @@ aporte.
   funcional de la usuaria y push: **2026-11-04**. Las cinco
   versiones del JSON (v1–v5) están conservadas en `docs/workflows/hu-007/`.
 
-- **Cierre de sesión 2026-11-04 (estado de Git)**: `main` = `origin/main` =
-  `9bfdbef`; push realizado (23 commits, incluidos HU-017/Spec 010 fase 2 y la
-  enmienda 007); Render redesplegado. `D-007-01` en `CORREGIDO — ACEPTADO
-  FUNCIONALMENTE (2026-11-04)`. Sin ramas locales pendientes de integrar.
-  `chore/proyecto-docs` (.opencode, `.agents/skills/sdd`, enmiendas 011/018)
-  sigue sin merge; `.opencode/` y `.agents/skills/sdd/` sin versionar.
-- **SIGUIENTE — HU-018 (inicio limpio)**: `specs/018_cancelar-reprogramar-citas/`
-  tiene `spec.md` (RF-1..RF-7; token `CONSULTORIO_ADMIN_TOKEN`, resumen previo
-  de la cita, reprogramar = cancelar + reservar reutilizando Specs 004/005/006
-  y el servicio de cancelación de la 010) y `plan.md` (D2 entrega del token por
-  esquema híbrido, Q1/Q2 aprobadas 2026-10-13, plan APROBADO 2026-10-13), pero
-  **no existe `task.md`**. Primer paso: pedir a `@planificador` el `task.md`
-  (numeración fija, dependencias, criterios verificables) y obtener su
-  aprobación **antes** de implementar. Antes de tocar código: `git status`,
-  rama nueva `feature/hu-018`.
+- **Estado de Git (2026-11-05)**: `main` = `origin/main` = `9846613`;
+  `feature/hu-018` creada desde `main`. `D-007-01` en `CORREGIDO — ACEPTADO
+  FUNCIONALMENTE (2026-11-04)`. `chore/proyecto-docs` (.opencode,
+  `.agents/skills/sdd`, enmiendas 011/018) sigue sin merge y **no debe
+  mergearse en bloque**: está muy desfasada (~28.700 líneas de borrado) y su
+  enmienda 018 «reservar primero» (`8c0b3a5`) es contradictoria y fue
+  **descartada** el 2026-11-05. `.opencode/` y `.agents/skills/sdd/` sin
+  versionar.
+- **HU-018 (Spec 018) — PLAN Y TAREAS APROBADOS (2026-11-05), T1 COMMITEADA**:
+  rama `feature/hu-018` desde `main` (`9846613`); baseline **302 PASS**;
+  commit `c1d53b5` (spec enmendada + plan revisado + `task.md`).
+  Decisiones: **modelo A confirmado** (cancelar primero y después registrar la
+  nueva; sin reversión; sin aceptación del paciente), actor psicólogo/
+  administrador, token `CONSULTORIO_ADMIN_TOKEN`. Enmienda 2026-11-05 de la
+  spec: contexto, literal Q2 «La cita ya estaba cancelada.», RF-9 (la fecha
+  nueva sigue la Spec 004) y RF-1 (solo mensaje de acceso denegado).
+  Plan/task corregidos tras la revisión (`CAMBIOS NECESARIOS`): campos reales +
+  `document_type`, literal contractual de horario ocupado,
+  `cancellation_url_builder`, cita ya cancelada, `?token=` solo GET +
+  `no-store`/`no-referrer`, TC-018-017/018/019, 20 constantes (14+6),
+  **18 tests → 320 PASS**, **7 tareas autocontenidas** (T1–T7).
+  Siguiente: **T2** (espejo + `admin_content` + config). Pendiente opcional:
+  literal de error de persistencia (no incluido; 320 no cambia).
