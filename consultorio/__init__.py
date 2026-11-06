@@ -18,6 +18,7 @@ def create_app(settings: Any = None) -> Flask:
     from consultorio.errors import register_error_handlers
     from consultorio.persistence.database import init_db
     from consultorio.web.about import bp as about_bp
+    from consultorio.web.admin import bp as admin_bp
     from consultorio.web.appointments import bp as appointments_bp
     from consultorio.web.cancellation import bp as cancellation_bp
     from consultorio.web.contact import bp as contact_bp
@@ -27,6 +28,7 @@ def create_app(settings: Any = None) -> Flask:
     from consultorio.web.services import bp as services_bp
 
     app.register_blueprint(about_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(appointments_bp)
     app.register_blueprint(cancellation_bp)
     app.register_blueprint(contact_bp)

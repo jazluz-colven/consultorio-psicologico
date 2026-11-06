@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — {{ view.brand_name }}{% endblock %}
+
+{% block content %}
+<article class="appointment">
+    <h1 class="appointment__title">{{ page_title }}</h1>
+
+    <section aria-labelledby="admin-summary-title">
+        <h2 class="appointment__panel-title" id="admin-summary-title">{{ summary_title }}</h2>
+
+        <dl class="appointment__summary">
+            <div class="appointment__summary-row">
+                <dt class="appointment__summary-label">{{ label_patient }}</dt>
+                <dd class="appointment__summary-value">{{ appointment.patient_name }}</dd>
+            </div>
+            <div class="appointment__summary-row">
+                <dt class="appointment__summary-label">{{ label_service }}</dt>
+                <dd class="appointment__summary-value">{{ service_name }}</dd>
+            </div>
+            <div class="appointment__summary-row">
+                <dt class="appointment__summary-label">{{ label_date }}</dt>
+                <dd class="appointment__summary-value">{{ formatted_date }}</dd>
+            </div>
+            <div class="appointment__summary-row">
+                <dt class="appointment__summary-label">{{ label_time }}</dt>
+                <dd class="appointment__summary-value">{{ appointment.time }}</dd>
+            </div>
+            <div class="appointment__summary-row">
+                <dt class="appointment__summary-label">{{ label_status }}</dt>
+                <dd class="appointment__summary-value">{{ status_label }}</dd>
+            </div>
+        </dl>
+    </section>
+
+    {% if not is_cancelled %}
+    <section aria-labelledby="admin-cancel-title">
+        <h2 class="appointment__panel-title" id="admin-cancel-title">{{ cancel_title }}</h2>
+
+        <form class="appointment__form admin__form admin__cancel-form" method="post"
+              action="{{ url_for('admin.cancel', cita_id=appointment.id) }}">
+            <p class="cancellation__notice">{{ cancel_notice }}</p>
+            <input type="hidden" name="admin_token" value="{{ admin_token }}">
+
+            <p class="appointment__actions">
+                <button class="appointment__submit admin__submit" type="submit">{{ cancel_button }}</button>
+            </p>
+        </form>
+    </section>
+
+    <section aria-labelledby="admin-reschedule-title">
+        <h2 class="appointment__panel-title" id="admin-reschedule-title">{{ reschedule_title }}</h2>
+
+        <form class="appointment__form admin__form admin__reschedule-form" method="post"
+              action="/admin/citas/{{ appointment.id }}/reprogramar">
+            <p class="cancellation__notice">{{ reschedule_notice }}</p>
+            <input type="hidden" name="admin_token" value="{{ admin_token }}">
+
+            <p class="appointment__field">
+                <label class="appointment__label" for="admin-service">{{ label_service }}</label>
+                <select class="appointment__input" id="admin-service" name="service" required>
+                    {% for key, item in services.items() %}
+                    <option value="{{ key }}" {% if key == appointment.service %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+
+            <p class="appointment__field">
+                <label class="appointment__label" for="admin-date">{{ label_new_date }}</label>
+                <input class="appointment__input" id="admin-date" name="date" type="date" required>
+            </p>
+
+            <fieldset class="appointment__hours-block">
+                <legend class="appointment__hours-legend">{{ block_morning }}</legend>
+                <div class="appointment__hours-list">
+                    {% for hour in booking_hours if hour < "12:00" %}
+                    <label class="appointment__hour">
+                        <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}" required>
+                        <span>{{ hour }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <fieldset class="appointment__hours-block">
+                <legend class="appointment__hours-legend">{{ block_afternoon }}</legend>
+                <div class="appointment__hours-list">
+                    {% for hour in booking_hours if hour >= "12:00" %}
+                    <label class="appointment__hour">
+                        <input class="appointment__hour-input" type="radio" name="time" value="{{ hour }}" required>
+                        <span>{{ hour }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <p class="appointment__actions">
+                <button class="appointment__submit admin__submit" type="submit">{{ reschedule_button }}</button>
+            </p>
+        </form>
+    </section>
+    {% endif %}
+</article>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

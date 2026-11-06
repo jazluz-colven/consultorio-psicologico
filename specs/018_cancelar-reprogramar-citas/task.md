@@ -194,7 +194,7 @@ TC-018-018.
   - Hecho cuando: `python -m pytest -q tests/test_admin_content.py -v` →
     **2 passed / 0 failed**; `python -m pytest -q` → **304 passed / 0 failed**.
 
-- [ ] **T3. Crear las plantillas y el guard, implementar el blueprint con el guard de token, `GET /admin/citas/<int:cita_id>` y `POST /admin/citas/<int:cita_id>/cancelar`, y escribir los 5 tests de rutas de esta tarea (TC-018-001, 002, 003, 004 y 013).**
+- [x] **T3. Crear las plantillas y el guard, implementar el blueprint con el guard de token, `GET /admin/citas/<int:cita_id>` y `POST /admin/citas/<int:cita_id>/cancelar`, y escribir los 5 tests de rutas de esta tarea (TC-018-001, 002, 003, 004 y 013).**
   RF-1, RF-2, RF-3, RF-7, RF-8, RNF identidad visual / estados
   - Alcance web: `bp = Blueprint("admin", __name__, url_prefix="/admin")`;
     `_check_token()` con `hmac.compare_digest` sobre bytes, que acepta
