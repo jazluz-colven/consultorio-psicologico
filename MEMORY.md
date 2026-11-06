@@ -545,6 +545,11 @@ aporte.
   **313 PASS**). **T5 completada** (`832149e`: `tests/test_hu_018.py` con
   TC-018-005/007/009/010/011/017/018, eventos filtrados por `event_type`,
   reloj congelado para RF-9 y orden cancelar→crear; suite **320 PASS**).
-  Siguiente: **T6** (demo manual §6.2 + `docs/evidencias/hu-018/qa-hu-018.md`
-  con PASS/FAIL y checkbox de aceptación vacío; servidor en marcha). Pendiente
-  opcional: literal de error de persistencia (no incluido; 320 no cambia).
+  **T6 en curso (2026-11-06)**: demo local §6.2 ejecutada con app en
+  `127.0.0.1:5000` y receptor stdlib en `127.0.0.1:8765` (BD y artefactos en
+  `%TEMP%\opencode\hu018-demo`, fuera del repo); **33/34** comprobaciones OK.
+  Única pendiente: **Calendar/n8n real (Spec 007 RF-8) = NO VERIFICADO**;
+  requiere la URL de producción y el Header Auth del workflow v5. Decisión de
+  la usuaria (2026-11-06): dejar esa prueba **pendiente**; T6 queda **PARCIAL**
+  (`[ ]`) y falta `docs/evidencias/hu-018/qa-hu-018.md`. Pendiente opcional:
+  literal de error de persistencia (no incluido; 320 no cambia).
