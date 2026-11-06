@@ -535,6 +535,10 @@ aporte.
   `no-store`/`no-referrer`, TC-018-017/018/019, 20 constantes (14+6),
   **18 tests → 320 PASS**, **7 tareas autocontenidas** (T1–T7).
   **T2 completada** (`b099104`: 20 constantes `ADMIN_`, espejo, config y 2
-  tests; suite **304 PASS**). Siguiente: **T3** (plantillas + guard + blueprint
-  + GET/POST cancelar). Pendiente opcional: literal de error de persistencia
-  (no incluido; 320 no cambia).
+  tests; **304 PASS**). **T3 completada** (`e08c8fe`: blueprint `admin`,
+  guard `hmac` (`?token=` solo GET, config vacía → 403), `GET` detalle y `POST`
+  cancelar delegado en el servicio 010, plantillas admin + `admin.js` (patrón
+  HU-006), 5 tests de rutas; **309 PASS**). D8: sin capturas en T3; validación
+  visual en T6. Siguiente: **T4** (POST reprogramar + 4 tests; **313 PASS**).
+  Pendiente opcional: literal de error de persistencia (no incluido; 320 no
+  cambia).
