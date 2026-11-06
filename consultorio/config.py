@@ -42,6 +42,11 @@ class Config:
     AUTOMATION_WEBHOOK_AUTH_HEADER: str = os.environ.get(
         "AUTOMATION_WEBHOOK_AUTH_HEADER", ""
     )
+    # HU-018 (spec 018, D9): admin token only by environment variable; empty
+    # disables the admin surface. Never commit a real token to the repository.
+    CONSULTORIO_ADMIN_TOKEN: str = os.environ.get(
+        "CONSULTORIO_ADMIN_TOKEN", ""
+    )
 
 
 class TestConfig(Config):

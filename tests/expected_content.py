@@ -406,3 +406,55 @@ LABEL_DATE = "Fecha"
 LABEL_TIME = "Hora"
 
 LABEL_STATUS = "Estado"
+
+# --- HU-018: Cancelar y reprogramar citas por el consultorio (espejo único de la spec 018) ---
+# «Confirmada»/«Cancelada» se reutilizan de STATUS_CONFIRMED_LABEL (HU-004) y
+# STATUS_CANCELLED_LABEL (HU-010), ya espejados arriba; aquí no se duplican (plan 018, D6).
+
+ADMIN_PAGE_TITLE = "Gestión de citas"
+
+ADMIN_CANCEL_TITLE = "Cancelar cita"
+
+ADMIN_CANCEL_NOTICE = (
+    "La cita quedará Cancelada, el horario se liberará y el paciente "
+    "recibirá la notificación."
+)
+
+ADMIN_CANCEL_BUTTON = "Sí, cancelar cita"
+
+ADMIN_RESCHEDULE_TITLE = "Reprogramar cita"
+
+ADMIN_RESCHEDULE_NOTICE = (
+    "Se cancelará la cita actual y se registrará una nueva. El paciente "
+    "recibirá la cancelación y la nueva confirmación."
+)
+
+ADMIN_RESCHEDULE_BUTTON = "Sí, reprogramar"
+
+ADMIN_BACK_BUTTON = "Volver"
+
+ADMIN_CANCEL_SUCCESS = "Cita cancelada."
+
+ADMIN_RESCHEDULE_SUCCESS_TEMPLATE = "Cita reprogramada. Nueva cita #{id}."
+
+ADMIN_ACCESS_DENIED = "No tienes acceso a la gestión de citas."
+
+ADMIN_APPOINTMENT_NOT_FOUND = "No encontramos esa cita. Revisa la referencia."
+
+ADMIN_MSG_ALREADY_CANCELLED = "La cita ya estaba cancelada."
+
+ADMIN_SLOT_TAKEN = "Ese horario ya está ocupado. Elige otro."
+
+# Functional labels (plan 018, D6)
+
+ADMIN_LABEL_SERVICE = "Servicio"
+
+ADMIN_LABEL_NEW_DATE = "Nueva fecha"
+
+ADMIN_LABEL_TIME = "Hora"
+
+ADMIN_LABEL_SUMMARY = "Resumen de la cita"
+
+ADMIN_LABEL_PATIENT = "Paciente"
+
+ADMIN_LABEL_STATUS = "Estado"

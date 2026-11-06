@@ -166,7 +166,7 @@ TC-018-018.
     `.agents/skills/sdd/` quedan fuera de la HU); el commit de docs cita HU-018 /
     Spec 018 e incluye la enmienda de `spec.md`.
 
-- [ ] **T2. Crear el espejo en `tests/expected_content.py`, `consultorio/content/admin_content.py` y `Config.CONSULTORIO_ADMIN_TOKEN`, con `tests/test_admin_content.py` (2 funciones).**
+- [x] **T2. Crear el espejo en `tests/expected_content.py`, `consultorio/content/admin_content.py` y `Config.CONSULTORIO_ADMIN_TOKEN`, con `tests/test_admin_content.py` (2 funciones).**
   RF-1, RF-2, RF-3, RF-4, RF-5, RF-6, RF-7, RF-8, RNF literales
   - Alcance: **20 constantes** en `admin_content.py` con prefijo `ADMIN_`:
     **14 literales contractuales** de la tabla de la spec 018 (los 13 anteriores
