@@ -553,3 +553,13 @@ aporte.
   la usuaria (2026-11-06): dejar esa prueba **pendiente**; T6 queda **PARCIAL**
   (`[ ]`) y falta `docs/evidencias/hu-018/qa-hu-018.md`. Pendiente opcional:
   literal de error de persistencia (no incluido; 320 no cambia).
+- **Decisiones confirmadas por la usuaria (2026-11-06) para la próxima spec de
+  acceso/agenda**: administrador y psicóloga son **personas distintas**; MVP con
+  roles **administrador** y **psicólogo**; agenda con **fechas pasadas y
+  futuras**; **auditoría por usuario** obligatoria; el acceso debe integrarse
+  con las Specs 011/012 y el detalle de la 018. La revisión visual local de la
+  pantalla admin fue **OK**. Recomendación del coordinador (**pendiente de
+  aprobación**): implementar primero el acceso y después 011/012, para no
+  exponer PII con el token compartido ni rehacer el guard; alternativa solo si
+  hay urgencia: 011/012 con token como piloto interno temporal y migración
+  planificada. Las specs 011/012 existen pero **no tienen plan ni tareas**.
