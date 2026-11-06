@@ -534,5 +534,7 @@ aporte.
   `cancellation_url_builder`, cita ya cancelada, `?token=` solo GET +
   `no-store`/`no-referrer`, TC-018-017/018/019, 20 constantes (14+6),
   **18 tests → 320 PASS**, **7 tareas autocontenidas** (T1–T7).
-  Siguiente: **T2** (espejo + `admin_content` + config). Pendiente opcional:
-  literal de error de persistencia (no incluido; 320 no cambia).
+  **T2 completada** (`b099104`: 20 constantes `ADMIN_`, espejo, config y 2
+  tests; suite **304 PASS**). Siguiente: **T3** (plantillas + guard + blueprint
+  + GET/POST cancelar). Pendiente opcional: literal de error de persistencia
+  (no incluido; 320 no cambia).
