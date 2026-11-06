@@ -539,6 +539,9 @@ aporte.
   guard `hmac` (`?token=` solo GET, config vacía → 403), `GET` detalle y `POST`
   cancelar delegado en el servicio 010, plantillas admin + `admin.js` (patrón
   HU-006), 5 tests de rutas; **309 PASS**). D8: sin capturas en T3; validación
-  visual en T6. Siguiente: **T4** (POST reprogramar + 4 tests; **313 PASS**).
-  Pendiente opcional: literal de error de persistencia (no incluido; 320 no
-  cambia).
+  visual en T6. **T4 completada** (`f3314d6`: `POST` reprogramar con orden D4
+  —ya cancelada → validar → hueco → cancelar → crear—, 5 campos copiados,
+  `cancellation_url_builder`, `SLOT_TAKEN` sin revertir la cancelación, 4 tests;
+  **313 PASS**). Siguiente: **T5** (`test_hu_018.py`, 7 tests + suite completa;
+  **320 PASS**). Pendiente opcional: literal de error de persistencia (no
+  incluido; 320 no cambia).
