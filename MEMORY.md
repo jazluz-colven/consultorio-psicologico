@@ -542,6 +542,9 @@ aporte.
   visual en T6. **T4 completada** (`f3314d6`: `POST` reprogramar con orden D4
   —ya cancelada → validar → hueco → cancelar → crear—, 5 campos copiados,
   `cancellation_url_builder`, `SLOT_TAKEN` sin revertir la cancelación, 4 tests;
-  **313 PASS**). Siguiente: **T5** (`test_hu_018.py`, 7 tests + suite completa;
-  **320 PASS**). Pendiente opcional: literal de error de persistencia (no
-  incluido; 320 no cambia).
+  **313 PASS**). **T5 completada** (`832149e`: `tests/test_hu_018.py` con
+  TC-018-005/007/009/010/011/017/018, eventos filtrados por `event_type`,
+  reloj congelado para RF-9 y orden cancelar→crear; suite **320 PASS**).
+  Siguiente: **T6** (demo manual §6.2 + `docs/evidencias/hu-018/qa-hu-018.md`
+  con PASS/FAIL y checkbox de aceptación vacío; servidor en marcha). Pendiente
+  opcional: literal de error de persistencia (no incluido; 320 no cambia).
