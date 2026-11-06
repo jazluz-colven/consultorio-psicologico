@@ -563,3 +563,9 @@ aporte.
   exponer PII con el token compartido ni rehacer el guard; alternativa solo si
   hay urgencia: 011/012 con token como piloto interno temporal y migración
   planificada. Las specs 011/012 existen pero **no tienen plan ni tareas**.
+- **Solicitud de evaluación (2026-11-06): migración a PostgreSQL** y posibilidad
+  de aprovecharla para el futuro módulo de acceso/agenda. Pendiente: spike de
+  evaluación (inventario de SQLite, dialecto, tests, límites del plan de Render,
+  migración de datos y rollback). Recomendación del coordinador: evaluar primero
+  y, si es viable, migrar **antes** de implementar acceso/011/012; no mezclar la
+  migración con la spec de acceso. **HU-018 no se migra**: se cierra en SQLite.
