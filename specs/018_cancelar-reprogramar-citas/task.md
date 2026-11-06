@@ -1,12 +1,12 @@
 # Tareas — Spec 018: Cancelar y reprogramar citas por el consultorio
 
-Estado: **borrador para aprobación de la usuaria (2026-11-05)**.
+Estado: **aprobado por la usuaria el 2026-11-05**; T1–T5 completadas, T6–T7 pendientes.
 
 > Trazabilidad: **HU-018 → Spec 018 (`spec.md`, enmendada y aprobada
 > 2026-11-05) → `plan.md`
-> (base aprobada 2026-10-13; revisión 2026-11-05 pendiente de aprobación,
+> (base aprobada 2026-10-13; revisión 2026-11-05 aprobada,
 > D1–D12, Q1/Q2) → este `task.md` → código → tests → evidencia → commit.**
-> Rama a crear: **`feature/hu-018` desde `main`** (`9846613`, baseline real
+> Rama creada: **`feature/hu-018` desde `main`** (`9846613`, baseline real
 > **302 passed / 0 failed**). Comandos: `python -m pytest -q`, `python app.py`.
 > **7 tareas** ordenadas por dependencia, y **cada una se cierra con sus propios
 > tests en verde o con la evidencia que ella misma produce**, sin depender de
@@ -365,8 +365,10 @@ y hoy **no se implementa**:
 
 ## Decisiones que la usuaria debe aprobar
 
-- Aprobación del `plan.md` revisado el 2026-11-05 (D1–D12, cifras 302/320,
-  horas/fecha del formulario y correcciones de la revisión técnica).
-- Aprobación de este `task.md`.
-- Opcional: si se adopta el literal de error de persistencia, aprobación del
-  texto y del TC adicional (la cifra 320 dejaría de ser la definitiva).
+- [x] Aprobación del `plan.md` revisado el **2026-11-05** (D1–D12, cifras
+  302/320, horas/fecha del formulario y correcciones de la revisión técnica).
+- [x] Aprobación de este `task.md` el **2026-11-05**.
+- T1–T5 completadas; la cifra vigente es **320**.
+- [ ] Opcional — **no aprobado / no implementado**: literal de error de
+  persistencia (sin TC ni constante asociados; la cifra vigente sigue siendo
+  **320**; si se adoptara, la cifra dejaría de ser la definitiva).

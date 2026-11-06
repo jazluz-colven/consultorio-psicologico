@@ -2,11 +2,11 @@
 
 > Trazabilidad: **HU-018 → Spec 018 (`specs/018_cancelar-reprogramar-citas/spec.md`) → este plan → código → tests → evidencia → commit**
 > Constitución: `docs/constitution.md` (6 principios). Ruta canónica de las specs: `/specs`.
-> **Estado: plan revisado — pendiente de aprobación de la usuaria (2026-11-05).**
+> **Estado: plan revisado — aprobado por la usuaria el 2026-11-05.**
 > La spec 018 queda **enmendada y aprobada el 2026-11-05** (enmienda mínima, ver
 > `spec.md`). La base del plan se aprobó el **2026-10-13**; esta revisión corrige
-> los defectos de la revisión técnica y requiere **nueva aprobación** antes de
-> implementar.
+> los defectos de la revisión técnica y quedó **aprobado por la usuaria el
+> 2026-11-05**; implementación en curso (T1–T5 completadas).
 >
 > **Decisiones vigentes confirmadas por la usuaria (2026-11-05):**
 > - **Modelo A confirmado**: reprogramar = **cancelar primero** la cita original
@@ -415,23 +415,27 @@ T6. Si se generan capturas, usar CDP.
    añadiría su TC y la cifra objetivo se recalcularía. Hoy la cifra vigente es
    **320**.
 
-Los puntos 1–4 quedaron aplicados en `spec.md` el 2026-11-05. El plan y las
-tareas siguen **pendientes de aprobación**.
+Los puntos 1–4 quedaron aplicados en `spec.md` el 2026-11-05. El plan y el
+`task.md` quedaron **aprobados por la usuaria el 2026-11-05**.
 
 ### 7.2 Pendientes de ejecución (bloquean declarar COMPLETADO)
 
-- [ ] Aprobación de este plan revisado (2026-11-05) y de `task.md`.
-- [ ] Creación de `feature/hu-018` desde `main` (D11) y verificación del
+- [x] Aprobación de este plan revisado (2026-11-05) y de `task.md`.
+- [x] Creación de `feature/hu-018` desde `main` (D11) y verificación del
       baseline **302 PASS / 0 FAIL**.
-- [ ] Espejo + `admin_content` + `Config.CONSULTORIO_ADMIN_TOKEN`.
-- [ ] Blueprint `admin` + templates + guard de doble envío + registro en
+- [x] Espejo + `admin_content` + `Config.CONSULTORIO_ADMIN_TOKEN`.
+- [x] Blueprint `admin` + templates + guard de doble envío + registro en
       `create_app()`.
-- [ ] Tests §6 en verde: objetivo **320 PASS / 0 FAIL** con los 302 previos
+- [x] Tests §6 en verde: objetivo **320 PASS / 0 FAIL** con los 302 previos
       intactos (cifra exacta y funciones en `task.md`).
 - [ ] Demo manual §6.2 + evidencia en `docs/evidencias/hu-018/`.
 - [ ] Informe QA `qa-hu-018.md` con PASS/FAIL por TC y checkbox de aceptación.
 - [ ] Commit/Push por fases, `MEMORY.md` y aceptación de la HU.
 - [ ] Servidor de revisión en marcha (AGENTS.md) y URL comunicada.
+
+> Nota de estado (2026-11-05): T1–T5 ejecutadas y versionadas en
+> `feature/hu-018` — `c1d53b5` (T1), `b099104` (T2), `e08c8fe` (T3),
+> `f3314d6` (T4), `832149e` (T5) — con suite real **320 PASS** (2026-11-05).
 
 ---
 
@@ -441,7 +445,7 @@ Cada tarea se cierra con **sus propios tests en verde**, sin depender de tests
 posteriores. La cifra acumulada de la suite se indica en cada paso.
 
 0. **Aprobación de este plan revisado** (2026-11-05) y de `task.md` —
-   **pendiente**.
+   **Aprobado por la usuaria el 2026-11-05**.
 1. **Rama y baseline**: `feature/hu-018` desde `main` (`9846613`), baseline
    **302 PASS**; commit de `spec.md` (enmienda 2026-11-05), `plan.md` y
    `task.md` (T1).
