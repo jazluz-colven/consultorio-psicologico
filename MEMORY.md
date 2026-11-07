@@ -545,13 +545,17 @@ aporte.
   **313 PASS**). **T5 completada** (`832149e`: `tests/test_hu_018.py` con
   TC-018-005/007/009/010/011/017/018, eventos filtrados por `event_type`,
   reloj congelado para RF-9 y orden cancelar→crear; suite **320 PASS**).
-  **T6 en curso (2026-11-06)**: demo local §6.2 ejecutada con app en
+  **T6 parcial y cierre (2026-11-06)**: demo local §6.2 ejecutada con app en
   `127.0.0.1:5000` y receptor stdlib en `127.0.0.1:8765` (BD y artefactos en
   `%TEMP%\opencode\hu018-demo`, fuera del repo); **33/34** comprobaciones OK.
   Única pendiente: **Calendar/n8n real (Spec 007 RF-8) = NO VERIFICADO**;
-  requiere la URL de producción y el Header Auth del workflow v5. Decisión de
-  la usuaria (2026-11-06): dejar esa prueba **pendiente**; T6 queda **PARCIAL**
-  (`[ ]`) y falta `docs/evidencias/hu-018/qa-hu-018.md`. Pendiente opcional:
+  requiere la URL de producción, el Header Auth y el workflow v5 configurado en
+  Render. Se creó `docs/evidencias/hu-018/qa-hu-018.md` con los 19 TC PASS, la
+  demo y una sección específica de NO VERIFICADO; **checkbox de aceptación
+  vacío**. T6 queda **PARCIAL** (`[ ]`). **T7 cerrada** (commits por fase, push
+  de `feature/hu-018` sin merge a `main`, `MEMORY.md` y servidor de revisión).
+  **HU-018 cerrada técnicamente con la E2E n8n/Calendar pendiente y
+  documentada**; la aceptación funcional sigue pendiente. Pendiente opcional:
   literal de error de persistencia (no incluido; 320 no cambia).
 - **Decisiones confirmadas por la usuaria (2026-11-06) para la próxima spec de
   acceso/agenda**: administrador y psicóloga son **personas distintas**; MVP con
@@ -563,9 +567,11 @@ aporte.
   exponer PII con el token compartido ni rehacer el guard; alternativa solo si
   hay urgencia: 011/012 con token como piloto interno temporal y migración
   planificada. Las specs 011/012 existen pero **no tienen plan ni tareas**.
-- **Solicitud de evaluación (2026-11-06): migración a PostgreSQL** y posibilidad
-  de aprovecharla para el futuro módulo de acceso/agenda. Pendiente: spike de
-  evaluación (inventario de SQLite, dialecto, tests, límites del plan de Render,
-  migración de datos y rollback). Recomendación del coordinador: evaluar primero
-  y, si es viable, migrar **antes** de implementar acceso/011/012; no mezclar la
-  migración con la spec de acceso. **HU-018 no se migra**: se cierra en SQLite.
+- **Secuencia acordada con la usuaria (2026-11-06)**: la **primera sesión nueva
+  es la evaluación PostgreSQL**; después se redacta la **spec de acceso/agenda**
+  (roles administrador/psicólogo, sesión, CSRF y auditoría por usuario) y luego
+  las Specs 011/012. La migración a PostgreSQL se evalúa con un spike
+  (inventario de SQLite, dialecto, tests, límites del plan de Render, migración
+  de datos y rollback). Recomendación del coordinador: si es viable, migrar
+  **antes** de implementar acceso/011/012; no mezclar la migración con la spec
+  de acceso. **HU-018 no se migra**: se cierra en SQLite.

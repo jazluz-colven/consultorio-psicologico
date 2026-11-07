@@ -428,14 +428,22 @@ Los puntos 1–4 quedaron aplicados en `spec.md` el 2026-11-05. El plan y el
       `create_app()`.
 - [x] Tests §6 en verde: objetivo **320 PASS / 0 FAIL** con los 302 previos
       intactos (cifra exacta y funciones en `task.md`).
-- [ ] Demo manual §6.2 + evidencia en `docs/evidencias/hu-018/`.
-- [ ] Informe QA `qa-hu-018.md` con PASS/FAIL por TC y checkbox de aceptación.
-- [ ] Commit/Push por fases, `MEMORY.md` y aceptación de la HU.
-- [ ] Servidor de revisión en marcha (AGENTS.md) y URL comunicada.
+- [ ] Demo manual §6.2 (parcial: 33/34 en local; E2E n8n/Calendar
+      **NO VERIFICADO**; evidencia en `docs/evidencias/hu-018/`).
+- [x] Informe QA `qa-hu-018.md` con PASS/FAIL por TC y checkbox de aceptación
+      vacío.
+- [x] Commit/Push por fases y `MEMORY.md`; aceptación funcional pendiente (solo
+      la usuaria puede marcarla).
+- [x] Servidor de revisión en marcha (AGENTS.md) y URL comunicada.
 
 > Nota de estado (2026-11-05): T1–T5 ejecutadas y versionadas en
 > `feature/hu-018` — `c1d53b5` (T1), `b099104` (T2), `e08c8fe` (T3),
 > `f3314d6` (T4), `832149e` (T5) — con suite real **320 PASS** (2026-11-05).
+>
+> Cierre (2026-11-06): HU-018 cerrada técnicamente con **T6 parcial** (E2E
+> n8n/Calendar diferida y documentada) y **T7 completada** (push de la rama,
+> sin merge a `main`, `MEMORY.md` y servidor de revisión). La aceptación
+> funcional queda pendiente y su checkbox sin marcar.
 
 ---
 

@@ -1,6 +1,8 @@
 # Tareas — Spec 018: Cancelar y reprogramar citas por el consultorio
 
-Estado: **aprobado por la usuaria el 2026-11-05**; T1–T5 completadas, T6–T7 pendientes.
+Estado: **aprobado por la usuaria el 2026-11-05**; T1–T5 completadas; T6
+**parcial** (demo local PASS, E2E n8n/Calendar NO VERIFICADO); T7 cerrada el
+2026-11-06 con esa limitación documentada.
 
 > Trazabilidad: **HU-018 → Spec 018 (`spec.md`, enmendada y aprobada
 > 2026-11-05) → `plan.md`
@@ -332,8 +334,12 @@ TC-018-018.
     su PASS/FAIL, la demo §6.2 registrada (incluidos Calendar/n8n y refresh) y
     el checkbox de aceptación vacío; `python app.py` queda en marcha y la URL de
     revisión se comunica.
+  - **Estado 2026-11-06:** demo local **33/34 PASS**; `qa-hu-018.md` creado con
+    los 19 TC y la sección de Calendar/n8n como **NO VERIFICADO**. La E2E real se
+    difiere por decisión de la usuaria (Render/n8n sin configurar). T6 **no se
+    marca completada**.
 
-- [ ] **T7. Cierre: commits por fase, push de la rama, actualización de `MEMORY.md` y verificación del servidor.**
+- [x] **T7. Cierre: commits por fase, push de la rama, actualización de `MEMORY.md` y verificación del servidor.**
   RF-1..RF-9, RNF, trazabilidad
   - Alcance: commits por fase citando HU-018 / Spec 018 (spec enmendada +
     plan + task → contenido+espejo+config → plantillas+guard+rutas → tests →
@@ -348,6 +354,9 @@ TC-018-018.
     `.opencode/` y `.agents/skills/sdd/` quedan fuera); `git rev-parse HEAD` =
     `git rev-parse origin/feature/hu-018`; `MEMORY.md` refleja HU-018, la cifra
     320 y los pendientes; el servidor responde en la URL comunicada.
+  - **Estado 2026-11-06:** cierre ejecutado con T6 parcial (E2E n8n/Calendar
+    diferida). La rama se publica sin merge a `main`; el servidor de revisión
+    queda en marcha en `http://127.0.0.1:5000`.
 
 ---
 
