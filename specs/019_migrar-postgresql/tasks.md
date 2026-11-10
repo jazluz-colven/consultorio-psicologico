@@ -247,7 +247,7 @@
   - **Evidencia:** salida de TC-019-011 y diff de los dos archivos.
   - **Hecho cuando:** TC-019-011 PASS y el espejo coincide exactamente.
 
-- [ ] **T9. Añadir el manejo HTTP/UX mínimo de indisponibilidad de persistencia. [NO AUTORIZADA]**
+- [x] **T9. Añadir el manejo HTTP/UX mínimo de indisponibilidad de persistencia. [COMPLETADA, APROBADA por @revisor Y ACEPTADA por la usuaria 2026-11-10 — 396 PASS]**
   - **Objetivo:** comunicar la indisponibilidad con el literal aprobado y sin
     confundirla con un conflicto de horario, una cita inexistente o una cita
     cancelada.

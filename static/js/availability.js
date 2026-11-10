@@ -18,6 +18,7 @@
   var viewYear = 0;
   var viewMonth = 0;
   var dayStates = null;
+  var daysUnavailable = false;
   var daySeq = 0;
   var hoursSeq = 0;
   var SUBMITTING_MIN_MS = 700;
@@ -87,6 +88,11 @@
         if (!isBookable(iso)) {
           button.disabled = true;
           button.className += " is-disabled";
+        } else if (daysUnavailable) {
+          // Outage: never present the day as bookable ("all free") nor as
+          // full ("all taken"). The status line explains the unavailability.
+          button.disabled = true;
+          button.className += " is-disabled";
         } else if (dayStates && !dayStates[iso]) {
           button.disabled = true;
           button.className += " is-full";
@@ -125,6 +131,7 @@
     viewYear = next.getFullYear();
     viewMonth = next.getMonth();
     dayStates = null;
+    daysUnavailable = false;
     renderCalendar();
     loadDayStates();
   }
@@ -196,6 +203,17 @@
     fillBlock("hours-afternoon", [], [], "");
   }
 
+  function showUnavailable() {
+    // Persistence outage (503) or network failure: clear the hours and show
+    // the approved literal served by the backend. Never render "Ocupado"
+    // badges nor reuse the busy-slot/empty messages.
+    clearBlocks();
+    var status = document.getElementById("hours-status");
+    if (status) {
+      status.textContent = dataAttr("data-unavailable-message");
+    }
+  }
+
   function splitByBlock(hours) {
     var morning = [];
     var afternoon = [];
@@ -258,12 +276,17 @@
     fetch(url)
       .then(function (response) {
         if (!response.ok) {
-          throw new Error("availability failed");
+          // Includes the 503 of a persistence outage: no availability data.
+          return null;
         }
         return response.json();
       })
       .then(function (data) {
         if (seq !== hoursSeq) {
+          return;
+        }
+        if (data === null) {
+          showUnavailable();
           return;
         }
         fillHours(data.available || [], data.occupied || []);
@@ -272,7 +295,7 @@
         if (seq !== hoursSeq) {
           return;
         }
-        fillHours([], []);
+        showUnavailable();
       });
   }
 
@@ -295,7 +318,8 @@
     fetch(url)
       .then(function (response) {
         if (!response.ok) {
-          throw new Error("days failed");
+          // Includes the 503 of a persistence outage: no day data at all.
+          return null;
         }
         return response.json();
       })
@@ -303,11 +327,19 @@
         if (seq !== daySeq) {
           return;
         }
+        if (data === null) {
+          dayStates = null;
+          daysUnavailable = true;
+          renderCalendar();
+          showUnavailable();
+          return;
+        }
         var map = {};
         (data.days || []).forEach(function (iso) {
           map[iso] = true;
         });
         dayStates = map;
+        daysUnavailable = false;
         renderCalendar();
       })
       .catch(function () {
@@ -315,7 +347,9 @@
           return;
         }
         dayStates = null;
+        daysUnavailable = true;
         renderCalendar();
+        showUnavailable();
       });
   }
 
@@ -377,6 +411,7 @@
     if (serviceField) {
       serviceField.addEventListener("change", function () {
         dayStates = null;
+        daysUnavailable = false;
         renderCalendar();
         loadDayStates();
         refreshHours();

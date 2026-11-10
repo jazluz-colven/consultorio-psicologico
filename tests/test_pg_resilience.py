@@ -10,13 +10,28 @@ import importlib
 import logging
 import os
 import sqlite3
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
 
 import consultorio.config as config_module
 from consultorio import DATABASE_EXTENSION_KEY, create_app
-from consultorio.config import TestConfig
+from consultorio.config import Config, TestConfig
+from consultorio.content.admin_content import (
+    ADMIN_APPOINTMENT_NOT_FOUND,
+    ADMIN_BACK_BUTTON,
+    ADMIN_MSG_ALREADY_CANCELLED,
+)
+from consultorio.content.appointment_content import (
+    MSG_OCCUPIED_HOUR,
+    MSG_PERSISTENCE_UNAVAILABLE,
+    MSG_SLOT_TAKEN,
+)
+from consultorio.content.cancellation_content import (
+    MSG_ALREADY_CANCELLED,
+    MSG_VERIFICATION_FAILED,
+)
 from consultorio.errors import PersistenceUnavailable
 from consultorio.persistence.database import Database, DatabaseTarget
 
@@ -769,3 +784,264 @@ def test_tc_019_016_startup_tolerates_outage_and_recovers(
     with database.connection() as connection:
         assert connection.execute("SELECT 1 AS ok").fetchone()["ok"] == 1
 
+
+# ---------------------------------------------------------------------------
+# TC-019-010 — persistence outage: HTTP 503 and minimal UX (T9, RF-20/RF-21)
+#
+# The app is configured with a real PostgreSQL backend and an unreachable
+# local DSN (127.0.0.1:1). The failure comes from the driver itself and is
+# translated by the T3/T6 layers, so these tests exercise the real path from
+# the route to ``PersistenceUnavailable`` and the T9 handler. No repository or
+# service result is monkeypatched.
+# ---------------------------------------------------------------------------
+
+T9_DSN = (
+    "postgresql://consultorio_dev:t9-secret-password@127.0.0.1:1/"
+    "consultorio_dev?sslmode=disable"
+)
+T9_ADMIN_TOKEN = "t9-admin-token"
+T9_DOCUMENT_NUMBER = "99887766"
+T9_PATIENT_NAME = "Paciente T9"
+T9_EMAIL = "t9-resilience@ejemplo.test"
+T9_PHONE = "3000000000"
+
+
+def _future_weekday() -> str:
+    candidate = date.today()
+    while candidate.weekday() >= 5:
+        candidate += timedelta(days=1)
+    return candidate.isoformat()
+
+
+@pytest.fixture()
+def unavailable_app(tmp_path: Path):
+    """App with a real PostgreSQL target whose server does not exist."""
+
+    class UnreachableConfig(TestConfig):
+        PERSISTENCE_BACKEND = "postgres"
+        DATABASE_URL = T9_DSN
+        DATABASE_PATH: Path = tmp_path / "fallback.db"
+        DATABASE_CONNECT_TIMEOUT = 1.0
+        DATABASE_ACQUIRE_TIMEOUT = 1.0
+        AUTOMATION_WEBHOOK_URL = ""
+        CONSULTORIO_ADMIN_TOKEN = T9_ADMIN_TOKEN
+
+    application = create_app(UnreachableConfig)
+    application.config.update(TESTING=True)
+    return application
+
+
+def _valid_booking_data() -> dict[str, str]:
+    return {
+        "document_type": "CC",
+        "document_number": T9_DOCUMENT_NUMBER,
+        "patient_name": T9_PATIENT_NAME,
+        "email": T9_EMAIL,
+        "phone": T9_PHONE,
+        "service": "nutrition",
+        "date": _future_weekday(),
+        "time": "08:00",
+    }
+
+
+def _assert_no_business_confusion(body: str) -> None:
+    """The outage is never shown as a business result (RF-21)."""
+    for literal in (
+        MSG_SLOT_TAKEN,
+        MSG_OCCUPIED_HOUR,
+        MSG_VERIFICATION_FAILED,
+        MSG_ALREADY_CANCELLED,
+        ADMIN_APPOINTMENT_NOT_FOUND,
+        ADMIN_MSG_ALREADY_CANCELLED,
+    ):
+        assert literal not in body, literal
+
+
+def test_tc_019_010_html_booking_page_responds_503_with_literal(
+    unavailable_app,
+) -> None:
+    response = unavailable_app.test_client().get("/citas")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 503
+    assert MSG_PERSISTENCE_UNAVAILABLE in body
+    assert 'href="/citas"' in body
+    assert ADMIN_BACK_BUTTON in body
+    _assert_no_business_confusion(body)
+
+
+def test_tc_019_010_hours_json_responds_503_with_approved_error(
+    unavailable_app,
+) -> None:
+    response = unavailable_app.test_client().get(
+        "/citas/horarios",
+        query_string={"service": "nutrition", "date": _future_weekday()},
+    )
+
+    assert response.status_code == 503
+    assert response.get_json() == {"error": MSG_PERSISTENCE_UNAVAILABLE}
+
+
+def test_tc_019_010_availability_json_responds_503_with_approved_error(
+    unavailable_app,
+) -> None:
+    response = unavailable_app.test_client().get(
+        "/citas/disponibilidad",
+        query_string={
+            "service": "nutrition",
+            "month": date.today().strftime("%Y-%m"),
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.get_json() == {"error": MSG_PERSISTENCE_UNAVAILABLE}
+
+
+def test_tc_019_010_post_booking_responds_503_without_confirmation(
+    unavailable_app,
+) -> None:
+    response = unavailable_app.test_client().post(
+        "/citas", data=_valid_booking_data()
+    )
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 503
+    assert response.status_code != 409
+    assert "Location" not in response.headers
+    assert "Cita registrada" not in body
+    assert MSG_PERSISTENCE_UNAVAILABLE in body
+    _assert_no_business_confusion(body)
+
+
+def test_tc_019_010_confirmation_responds_503_not_404(
+    unavailable_app,
+) -> None:
+    response = unavailable_app.test_client().get("/citas/confirmada/1")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 503
+    assert response.status_code != 404
+    assert MSG_PERSISTENCE_UNAVAILABLE in body
+    assert "Página no encontrada" not in body
+    _assert_no_business_confusion(body)
+
+
+def test_tc_019_010_cancellation_017_responds_503_not_business_result(
+    unavailable_app,
+) -> None:
+    client = unavailable_app.test_client()
+
+    verification = client.post(
+        "/citas/cancelar/1", data={"document_number": T9_DOCUMENT_NUMBER}
+    )
+    confirmation = client.post(
+        "/citas/cancelar/1/confirmar",
+        data={"document_number": T9_DOCUMENT_NUMBER},
+    )
+    success = client.get("/citas/cancelar/1/exito")
+
+    for response in (verification, confirmation, success):
+        body = response.get_data(as_text=True)
+        assert response.status_code == 503
+        assert response.status_code != 303
+        assert MSG_PERSISTENCE_UNAVAILABLE in body
+        assert MSG_VERIFICATION_FAILED not in body
+        assert MSG_ALREADY_CANCELLED not in body
+        _assert_no_business_confusion(body)
+
+
+def test_tc_019_010_admin_018_responds_503_not_missing_or_cancelled(
+    unavailable_app,
+) -> None:
+    client = unavailable_app.test_client()
+    headers = {"X-Admin-Token": T9_ADMIN_TOKEN}
+
+    detail = client.get("/admin/citas/1", headers=headers)
+    cancel = client.post("/admin/citas/1/cancelar", headers=headers)
+    reschedule = client.post("/admin/citas/1/reprogramar", headers=headers)
+
+    for response in (detail, cancel, reschedule):
+        body = response.get_data(as_text=True)
+        assert response.status_code == 503
+        assert MSG_PERSISTENCE_UNAVAILABLE in body
+        assert ADMIN_APPOINTMENT_NOT_FOUND not in body
+        assert ADMIN_MSG_ALREADY_CANCELLED not in body
+        _assert_no_business_confusion(body)
+
+
+def test_tc_019_010_response_and_logs_have_no_dsn_or_pii(
+    unavailable_app, caplog
+) -> None:
+    data = _valid_booking_data()
+    with caplog.at_level(logging.WARNING):
+        response = unavailable_app.test_client().post("/citas", data=data)
+
+    body = response.get_data(as_text=True)
+    assert response.status_code == 503
+
+    for secret in (
+        T9_DSN,
+        "postgresql://",
+        "t9-secret-password",
+        "127.0.0.1:1",
+        data["document_number"],
+        data["patient_name"],
+        data["email"],
+        data["phone"],
+    ):
+        assert secret not in body
+
+    for secret in (
+        T9_DSN,
+        "t9-secret-password",
+        data["document_number"],
+        data["patient_name"],
+        data["email"],
+        data["phone"],
+    ):
+        assert secret not in caplog.text
+
+
+def test_tc_019_010_availability_template_and_js_show_unavailable_state(
+    app,
+) -> None:
+    """The literal is served by the backend; the 503 branch paints no badge."""
+    html = app.test_client().get("/citas").get_data(as_text=True)
+    assert (
+        f'data-unavailable-message="{MSG_PERSISTENCE_UNAVAILABLE}"' in html
+    )
+
+    js = (Config.STATIC_DIR / "js" / "availability.js").read_text(
+        encoding="utf-8"
+    )
+    assert "data-unavailable-message" in js
+    assert "function showUnavailable" in js
+    start = js.index("function showUnavailable")
+    end = js.index("function splitByBlock")
+    unavailable_branch = js[start:end]
+    assert "createTakenHour" not in unavailable_branch
+    assert "data-occupied-label" not in unavailable_branch
+    assert "data-unavailable-message" in unavailable_branch
+
+
+def test_tc_019_010_404_405_500_handlers_still_work(app) -> None:
+    application = app
+    application.config["PROPAGATE_EXCEPTIONS"] = False
+
+    @application.get("/_t9_internal_error")
+    def _t9_internal_error():
+        raise RuntimeError("T9 regression")
+
+    client = application.test_client()
+
+    not_found = client.get("/ruta-que-no-existe-t9")
+    assert not_found.status_code == 404
+    assert "Página no encontrada" in not_found.get_data(as_text=True)
+
+    not_allowed = client.post("/")
+    assert not_allowed.status_code == 405
+    assert "Método no permitido" in not_allowed.get_data(as_text=True)
+
+    internal = client.get("/_t9_internal_error")
+    assert internal.status_code == 500
+    assert "Error interno" in internal.get_data(as_text=True)

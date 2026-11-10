@@ -11,12 +11,12 @@ se reserva para la verificación E2E y **no** se usa en el desarrollo diario.
 Alcance actual: T1 (entorno local), T2 (dependencia `psycopg` y configuración
 por entorno: `DATABASE_URL`, `PERSISTENCE_BACKEND`, límites y timeouts),
 T3 (capa de conexiones y traducción de errores), T4 (DDL PostgreSQL
-idempotente, advisory lock, arranque tolerante y recuperación perezosa) y T5
+idempotente, advisory lock, arranque tolerante y recuperación perezosa), T5
 (repositorios de citas y eventos en dialecto PostgreSQL con adaptador SQLite
-de rollback). Los **servicios web siguen pasando `DATABASE_PATH`/SQLite** hasta
-T6: la aplicación arranca con SQLite y, además, intenta el bootstrap de
-PostgreSQL sin abortar si la base no está disponible. La convivencia es
-transitoria y se retira en T6/T10.
+de rollback), T6 (servicios y rutas con el objeto `Database`), T7 (atomicidad
+de la cancelación 010/017/018), T8 (literal coordinado de indisponibilidad) y
+T9 (errores HTTP/UX de indisponibilidad). La suite general sigue en SQLite
+hasta T10/T11; la ruta SQLite se conserva como rollback temporal.
 
 ## Requisitos
 
@@ -303,6 +303,49 @@ Salida esperada (PostgreSQL 16.15): `UNIQUE (event_id)`, el índice
   llamando a `init_db(DATABASE_PATH)` para los servicios que aún pasan la ruta
   SQLite.
 
+## Indisponibilidad de la base de datos (503)
+
+Cuando la base no responde, la frontera de persistencia traduce el error del
+driver a `PersistenceUnavailable` y un único handler en
+`consultorio/errors.py` responde **503** con el literal contractual
+`MSG_PERSISTENCE_UNAVAILABLE`:
+
+```text
+No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en unos minutos.
+```
+
+| Superficie | Respuesta |
+|---|---|
+| Peticiones HTML (`/citas`, confirmación, cancelación 017, admin 018) | `templates/errors/persistence_unavailable.html` con el literal y un enlace «Volver» a `/citas` |
+| `GET /citas/horarios` y `GET /citas/disponibilidad` | JSON `{"error": MSG_PERSISTENCE_UNAVAILABLE}` con 503 |
+| `availability.js` | Limpia las horas, muestra el literal servido por el backend y **no** pinta badges «Ocupado» ni estados de día engañosos |
+
+El handler decide HTML/JSON por el `endpoint` de la petición
+(`appointments.horarios` y `appointments.disponibilidad`), no por la cabecera
+`Accept`. El log es un mensaje constante: **nunca** incluye DSN, contraseña ni
+datos del paciente (RNF-6). El fallo no se presenta como horario ocupado, cita
+inexistente ni cita cancelada (RF-21).
+
+Para reproducirlo en local, apunta `DATABASE_URL` a un puerto sin servidor
+(DSN ficticio, sin credenciales reales) y arranca la app sin *reloader*:
+
+```powershell
+$env:PERSISTENCE_BACKEND = "postgres"
+$env:DATABASE_URL = "postgresql://consultorio_dev:local-placeholder@127.0.0.1:1/consultorio_dev?sslmode=disable"
+$env:DATABASE_CONNECT_TIMEOUT = "1"
+python -m flask --app app run --host 127.0.0.1 --port 5001 --no-reload
+```
+
+```powershell
+curl.exe -i http://127.0.0.1:5001/citas
+curl.exe -i "http://127.0.0.1:5001/citas/horarios?service=nutrition&date=2026-11-11"
+curl.exe -i "http://127.0.0.1:5001/citas/disponibilidad?service=nutrition&month=2026-11"
+```
+
+Las tres peticiones responden 503 con el literal (las dos últimas en JSON). La
+evidencia de T9, con la captura de la pantalla, está en
+`docs/evidencias/hu-019/t9-unavailable.md`.
+
 ## Ejecutar y aislar los tests de esquema
 
 ```powershell
@@ -395,3 +438,7 @@ variable `DATABASE_URL` de producción se configura como secreto en Render
 - Evidencia real de T1: `docs/evidencias/hu-019/setup-local.md`.
 - Evidencia real de T3: `docs/evidencias/hu-019/t3-connection-layer.md`.
 - Evidencia real de T4: `docs/evidencias/hu-019/schema.md`.
+- Evidencia real de T6: `docs/evidencias/hu-019/t6-services.md`.
+- Evidencia real de T7: `docs/evidencias/hu-019/t7-atomicity.md`.
+- Evidencia real de T8: `docs/evidencias/hu-019/t8-literal.md`.
+- Evidencia real de T9: `docs/evidencias/hu-019/t9-unavailable.md`.

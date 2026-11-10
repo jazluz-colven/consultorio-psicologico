@@ -744,3 +744,31 @@ aporte.
   sin `skip`. `@revisor`: **APROBADO**, sin defectos; solo adiciones en los dos
   archivos de contenido. Evidencia: `docs/evidencias/hu-019/t8-literal.md`.
   **T9+ no autorizadas.** Sin commit ni push.
+- **Spec 019 — T9 COMPLETADA Y APROBADA (2026-11-10)**: handler
+  central `PersistenceUnavailable` → **503** (`consultorio/errors.py`), por
+  endpoint: `appointments.horarios`/`appointments.disponibilidad` JSON
+  `{"error": MSG_PERSISTENCE_UNAVAILABLE}`; resto plantilla
+  `templates/errors/persistence_unavailable.html` con el literal y enlace a
+  `/citas` etiquetado con `ADMIN_BACK_BUTTON` («Volver», sin copy nuevo).
+  `availability.js` limpia horas y muestra el literal ante 503/no-2xx/red, sin
+  badges «Ocupado» ni estados de día engañosos (mantiene `daySeq`/`hoursSeq`);
+  la plantilla sirve el literal por `data-unavailable-message`. Rutas 004/017/
+  018 cubiertas por el mismo handler, sin degradar a 404/409/cancelada/ocupada.
+  Log constante sin DSN/PII. TC-019-010: **10 PASS** en
+  `tests/test_pg_resilience.py` con fallo real del driver (DSN `127.0.0.1:1`);
+  suite completa PostgreSQL **396 PASS / 0 FAIL**, sin `skip` (T8: 386).
+  Evidencia: `docs/evidencias/hu-019/t9-unavailable.md`; capturas CDP
+  `persistence-unavailable.png` (1280×900, sin desborde) y
+  `persistence-unavailable-movil.png` (375×800, sin desborde).
+  `docs/operaciones/postgresql.md` documenta el 503 y su reproducción. Servidor
+  normal de revisión: http://127.0.0.1:5000/. **`@revisor` emitió APROBADO**
+  (RF-20/RF-21/RNF-6 y CL-1/2/3/11 CUMPLE; suite reproducida 396 PASS; 503
+  reproducido sin mocks; JS verificado estática y dinámicamente sin badges
+  «Ocupado»); **T9 marcada `[x]` en `tasks.md`**. Observaciones no bloqueantes:
+  el JS trata cualquier `!response.ok` como indisponibilidad (incluido 400);
+  la prueba JS del repo es estática; el reporte CDP completo no está
+  versionado; el test de logs no exige la presencia del warning; el
+  reprogramado admin sigue sin atomicidad entre cancelar y crear (preexistente,
+  plan D4/RF-6, para T12/T13). **Aceptación funcional de la usuaria:
+  2026-11-10**, con esas observaciones no bloqueantes. **Commit de T9
+  autorizado el 2026-11-10.** **T10 autorizada el 2026-11-10.** Sin push.
