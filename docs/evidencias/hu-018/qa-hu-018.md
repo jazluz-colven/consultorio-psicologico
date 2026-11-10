@@ -21,13 +21,17 @@ reales; la demo usó datos ficticios.
 - **Demo local:** **33/34** comprobaciones superadas.
 - **Única comprobación no superada:** E2E real **n8n + Google Calendar**
   (Spec 007 RF-8), marcada como **NO VERIFICADO**; no se declara PASS.
-- **Aceptación funcional:** **PENDIENTE** (checkbox sin marcar; solo la usuaria
-  puede marcarlo).
+- **Aceptación funcional:** aceptada por la usuaria el **2026-11-07**, con la
+  limitación de que la E2E n8n/Calendar (Spec 007 RF-8) sigue **NO VERIFICADA**;
+  no se declara PASS.
 
 **Estado del cierre:** HU-018 cerrada técnicamente el 2026-11-06 por decisión de
 la usuaria, con la E2E de n8n/Calendar diferida y documentada en este informe.
 La pantalla admin fue revisada visualmente en local y quedó OK; esa revisión
 visual no sustituye la aceptación funcional.
+La aceptación funcional se registró el **2026-11-07** y HU-018 se mergeó
+localmente a `main` en `8ce511f` (fast-forward, **sin push**; Render no
+redesplegado).
 
 ---
 
@@ -140,7 +144,9 @@ python -m pytest -q tests/test_contraste.py
 
 ## Aceptación funcional
 
-- [ ] Aceptación funcional de la usuaria (pendiente)
+- [x] Aceptación funcional de la usuaria — **2026-11-07**, con la limitación de
+  que la E2E n8n/Calendar (Spec 007 RF-8) sigue **NO VERIFICADA**; no se declara
+  PASS.
 
 ---
 

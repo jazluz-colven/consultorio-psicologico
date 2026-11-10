@@ -42,6 +42,13 @@
 > 2026-10-30 (DP-06)» (final del documento) y en `docs/defectos/D-010-01.md`
 > §11.
 
+> **Enmienda 4 (2026-11-08)** — alinea la Spec 010 con la Spec 019 (migración a
+> PostgreSQL/Neon, aprobada el 2026-11-07): sustituye las dos menciones a la
+> «transacción de persistencia de SQLite» por «transacción de persistencia del
+> motor de base de datos». No cambia RF, criterios, literales ni garantías
+> («sin traza local, sin cancelación confirmada» se mantiene). **Aprobada por
+> la usuaria el 2026-11-08.**
+
 ## Contexto y objetivo
 Cuando una cita cambia a estado Cancelada, el paciente necesita conocer
 oportunamente la modificación para evitar desplazamientos innecesarios y
@@ -204,7 +211,7 @@ Los RF están **[IMPLEMENTADO — ACEPTADO FUNCIONALMENTE 2026-10-30]**, con pla
 tareas, tests, evidencia y aceptación (HU-017).
 
 ### Atomicidad del registro con la cancelación (RF-11, RF-12)
-- **Principio: «sin traza local, sin cancelación confirmada».** La transición de la cita al estado `cancelled` y el registro del evento `appointment.cancelled` en estado `pending` se confirman **o se revierten de manera conjunta**, utilizando la misma conexión y transacción de persistencia de SQLite. No puede existir una cancelación confirmada sin su evento `pending` correspondiente.
+- **Principio: «sin traza local, sin cancelación confirmada».** La transición de la cita al estado `cancelled` y el registro del evento `appointment.cancelled` en estado `pending` se confirman **o se revierten de manera conjunta**, utilizando la misma conexión y transacción de persistencia del motor de base de datos. No puede existir una cancelación confirmada sin su evento `pending` correspondiente.
 - El registro en `pending` forma parte de la transacción de la cancelación; la publicación (POST al webhook) se realiza **después** del commit, por separado y sin posibilidad de revertir la cancelación (RF-10).
 - Mismo modelo de deduplicación en el punto de persistencia: `event_id` determinista `appointment.cancelled:{appointment.id}:v1` en la tabla `automation_events` (HU-007) con `UNIQUE(event_id)`.
 
@@ -369,7 +376,8 @@ enmienda, una autorización explícita para la fase de planificación (`plan.md`
    vs. «el reproceso lo decide el administrador»).
 2. **Atomicidad del registro con la cancelación (precisión 2)**: la transición
    a Cancelada y el registro del evento en estado `pending` se confirman o se
-   revierten conjuntamente en la misma conexión y transacción de SQLite —
+   revierten conjuntamente en la misma conexión y transacción de persistencia
+   del motor de base de datos —
    «sin traza local, sin cancelación confirmada» (RF-11, RF-12). Matriz de
    fallos reflejada como requisitos y criterios: fallo del registro antes del
    commit ⇒ rollback y cancelación no confirmada; commit correcto y POST

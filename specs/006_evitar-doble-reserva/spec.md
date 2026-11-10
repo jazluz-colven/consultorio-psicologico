@@ -1,5 +1,12 @@
 # Spec 006 — Evitar doble reserva de citas
 
+> **Enmienda 2026-11-08** — alinea el «Contrato de datos» y «Duplicados
+> históricos» con la Spec 019 (migración a PostgreSQL/Neon, aprobada el
+> 2026-11-07) y con la Spec 010: la unicidad es un índice único parcial sobre
+> citas no canceladas (`ux_appointments_slot_open … WHERE status <> 'cancelled'`)
+> y no un `UNIQUE (service, date, time)` de tabla simple. No cambian RF,
+> literales ni garantías. **Aprobada por la usuaria el 2026-11-08.**
+
 ## Contexto y objetivo
 Una doble reserva sobre el mismo horario genera conflictos de agenda y deteriora la confianza del paciente y del consultorio. Esta funcionalidad garantiza que un horario no pueda quedar reservado por más de una cita válida, incluso cuando dos intentos ocurran de forma concurrente, y que el paciente reciba una respuesta clara cuando el horario ya no esté disponible.
 
@@ -54,8 +61,9 @@ claves técnicas viven en `consultorio/content/appointment_content.py` y su espe
 Contrato de datos que soporta los RF (el detalle de rutas, métodos y códigos vive en
 el plan asociado):
 
-- **Clave de unicidad**: exclusivamente `servicio + fecha + hora`. Una única cita
-  válida por esa combinación. [RF-1, RF-2, RF-6]
+- **Clave de unicidad**: exclusivamente `servicio + fecha + hora` **entre citas
+  no canceladas**. Una única cita no cancelada válida por esa combinación; una
+  cita cancelada no bloquea la combinación (Spec 010, RF-6). [RF-1, RF-2, RF-6]
 - `POST /citas` sobre un horario libre → `303` a la confirmación con exactamente
   1 fila nueva. [RF-1]
 - `POST /citas` sobre una combinación ya reservada **o reintento idéntico de una
@@ -64,8 +72,11 @@ el plan asociado):
   seleccionable). [RF-2, RF-3, RF-4, caso «Reintento de una misma solicitud»]
 - **Concurrencia**: de N solicitudes simultáneas sobre la misma combinación, máximo
   1 registra cita (`303`) y las restantes se rechazan con el mismo literal (`200`);
-  la integridad la garantiza el índice `UNIQUE (service, date, time)` en el punto de
-  persistencia. [RF-3, RF-6]
+  la integridad la garantiza el **índice único parcial** sobre citas no
+  canceladas, en el punto de persistencia:
+  `ux_appointments_slot_open (service, date, time) … WHERE status <> 'cancelled'`.
+  Al cancelar una cita se libera el horario sin relajar la protección entre
+  citas no canceladas (Spec 010, RF-6). [RF-3, RF-6]
 - **Estado en curso**: mientras se procesa el envío, el botón de envío queda
   deshabilitado, muestra `MSG_SUBMITTING` y el formulario marca `aria-busy`; un
   envío repetido mientras está en curso se bloquea en el cliente (sin segundo
@@ -76,11 +87,18 @@ el plan asociado):
 
 ## Duplicados históricos (duda cerrada 2026-10-09, usuaria)
 
-- **Prevención**: el índice `UNIQUE (service, date, time)` impide la creación de
-  nuevos duplicados desde la creación de la tabla.
+- **Prevención**: el **índice único parcial** sobre citas no canceladas
+  —`ux_appointments_slot_open (service, date, time) … WHERE status <> 'cancelled'`—
+  impide la creación de nuevos duplicados **entre citas no canceladas** desde su
+  creación; dos citas canceladas sobre la misma combinación no constituyen una
+  doble reserva (Spec 010, RF-6).
 - **Detección**: los tests ejecutan el diagnóstico
-  `SELECT service, date, time FROM appointments GROUP BY service, date, time
-  HAVING COUNT(*) > 1` y exigen 0 filas.
+  `SELECT service, date, time FROM appointments WHERE status <> 'cancelled'
+  GROUP BY service, date, time HAVING COUNT(*) > 1` y exigen **0 filas entre
+  citas no canceladas**: la misma garantía de antes, ahora acotada a las filas
+  que el índice protege. La suite vigente (`TC-006-015`) aplica la variante
+  sobre todas las filas —más estricta y compatible—; su acotación a citas no
+  canceladas corresponde al PR de implementación de la Spec 019.
 - **Sin saneamiento automático**: ante duplicados reales se requiere decisión
   explícita de la usuaria con respaldo/auditoría previo (AGENTS.md «Base de datos e
   integridad»); esta HU solo garantiza que no se creen nuevos ni que pasen
@@ -89,9 +107,10 @@ el plan asociado):
 ## Dudas cerradas
 
 - **Política de duplicados históricos (cerrada 2026-10-09, usuaria)**: prevenir con el
-  índice `UNIQUE` y detectar mediante diagnóstico en los tests, **sin saneamiento
-  automático**; cualquier limpieza exige decisión explícita de la usuaria con
-  respaldo/auditoría previo. Detalle en «Duplicados históricos».
+  **índice único parcial sobre citas no canceladas** y detectar mediante
+  diagnóstico en los tests, **sin saneamiento automático**; cualquier limpieza
+  exige decisión explícita de la usuaria con respaldo/auditoría previo. Detalle
+  en «Duplicados históricos».
 - **Duración mínima del estado en curso (cerrada 2026-10-09, usuaria; observación
   «El mensaje de «Registrando tu cita…» es muy rápido»)**: el estado debe percibirse
   incluso con respuestas casi instantáneas → mínimo **700 ms** visibles antes de

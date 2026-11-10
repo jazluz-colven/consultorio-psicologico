@@ -551,12 +551,13 @@ aporte.
   Única pendiente: **Calendar/n8n real (Spec 007 RF-8) = NO VERIFICADO**;
   requiere la URL de producción, el Header Auth y el workflow v5 configurado en
   Render. Se creó `docs/evidencias/hu-018/qa-hu-018.md` con los 19 TC PASS, la
-  demo y una sección específica de NO VERIFICADO; **checkbox de aceptación
-  vacío**. T6 queda **PARCIAL** (`[ ]`). **T7 cerrada** (commits por fase, push
-  de `feature/hu-018` sin merge a `main`, `MEMORY.md` y servidor de revisión).
+  demo y una sección específica de NO VERIFICADO; checkbox de aceptación
+  marcado el **2026-11-07**. T6 queda **PARCIAL** (`[ ]`). **T7 cerrada**
+  (commits por fase, `MEMORY.md` y servidor de revisión).
   **HU-018 cerrada técnicamente con la E2E n8n/Calendar pendiente y
-  documentada**; la aceptación funcional sigue pendiente. Pendiente opcional:
-  literal de error de persistencia (no incluido; 320 no cambia).
+  documentada**; **aceptada funcionalmente el 2026-11-07 con esa limitación**
+  (sin declarar PASS la E2E). Pendiente opcional: literal de error de
+  persistencia (no incluido; 320 no cambia).
 - **Decisiones confirmadas por la usuaria (2026-11-06) para la próxima spec de
   acceso/agenda**: administrador y psicóloga son **personas distintas**; MVP con
   roles **administrador** y **psicólogo**; agenda con **fechas pasadas y
@@ -575,3 +576,171 @@ aporte.
   de datos y rollback). Recomendación del coordinador: si es viable, migrar
   **antes** de implementar acceso/011/012; no mezclar la migración con la spec
   de acceso. **HU-018 no se migra**: se cierra en SQLite.
+- **HU-018 MERGEADA A `main` (local, 2026-11-07)**: fast-forward
+  `9846613 → 8ce511f` (15 commits), **sin push**; `main` queda 15 commits por
+  delante de `origin/main` y Render **no** se ha redesplegado. Verificado antes y
+  después del merge: **320 PASS** (`python -m pytest -q`). **La aceptación
+  funcional fue otorgada por la usuaria el 2026-11-07**, con la limitación
+  documentada de que la **E2E n8n/Calendar sigue NO VERIFICADA** (no se declara
+  PASS); registrada en `qa-hu-018.md`. T6 permanece **PARCIAL** y HU-018 se
+  cierra como aceptada con limitación.
+- **Evaluación PostgreSQL (spike 2026-11-07) — COMPLETADA TÉCNICAMENTE**:
+  modalidad B; rama aislada `spike/postgres-evaluacion` en worktree
+  `%TEMP%\opencode\spike-postgres`, sin commit ni merge. PostgreSQL 16.15 en
+  Docker + `psycopg` 3.3.8; suite **307 PASS** con backend PG y **302 PASS /
+  5 skip** en SQLite; pruebas críticas 5/5 (índice parcial, concurrencia,
+  atomicidad Spec 010, dedup) con **no-vacuidad verificada** por `@revisor`
+  → **APROBADO**. Informe: `docs/spikes/postgresql-evaluacion-2026-11.md`.
+  Esfuerzo real: ~140–200 líneas netas en 9 archivos de producción + ~180–250 en
+  6–8 tests; sin migración de datos. Render Free Postgres descartado (caduca a
+  30 días); Render pago ~$6.30/mes; Neon Free $0; SQLite + disco ~$7.25/mes.
+- **Spec 019 (migración a PostgreSQL/Neon) APROBADA por la usuaria (2026-11-07)**
+  con estas decisiones: (1) **UTC** en `created_at`/`sent_at` y
+  `America/Bogota` para futuras visualizaciones; (2) suite **siempre contra
+  PostgreSQL**; (3) desarrollo/pruebas con **Postgres en Docker**, Neon solo
+  para E2E; (4) **misma región** que Render, sin umbral numérico de latencia en
+  el MVP; (5) SQLite queda como **rollback temporal** y se retira tras la
+  aceptación; (6) **pérdida de filas en rollback aceptada** (snapshot antes de
+  un rollback con datos reales); (7) nuevo literal de BD no disponible
+  («No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en
+  unos minutos.») aprobado para el MVP, pero exige **enmienda coordinada** de
+  las Specs 004/005 y su espejo `tests/expected_content.py`. Rama
+  `feature/hu-019-migracion-postgres` (creada desde `main`, ya ff a `8ce511f`);
+  `plan.md`/`tasks.md` **aprobados el 2026-11-08**; T1/T2 completadas
+  (2026-11-09). Pendiente: reconciliar los literales de la
+  **Spec 011** (están en MEMORY, no en su `spec.md`).
+- **Enmiendas coordinadas 004/005/006/010 — APROBADAS por la usuaria
+  (2026-11-08)**: 004 fija el literal `MSG_PERSISTENCE_UNAVAILABLE` («No
+  pudimos completar tu solicitud en este momento. Inténtalo de nuevo en unos
+  minutos.»); 005 lo reutiliza; 006 describe la unicidad como **índice único
+  parcial** `ux_appointments_slot_open … WHERE status <> 'cancelled'`
+  (coherente con 010) y acota el diagnóstico a citas no canceladas; 010
+  sustituye «transacción de persistencia de SQLite» por «… del motor de base de
+  datos». Sin cambios en código, tests ni `tests/expected_content.py`: la clave
+  y su espejo entran con la implementación de la Spec 019.
+- **Plan y tareas de la Spec 019 — APROBADOS (2026-11-08)**:
+  `plan.md` con D1–D16 (psycopg 3.3.8 sin ORM, config
+  `DATABASE_URL`/`PERSISTENCE_BACKEND`, conexión por petición + semáforo, DDL
+  idempotente con advisory lock, atomicidad 010, errores 503 ≠ 409, UTC en
+  `TEXT`, suite siempre PostgreSQL, rollback SQLite, Render/Neon, trazabilidad
+  RF-1..30/RNF-1..8/CL-1..11); `tasks.md` con T1–T18 en fases A/B/C. T13 (E2E
+  Neon desde entorno controlado) y T14 (Render: redespliegue/spin-down)
+  separadas; `TC-010-014` se conserva, reubicado a la verificación de rollback
+  (T15). Baseline 320 PASS en SQLite; el conteo final en PostgreSQL se
+  reportará ejecutado, sin cifras inventadas.
+  **Implementación: T1 y T2 completadas (2026-11-09)**; T3–T18 y T18 (retirada
+  del rollback) requieren autorización expresa y revisión tras cada tarea.
+  Sin commit ni push.
+- **Spec 019 — T1 y T2 COMPLETADAS (2026-11-09)**:
+  **T1:** PostgreSQL **16.15** en Docker (`consultorio-pg-019`,
+  `127.0.0.1:55432`, volumen `consultorio-pgdata-019`, en marcha),
+  `docs/operaciones/postgresql.md` y `docs/evidencias/hu-019/setup-local.md`;
+  320 PASS. **T2:** `psycopg[binary]==3.3.8`; config por entorno
+  (`DATABASE_URL`, `PERSISTENCE_BACKEND`, límites/timeouts y TLS);
+  `tests/test_pg_resilience.py` (TC-019-001, 18 casos); evidencia
+  `docs/evidencias/hu-019/t2-driver-config.md`; **338 PASS**. La usuaria
+  aprobó **A1 (2026-11-09)**: binarios oficiales de EDB sin firma Authenticode,
+  verificados por SHA-256 oficial; cliente local **16.15-5** (SHA-256
+  `43BB45F1…CCAA8281`, 373.254.386 bytes) con `PSYCOPG_IMPL=python` y
+  `libpq.dll` `NotSigned` aceptado; servidor 16.15. El `@revisor` emitió
+  **APROBADO** para T2. **Riesgos no bloqueantes**: (a) `sslmode` duplicado en
+  el DSN puede eludir la validación TLS (endurecer antes de T14);
+  (b) `DATABASE_PATH` se lee con cualquier backend (condicionar en T3/T4/T15);
+  (c) RF-17 y la indisponibilidad de rutas son parciales en T2 y se completan en
+  T3/T4/T9; (d) restaurar el entorno del fixture de TC-019-001 y corregir el
+  docstring de `tests/test_admin_content.py`. **T3 COMPLETADA y APROBADA
+  (2026-11-09)**: capa `DatabaseTarget`/`Database` con conexión por petición,
+  semáforo, transacciones y traducción de errores; 14 casos iniciales + 12 de
+  la corrección F-01/F-02; **364 PASS**. El revisor aprobó tras corregir la
+  traducción en operación/commit/rollback y el uso de `isinstance` sobre
+  subclases reales de psycopg. **RF-23 sigue base/parcial** (T4/T5/T9).
+  Observaciones no bloqueantes: falta un test automatizado de error de driver
+  dentro de contexto Flask (verificado manualmente) y persiste el riesgo de
+  `sslmode` duplicado de T2 (endurecer antes de T14). **T4 no autorizada**.
+  Sin commit ni push.
+- **Spec 019 — T4 COMPLETADA y APROBADA (2026-11-09)**: DDL PostgreSQL
+  idempotente sin ORM (`appointments`, `automation_events` con
+  `UNIQUE(event_id)`, índice parcial `ux_appointments_slot_open`,
+  `schema_migrations`), `pg_advisory_xact_lock(719019)`, pasos versionados con
+  `ON CONFLICT DO NOTHING` y `ensure_schema()` perezoso con reintento;
+  `create_app()` tolera BD no disponible sin abortar y mantiene SQLite mientras
+  dure la convivencia con T5/T6. Tests: TC-019-003/004/005/018/016; **369
+  PASS** (364 + 5). El `@revisor` emitió **APROBADO** (RF-22..RF-27,
+  CL-4/CL-5/CL-7); RF-23 queda base hasta T5/T6/T9. Observaciones no
+  bloqueantes: sin `TEST_DATABASE_URL` son 364 PASS + 5 errores de setup (no
+  skip); el intento eager de `ensure_schema()` puede esperar `connect_timeout`;
+  un DSN malformado podría abortar el arranque; falta test automatizado de
+  rollback mid-DDL; limpieza de esquemas best-effort; SQLite UTC pendiente en
+  T5/T6; `CREATE TABLE IF NOT EXISTS` no altera tablas preexistentes. **T5
+  autorizada después**. Sin commit ni push.
+- **Spec 019 — T5 COMPLETADA y APROBADA (2026-11-09)**: repositorios de citas y
+  eventos en dialecto PostgreSQL (`%s`, `RETURNING id`, `rowcount`, acceso por
+  nombre) con adaptador mínimo SQLite `%s`→`?`; índice parcial y dedup
+  `UNIQUE(event_id)` verificados en PostgreSQL real; `mark_sent()`/`created_at`
+  UTC; `claim_failed_event()` atómico; sin reglas de negocio ni mensajes de
+  usuario. Se corrigió antes de revisar una fuga de conexión/semáforo al usar
+  `DatabaseTarget` dentro de contexto Flask (`_scope` cierra la instancia
+  temporal; `Database` del llamador no se cierra); regresión
+  `test_t5_target_scope_closes_connection_in_app_context`. Tests T5: **9
+  PASS**; suite completa: **378 PASS / 0 FAIL**, sin `skip`. El `@revisor`
+  emitió **APROBADO** para T5 (RF-4, RF-5, RF-6, RF-7, RF-10..RF-12, RF-14,
+  RF-30; CL-8), con dependencias de T6/T7/T11/T12/T15 pendientes. Evidencia:
+  `docs/evidencias/hu-019/persistence.md`. Observaciones no bloqueantes:
+  limpiar `import sqlite3` sin uso en `appointments_repository.py`; ajustar el
+  docstring de `insert_event()`; validar SQLite ≥ 3.35 y bases preexistentes en
+  T14/T15; completar `mark_skipped` y atomicidad real en T11/T7; la nota
+  histórica de `schema.md` sobre `localtime` se aclara en la evidencia T5.
+  **T6+ no autorizadas.** Sin commit ni push.
+- **Spec 019 — T6 COMPLETADA y APROBADA (2026-11-10)**: servicios de reserva,
+  disponibilidad y cancelación reciben `DatabaseResource`; las rutas de citas,
+  cancelación y admin resuelven el `Database` registrado en
+  `app.extensions["consultorio.database"]` mediante `web/persistence.py`.
+  `create_booking()` conserva el contrato y mapea **solo** la violación del
+  índice único del slot a `SLOT_TAKEN`; `PersistenceUnavailable` y errores
+  operativos (`OperationalError`/`InterfaceError` de SQLite y psycopg) se
+  traducen a indisponibilidad, nunca a horario ocupado. Sin imports de
+  `sqlite3` en servicios. TC-019-008 cubre el mapeo y la concurrencia de 8
+  hilos (1 cita, 7 `SLOT_TAKEN`) contra PostgreSQL real; `TestConfig` mantiene
+  la suite general en SQLite hasta T10/T11. Suite: **382 PASS / 0 FAIL**, sin
+  `skip`; tests T6 **12 PASS**. El `@revisor` emitió **APROBADO** (RF-4, RF-5,
+  RF-6, RF-14, RF-20, RF-21 en alcance T6; CL-8), sin defectos bloqueantes.
+  Evidencia: `docs/evidencias/hu-019/t6-services.md`. Observaciones no
+  bloqueantes: `create_app()` aún crea un SQLite no usado con backend
+  PostgreSQL (retirar en T15/T18); anotaciones `database_path` en
+  automation/email por alinear en T10/T11; `_is_unique_violation()` de eventos
+  en SQLite acepta cualquier `IntegrityError` (acotar en T7); el 503/UX de
+  indisponibilidad y el saneamiento de trazas quedan en T9; la paridad de
+  disponibilidad en PostgreSQL queda en T10/T11. **T7+ no autorizadas.** Sin
+  commit ni push.
+- **Spec 019 — T7 COMPLETADA y APROBADA (2026-11-10)**: no fue necesario cambiar
+  producción; T5/T6 ya garantizaban D5. `update_appointment_status_with_pending_event()`
+  ejecuta `UPDATE` + `INSERT` del evento `pending` en un único
+  `_scope(write=True)`/`Database.transaction()` sobre la misma conexión, con un
+  solo commit o rollback completo; la publicación del evento de negocio y el
+  correo ocurren después del commit. TC-019-009 se añadió a
+  `tests/test_pg_persistence.py` con 3 pruebas contra PostgreSQL real:
+  (1) misma conexión y commit único, (2) fallo real del `INSERT` por
+  `UNIQUE(event_id)` con rollback y cita `confirmed`, (3) publicación solo
+  después del commit, verificada desde conexión independiente. Regresión
+  017/018 sin lógica de persistencia propia ni imports de `sqlite3` en
+  servicios. Resultados: T7 **61 PASS**, regresión ampliada **90 PASS**, suite
+  **385 PASS / 0 FAIL**, sin `skip`. El `@revisor` emitió inicialmente
+  **CAMBIOS NECESARIOS** solo por sobreafirmar la paridad total de la suite y
+  por volcados no reproducibles; corregida la evidencia, emitió **APROBADO**
+  para el alcance T7. Evidencia: `docs/evidencias/hu-019/t7-atomicity.md`.
+  La paridad total de la suite en PostgreSQL sigue pendiente de T10/T11/T12;
+  las rutas 017/018 se prueban en SQLite hasta T11. Observación residual de T6:
+  acotar `_is_unique_violation()` de eventos en SQLite. **T8+ no autorizadas.**
+  Sin commit ni push.
+- **Spec 019 — T8 COMPLETADA y APROBADA (2026-11-10)**: literal contractual
+  `MSG_PERSISTENCE_UNAVAILABLE` añadido en
+  `consultorio/content/appointment_content.py` con el texto exacto «No pudimos
+  completar tu solicitud en este momento. Inténtalo de nuevo en unos minutos.»
+  y espejo idéntico en `tests/expected_content.py`, con trazabilidad a RF-20 /
+  RNF-5, D12, T8 y la enmienda coordinada de las Specs 004/005 (2026-11-08).
+  TC-019-011 en `tests/test_hu_019.py` fija valor, espejo y permanencia de
+  literales 004/005; no se consume aún en handlers/templates/JS (T9). Resultados:
+  TC-019-011 **1 PASS**, content+HU-019 **8 PASS**, suite **386 PASS / 0 FAIL**,
+  sin `skip`. `@revisor`: **APROBADO**, sin defectos; solo adiciones en los dos
+  archivos de contenido. Evidencia: `docs/evidencias/hu-019/t8-literal.md`.
+  **T9+ no autorizadas.** Sin commit ni push.

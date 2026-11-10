@@ -1,5 +1,12 @@
 # Spec 005 — Validar disponibilidad de horarios
 
+> **Enmienda 2026-11-08** — alinea el contrato textual con la Spec 019
+> (migración a PostgreSQL/Neon, aprobada el 2026-11-07): reutiliza el literal
+> `MSG_PERSISTENCE_UNAVAILABLE` fijado en la Spec 004 cuando la consulta de
+> disponibilidad falla por indisponibilidad de persistencia (RF-20 de la Spec
+> 019). No define un literal nuevo ni cambia RF, criterios o literales
+> existentes. **Aprobada por la usuaria el 2026-11-08.**
+
 ## Contexto y objetivo
 El paciente necesita seleccionar únicamente horarios que puedan ser reservados. La funcionalidad debe reflejar el estado vigente de la agenda para evitar selecciones inválidas, mantener coherencia después de registrar una cita y comunicar claramente cuándo no existen horarios disponibles.
 
@@ -49,6 +56,15 @@ claves técnicas viven en `consultorio/content/appointment_content.py` y su espe
 | `CALENDAR_LEGEND_FREE` | Con horarios disponibles | RF-6 |
 | `CALENDAR_LEGEND_FULL` | Sin horarios disponibles | RF-4, RF-6 |
 | `DAY_LABEL_NO_HOURS` | «, sin horarios disponibles» (sufijo del aria-label de un día sin horarios libres) | RF-6 |
+| `MSG_PERSISTENCE_UNAVAILABLE` (reutilizado; fijado en la Spec 004) | No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en unos minutos. | Spec 019 RF-20 (indisponibilidad de persistencia) |
+
+**Enmienda 2026-11-08 (Spec 019, RF-20).** La consulta de disponibilidad puede
+fallar por indisponibilidad de persistencia; en ese caso se comunica el literal
+`MSG_PERSISTENCE_UNAVAILABLE`, **reutilizado y fijado en la Spec 004**, sin
+inventar un literal nuevo ni duplicar su definición. La clave y su espejo en
+`tests/expected_content.py` entran en el **PR de implementación de la Spec
+019**; esta enmienda solo fija el contrato compartido y no modifica esos
+archivos. La enmienda fue aprobada por la usuaria el 2026-11-08.
 
 Contrato de datos que soporta los RF (el detalle de rutas, métodos y códigos vive en
 el plan asociado):

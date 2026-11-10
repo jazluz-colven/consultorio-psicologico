@@ -1,5 +1,11 @@
 # Spec 004 — Agendar una cita
 
+> **Enmienda 2026-11-08** — alinea el contrato textual con la Spec 019
+> (migración a PostgreSQL/Neon, aprobada el 2026-11-07): añade el literal de
+> indisponibilidad de persistencia (`MSG_PERSISTENCE_UNAVAILABLE`, RF-20 de la
+> Spec 019). No cambia ningún RF, criterio ni literal existente.
+> **Aprobada por la usuaria el 2026-11-08.**
+
 ## Contexto y objetivo
 La reserva de una cita permite convertir el interés del paciente en una atención programada. La funcionalidad debe permitir seleccionar un horario disponible, registrar los datos necesarios y confirmar la reserva, evitando registrar citas inválidas o sobre horarios que hayan dejado de estar disponibles.
 
@@ -92,6 +98,18 @@ tarde comienza a las 14:00 (12:00–14:00 libre). Las 14 horas exactas son:
 | Fecha sin horas | No hay horarios disponibles para esta fecha. |
 | Confirmación (título) | Cita registrada |
 | Estado inicial | Confirmada |
+| Indisponibilidad de persistencia (`MSG_PERSISTENCE_UNAVAILABLE`) | No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en unos minutos. |
+
+**Enmienda 2026-11-08 (Spec 019, RF-20).** Se fija el contrato del literal de
+indisponibilidad de persistencia: clave `MSG_PERSISTENCE_UNAVAILABLE`, texto
+«No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en unos
+minutos.». Se usa cuando la base de datos no está disponible o no responde al
+registrar la cita; en ese caso no se registra la cita ni se muestra una
+confirmación de reserva. La clave, su valor en
+`consultorio/content/appointment_content.py` y su espejo en
+`tests/expected_content.py` se incorporan en el **PR de implementación de la
+Spec 019**; esta enmienda solo fija el contrato y no modifica esos archivos.
+La enmienda fue aprobada por la usuaria el 2026-11-08.
 
 ## Criterios de finalización
 Todos los RF con test en verde, incluyendo datos inválidos y pérdida de disponibilidad, más demo manual del flujo completo de reserva.
