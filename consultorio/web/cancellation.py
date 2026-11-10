@@ -24,7 +24,6 @@ Plan decisions applied here:
 """
 
 import re
-from pathlib import Path
 
 from flask import (
     Blueprint,
@@ -74,16 +73,13 @@ from consultorio.services.cancellation_flow_service import (
 )
 from consultorio.services.email_service import format_spanish_date
 from consultorio.services.home_service import get_home_view
+from consultorio.web.persistence import get_database
 
 bp = Blueprint("cancellation", __name__)
 
 # Same format rule as the booking form (Spec 004: 4 to 20 digits). Empty and
 # malformed values reuse that spec's contractual literals (plan D5).
 _DOCUMENT_NUMBER_RE = re.compile(r"^[0-9]{4,20}$")
-
-
-def _database_path() -> Path:
-    return Path(current_app.config["DATABASE_PATH"])
 
 
 def _automation_settings() -> tuple[str, float, str]:
@@ -131,7 +127,7 @@ def verify_submit(cita_id: int):
     if not _DOCUMENT_NUMBER_RE.fullmatch(document):
         return _render_verify(cita_id, MSG_INVALID_DOC_NUMBER)
 
-    result = verify_cancellation_request(cita_id, document, _database_path())
+    result = verify_cancellation_request(cita_id, document, get_database())
     if result == FAILED:
         return _render_verify(cita_id, MSG_VERIFICATION_FAILED)
     if result == ALREADY_CANCELLED:
@@ -180,7 +176,7 @@ def confirm(cita_id: int):
     result = cancel_verified_request(
         cita_id,
         document,
-        _database_path(),
+        get_database(),
         automation_url=automation_url,
         automation_timeout=automation_timeout,
         automation_auth_header=automation_auth_header,
@@ -206,7 +202,7 @@ def success(cita_id: int):
     Only reachable meaningfully after the cancellation: if the appointment does
     not exist or is not cancelled, redirect (303) to the verification step.
     """
-    appointment = get_appointment_by_id(cita_id, _database_path())
+    appointment = get_appointment_by_id(cita_id, get_database())
     if appointment is None or appointment.status != STATUS_CANCELLED:
         return redirect(
             url_for("cancellation.verify", cita_id=cita_id), code=303

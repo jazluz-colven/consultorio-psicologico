@@ -26,7 +26,6 @@ Plan decisions applied here:
 """
 
 import hmac
-from pathlib import Path
 
 from flask import Blueprint, current_app, render_template, request, url_for
 
@@ -74,12 +73,9 @@ from consultorio.services.appointment_service import (
 )
 from consultorio.services.email_service import format_spanish_date
 from consultorio.services.home_service import get_home_view
+from consultorio.web.persistence import get_database
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
-
-
-def _database_path() -> Path:
-    return Path(current_app.config["DATABASE_PATH"])
 
 
 def _check_token() -> bool:
@@ -179,7 +175,7 @@ def detail(cita_id: int):
     if not _check_token():
         return _render_result(ADMIN_ACCESS_DENIED, 403)
 
-    appointment = get_appointment_by_id(cita_id, _database_path())
+    appointment = get_appointment_by_id(cita_id, get_database())
     if appointment is None:
         return _render_result(ADMIN_APPOINTMENT_NOT_FOUND, 404)
 
@@ -192,7 +188,7 @@ def cancel(cita_id: int):
     if not _check_token():
         return _render_result(ADMIN_ACCESS_DENIED, 403)
 
-    appointment = get_appointment_by_id(cita_id, _database_path())
+    appointment = get_appointment_by_id(cita_id, get_database())
     if appointment is None:
         return _render_result(ADMIN_APPOINTMENT_NOT_FOUND, 404)
 
@@ -205,7 +201,7 @@ def cancel(cita_id: int):
     )
     result = cancel_appointment(
         cita_id,
-        _database_path(),
+        get_database(),
         automation_url,
         automation_timeout,
         automation_auth_header,
@@ -229,7 +225,7 @@ def reschedule(cita_id: int):
     if not _check_token():
         return _render_result(ADMIN_ACCESS_DENIED, 403)
 
-    appointment = get_appointment_by_id(cita_id, _database_path())
+    appointment = get_appointment_by_id(cita_id, get_database())
     if appointment is None:
         return _render_result(ADMIN_APPOINTMENT_NOT_FOUND, 404)
 
@@ -254,7 +250,7 @@ def reschedule(cita_id: int):
         return _render_detail(appointment, errors=errors, values=data)
 
     if repository.is_slot_taken(
-        data["service"], data["date"], data["time"], _database_path()
+        data["service"], data["date"], data["time"], get_database()
     ):
         return _render_result(ADMIN_SLOT_TAKEN, 200)
 
@@ -263,7 +259,7 @@ def reschedule(cita_id: int):
     )
     result = cancel_appointment(
         cita_id,
-        _database_path(),
+        get_database(),
         automation_url,
         automation_timeout,
         automation_auth_header,
@@ -275,7 +271,7 @@ def reschedule(cita_id: int):
 
     new_appointment = create_booking(
         data,
-        _database_path(),
+        get_database(),
         automation_url,
         automation_timeout,
         automation_auth_header,

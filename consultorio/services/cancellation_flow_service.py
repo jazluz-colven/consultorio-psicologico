@@ -37,11 +37,13 @@ validated by the web layer (task T5, Spec 004 literals), not here.
 """
 
 from datetime import date, datetime, time, timedelta
-from pathlib import Path
 
 from consultorio.content.appointment_content import STATUS_CANCELLED
 from consultorio.persistence import appointments_repository as repository
-from consultorio.persistence.appointments_repository import Appointment
+from consultorio.persistence.appointments_repository import (
+    Appointment,
+    DatabaseResource,
+)
 from consultorio.services.appointment_service import (
     ALREADY_CANCELLED,
     cancel_appointment,
@@ -58,7 +60,7 @@ NOTICE_PERIOD: timedelta = timedelta(hours=3)
 def verify_cancellation_request(
     appointment_id: int,
     document: str,
-    database_path: str | Path,
+    database: DatabaseResource,
     now: datetime | None = None,
 ) -> Appointment | str:
     """Verify that the appointment belongs to the requester and may be
@@ -68,7 +70,8 @@ def verify_cancellation_request(
         appointment_id: reference of the appointment (URL identifier).
         document: document number typed by the patient; compared exactly
             against ``document_number`` after ``strip()`` (D3).
-        database_path: SQLite database used by the persistence layer.
+        database: persistence resource (``Database``/``DatabaseTarget`` or a
+            transitional SQLite path, plan D13).
         now: explicit reference time; defaults to ``datetime.now()`` (local,
             naive — same base as ``date.today()`` used by the booking rules).
             Passing it makes the 3-hour boundary deterministic in tests (D6).
@@ -78,7 +81,7 @@ def verify_cancellation_request(
         ``FAILED`` / ``ALREADY_CANCELLED`` / ``TOO_SOON``. ``FAILED`` carries
         no appointment data at all (D4).
     """
-    appointment = repository.get_appointment_by_id(appointment_id, database_path)
+    appointment = repository.get_appointment_by_id(appointment_id, database)
     if appointment is None:
         return FAILED
     if document.strip() != appointment.document_number:
@@ -100,7 +103,7 @@ def verify_cancellation_request(
 def cancel_verified_request(
     appointment_id: int,
     document: str,
-    database_path: str | Path,
+    database: DatabaseResource,
     now: datetime | None = None,
     automation_url: str = "",
     automation_timeout: float = 3.0,
@@ -137,7 +140,8 @@ def cancel_verified_request(
         appointment_id: reference of the appointment (URL identifier).
         document: document number typed by the patient (D3, compared after
             ``strip()``).
-        database_path: SQLite database used by the persistence layer.
+        database: persistence resource (``Database``/``DatabaseTarget`` or a
+            transitional SQLite path, plan D13).
         now: explicit reference time for the 3-hour window (D6); defaults to
             ``datetime.now()``.
         automation_url: webhook configuration forwarded to the delegated
@@ -151,7 +155,7 @@ def cancel_verified_request(
         ``ALREADY_CANCELLED`` / ``FAILED`` / ``TOO_SOON``.
     """
     verification = verify_cancellation_request(
-        appointment_id, document, database_path, now
+        appointment_id, document, database, now
     )
     if not isinstance(verification, Appointment):
         # FAILED / ALREADY_CANCELLED / TOO_SOON: stop before any write (RF-1)
@@ -159,7 +163,7 @@ def cancel_verified_request(
 
     result = cancel_appointment(
         appointment_id,
-        database_path,
+        database,
         automation_url,
         automation_timeout,
         automation_auth_header,

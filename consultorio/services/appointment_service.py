@@ -2,9 +2,7 @@
 appointments (HU-004…HU-008, HU-010)."""
 
 import re
-import sqlite3
 from datetime import date, timedelta
-from pathlib import Path
 
 from consultorio.content.appointment_content import (
     BOOKING_HOURS,
@@ -32,7 +30,14 @@ from consultorio.content.automation_content import (
 )
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import appointments_repository as repository
-from consultorio.persistence.appointments_repository import Appointment
+from consultorio.persistence.appointments_repository import (
+    Appointment,
+    DatabaseResource,
+)
+from consultorio.persistence.database import (
+    is_slot_uniqueness_violation,
+    translate_persistence_error,
+)
 from consultorio.services import automation_service, email_service
 
 SLOT_TAKEN: str = "slot_taken"
@@ -98,29 +103,29 @@ def validate_booking(data: dict[str, str]) -> dict[str, str]:
 
 
 def get_hours_with_status(
-    service: str, booking_date: str, database_path: str | Path
+    service: str, booking_date: str, database: DatabaseResource
 ) -> list[tuple[str, bool]]:
     """Ordered (hour, is_free) pairs for a weekday; [] on weekend/past/invalid."""
     if not _is_valid_weekday(booking_date):
         return []
-    booked = repository.list_booked_times(service, booking_date, database_path)
+    booked = repository.list_booked_times(service, booking_date, database)
     return [(hour, hour not in booked) for hour in BOOKING_HOURS]
 
 
 def get_available_hours(
-    service: str, booking_date: str, database_path: str | Path
+    service: str, booking_date: str, database: DatabaseResource
 ) -> list[str]:
     return [
         hour
         for hour, is_free in get_hours_with_status(
-            service, booking_date, database_path
+            service, booking_date, database
         )
         if is_free
     ]
 
 
 def get_available_days(
-    service: str, year: int, month: int, database_path: str | Path
+    service: str, year: int, month: int, database: DatabaseResource
 ) -> list[str]:
     """Weekdays >= today in the month with at least one free hour."""
     first = date(year, month, 1)
@@ -129,7 +134,7 @@ def get_available_days(
     else:
         last = date(year, month + 1, 1) - timedelta(days=1)
     booked_by_date = repository.list_booked_times_by_date(
-        service, first.isoformat(), last.isoformat(), database_path
+        service, first.isoformat(), last.isoformat(), database
     )
     days: list[str] = []
     current = first
@@ -145,7 +150,7 @@ def get_available_days(
 
 def create_booking(
     data: dict[str, str],
-    database_path: str | Path,
+    database: DatabaseResource,
     automation_url: str = "",
     automation_timeout: float = 3.0,
     automation_auth_header: str = "",
@@ -158,25 +163,30 @@ def create_booking(
     It receives the new id and returns the absolute cancellation URL. The
     annotation stays a forward-reference string on purpose: the Spec 010
     stdlib-only check (``test_hu_010``) restricts this module's imports.
+
+    Only the slot unique-index violation becomes ``SLOT_TAKEN`` (plan D6).
+    Driver unavailability (``OperationalError``/``InterfaceError``) is
+    translated to ``PersistenceUnavailable``; it is never reported as an
+    occupied slot. Programming errors and other integrity failures keep
+    propagating unchanged.
     """
-    if repository.is_slot_taken(
-        data["service"], data["date"], data["time"], database_path
-    ):
-        return SLOT_TAKEN
     try:
-        appointment = repository.insert_appointment(data, database_path)
-    except sqlite3.IntegrityError:
-        # UNIQUE (service, date, time) on live rows enforced by the partial
-        # index at the persistence point (spec 010)
-        return SLOT_TAKEN
-    except sqlite3.OperationalError:
-        # lock/busy under concurrency: user-facing rejection, never a raw 500
-        return SLOT_TAKEN
-    # any other exception propagates (a real 500 must not be silenced)
+        if repository.is_slot_taken(
+            data["service"], data["date"], data["time"], database
+        ):
+            return SLOT_TAKEN
+        appointment = repository.insert_appointment(data, database)
+    except Exception as error:
+        if is_slot_uniqueness_violation(error):
+            return SLOT_TAKEN
+        translated = translate_persistence_error(error)
+        if translated is error:
+            raise
+        raise translated from error
     # best-effort automation: never raises, never conditions the booking (RF-2/RF-7)
     automation_service.on_appointment_confirmed(
         appointment,
-        database_path,
+        database,
         automation_url,
         automation_timeout,
         automation_auth_header,
@@ -187,7 +197,7 @@ def create_booking(
     # best-effort confirmation e-mail via n8n (HU-008): never raises either
     email_service.send_confirmation(
         appointment,
-        database_path,
+        database,
         automation_url,
         automation_timeout,
         automation_auth_header,
@@ -198,7 +208,7 @@ def create_booking(
 
 def cancel_appointment(
     appointment_id: int,
-    database_path: str | Path,
+    database: DatabaseResource,
     automation_url: str = "",
     automation_timeout: float = 3.0,
     automation_auth_header: str = "",
@@ -211,7 +221,7 @@ def cancel_appointment(
     best-effort and only attempted on the first successful transition
     (RF-4, D6/D7).
     """
-    appointment = repository.get_appointment_by_id(appointment_id, database_path)
+    appointment = repository.get_appointment_by_id(appointment_id, database)
     if appointment is None:
         return APPOINTMENT_NOT_FOUND
     updated = repository.update_appointment_status_with_pending_event(
@@ -220,7 +230,7 @@ def cancel_appointment(
         f"{CANCELLED_EVENT_TYPE}:{appointment_id}:v{CANCELLED_EVENT_VERSION}",
         CANCELLED_EVENT_TYPE,
         CANCELLED_EVENT_VERSION,
-        database_path,
+        database,
     )
     if updated is None:
         # already cancelled / concurrent cancellation: no second notification
@@ -228,7 +238,7 @@ def cancel_appointment(
     # business event first (RF-8, F2-D1): best-effort, never raises (RF-10)
     automation_service.publish_cancelled_event(
         updated,
-        database_path,
+        database,
         automation_url,
         automation_timeout,
         automation_auth_header,
@@ -236,7 +246,7 @@ def cancel_appointment(
     # cancellation e-mail after the business event (F2-D1): best-effort too
     email_service.send_cancellation(
         updated,
-        database_path,
+        database,
         automation_url,
         automation_timeout,
         automation_auth_header,

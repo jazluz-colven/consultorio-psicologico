@@ -211,6 +211,13 @@ MSG_NO_HOURS = "No hay horarios disponibles para esta fecha."
 MSG_INVALID_PARAMS = "Parámetros inválidos."
 MSG_SELECT_DATE_HINT = "Selecciona una fecha para ver las horas disponibles."
 
+# --- Spec 019 RF-20: persistence unavailable (Specs 004/005 coordinated
+# amendment, approved 2026-11-08) — mirror of the contractual literal. ---
+
+MSG_PERSISTENCE_UNAVAILABLE = (
+    "No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en unos minutos."
+)
+
 BOOKING_BLOCK_MORNING = "Mañana"
 BOOKING_BLOCK_AFTERNOON = "Tarde"
 

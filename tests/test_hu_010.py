@@ -385,7 +385,6 @@ def test_tc_010_017_regresion_funcional_y_constitucion_1(
         "consultorio/services/email_service.py": {"re", "urllib", "datetime"},
         "consultorio/services/appointment_service.py": {
             "re",
-            "sqlite3",
             "datetime",
             "pathlib",
         },
@@ -393,12 +392,30 @@ def test_tc_010_017_regresion_funcional_y_constitucion_1(
             "sqlite3",
             "dataclasses",
             "pathlib",
+            # HU-019 T5 (plan D8/D13): one SQL source runs on PostgreSQL and
+            # the SQLite rollback route. ``contextlib`` provides the connection
+            # scope and ``typing`` the row-mapping/iterator annotations. The
+            # driver itself is not imported at module level.
+            "contextlib",
+            "typing",
         },
         "consultorio/persistence/database.py": {
             "shutil",
             "sqlite3",
             "datetime",
             "pathlib",
+            # HU-019 T3 (plan D3): request-scoped reuse, per-instance
+            # BoundedSemaphore/threading.Lock and context managers. ``flask``
+            # is the project's existing core dependency (flask.g), not a new
+            # or alternative persistence dependency.
+            "threading",
+            "contextlib",
+            "dataclasses",
+            "typing",
+            "flask",
+            # HU-019 T2/T3: the approved PostgreSQL driver (D1), imported
+            # lazily inside the connection factory.
+            "psycopg",
         },
     }
     for relative_path, stdlib_allowed in stdlib_by_module.items():

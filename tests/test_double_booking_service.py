@@ -8,6 +8,7 @@ from unittest import mock
 
 import pytest
 
+from consultorio.errors import PersistenceUnavailable
 from consultorio.services import appointment_service as service
 from consultorio.services.appointment_service import SLOT_TAKEN
 
@@ -116,7 +117,7 @@ def test_tc_006_004_misma_fecha_hora_en_servicio_distinto_valido(
     assert _count_rows(database_path) == 2
 
 
-def test_tc_006_005_integrity_y_locked_a_slot_taken_resto_se_propaga(
+def test_tc_006_005_solo_la_unicidad_del_slot_es_slot_taken(
     database_path: Path,
 ) -> None:
     booking_date = _future_weekday()
@@ -137,7 +138,11 @@ def test_tc_006_005_integrity_y_locked_a_slot_taken_resto_se_propaga(
         "insert_appointment",
         side_effect=sqlite3.OperationalError("database is locked"),
     ):
-        assert service.create_booking(data, database_path) == SLOT_TAKEN
+        # A lock/outage is a domain outage, never an occupied slot (HU-019 D6).
+        with pytest.raises(PersistenceUnavailable) as excinfo:
+            service.create_booking(data, database_path)
+        assert "locked" not in str(excinfo.value)
+        assert str(excinfo.value) != SLOT_TAKEN
 
     with mock.patch.object(
         service.repository, "insert_appointment", side_effect=ValueError("boom")

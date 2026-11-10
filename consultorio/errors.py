@@ -2,6 +2,17 @@ from flask import Flask, render_template
 from werkzeug.exceptions import HTTPException
 
 
+class PersistenceUnavailable(Exception):
+    """The persistence backend cannot serve the current operation (RF-22/23).
+
+    This is a domain error, deliberately *not* an ``HTTPException``: the HTTP
+    503 mapping and its user-facing message belong to T9 (Spec 019). Driver
+    failures (``OperationalError``, ``InterfaceError``, connection/acquire
+    timeouts, connection limit) are translated to this type so callers never
+    confuse an outage with a booking conflict such as ``SLOT_TAKEN``.
+    """
+
+
 def handle_not_found(exception: HTTPException) -> tuple[str, int]:
     return render_template("errors/404.html"), 404
 

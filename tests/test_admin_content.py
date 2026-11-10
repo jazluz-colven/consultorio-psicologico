@@ -112,4 +112,6 @@ def test_tc_018_015_sin_dependencias_nuevas() -> None:
         for line in REQUIREMENTS_PATH.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.strip().startswith("#")
     ]
-    assert requirement_lines == ["Flask", "gunicorn"]
+    # Spec 019 (D1/T2) autoriza la única dependencia nueva del proyecto: el
+    # driver PostgreSQL sin ORM. El resto se conserva igual que en HU-018.
+    assert requirement_lines == ["Flask", "gunicorn", "psycopg[binary]==3.3.8"]

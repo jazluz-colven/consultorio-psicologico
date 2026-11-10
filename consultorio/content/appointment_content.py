@@ -42,6 +42,13 @@ MSG_NO_HOURS: str = "No hay horarios disponibles para esta fecha."
 MSG_INVALID_PARAMS: str = "Parámetros inválidos."
 MSG_SELECT_DATE_HINT: str = "Selecciona una fecha para ver las horas disponibles."
 
+# Spec 019 RF-20 / RNF-5: persistence unavailable. Contract fixed by the
+# coordinated Specs 004/005 amendment (approved 2026-11-08) and implemented
+# by T8/D12; never reused as a busy-slot (SLOT_TAKEN) message.
+MSG_PERSISTENCE_UNAVAILABLE: str = (
+    "No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en unos minutos."
+)
+
 BOOKING_BLOCK_MORNING: str = "Mañana"
 BOOKING_BLOCK_AFTERNOON: str = "Tarde"
 

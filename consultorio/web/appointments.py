@@ -1,7 +1,6 @@
 """Booking routes: form, availability JSON and confirmation page."""
 
 from datetime import date, timedelta
-from pathlib import Path
 
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template
 from flask import request, url_for
@@ -42,6 +41,7 @@ from consultorio.services.appointment_service import (
 )
 from consultorio.services.home_service import get_home_view
 from consultorio.services.services_service import get_services_view
+from consultorio.web.persistence import get_database
 
 bp = Blueprint("appointments", __name__)
 
@@ -55,10 +55,6 @@ _BOOKING_FIELDS: tuple[str, ...] = (
     "email",
     "phone",
 )
-
-
-def _database_path() -> Path:
-    return Path(current_app.config["DATABASE_PATH"])
 
 
 def _next_weekday() -> str:
@@ -77,7 +73,7 @@ def _render_form(values: dict[str, str], errors: dict[str, str], status: int = 2
     default_service = _default_service()
     service = values.get("service", "") or default_service
     booking_date = values.get("date", "") or default_date
-    pairs = get_hours_with_status(service, booking_date, _database_path())
+    pairs = get_hours_with_status(service, booking_date, get_database())
     morning_hours = [hour for hour, free in pairs if free and hour < "12:00"]
     afternoon_hours = [hour for hour, free in pairs if free and hour >= "12:00"]
     morning_taken = [hour for hour, free in pairs if not free and hour < "12:00"]
@@ -128,7 +124,7 @@ def index():
 
     result = create_booking(
         data,
-        _database_path(),
+        get_database(),
         current_app.config["AUTOMATION_WEBHOOK_URL"],
         current_app.config["AUTOMATION_TIMEOUT_SECONDS"],
         current_app.config["AUTOMATION_WEBHOOK_AUTH_HEADER"],
@@ -150,7 +146,7 @@ def horarios():
     booking_date = request.args.get("date", "")
     if service not in SERVICES_CATALOG or not is_valid_iso_date(booking_date):
         return jsonify({"error": MSG_INVALID_PARAMS}), 400
-    pairs = get_hours_with_status(service, booking_date, _database_path())
+    pairs = get_hours_with_status(service, booking_date, get_database())
     return (
         jsonify(
             {
@@ -170,7 +166,7 @@ def disponibilidad():
         return jsonify({"error": MSG_INVALID_PARAMS}), 400
     year_str, month_str = month.split("-")
     days = get_available_days(
-        service, int(year_str), int(month_str), _database_path()
+        service, int(year_str), int(month_str), get_database()
     )
     return jsonify({"days": days}), 200
 
@@ -208,4 +204,4 @@ def _find_appointment(cita_id: int):
         get_appointment_by_id,
     )
 
-    return get_appointment_by_id(cita_id, _database_path())
+    return get_appointment_by_id(cita_id, get_database())
