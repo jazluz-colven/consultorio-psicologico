@@ -317,7 +317,7 @@
     produce un fallo explícito y `TC-010-014` queda reubicado en
     `tests/test_rollback_sqlite.py` sin pérdida de cobertura.
 
-- [ ] **T11. Migrar los tests de servicios, rutas y HU, y ejecutar la suite completa. [NO AUTORIZADA]**
+- [x] **T11. Migrar los tests de servicios, rutas y HU, y ejecutar la suite completa. [COMPLETADA Y APROBADA por @revisor 2026-11-11 — 396 PASS / 0 FAIL / 0 skipped]**
   - **Objetivo:** cubrir los flujos 004–018 contra PostgreSQL, incluidos los 18
     tests de HU-018, sin relajar aserciones.
   - **Cubre:** RF-4..RF-9, RF-28; RNF-5; CL-10.

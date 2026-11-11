@@ -12,11 +12,7 @@ if str(ROOT) not in sys.path:
 
 from consultorio import DATABASE_EXTENSION_KEY, create_app
 from consultorio.config import TestConfig
-from consultorio.persistence.database import (
-    Database,
-    DatabaseTarget,
-    init_db,
-)
+from consultorio.persistence.database import Database, DatabaseTarget
 
 TEST_DATABASE_URL_ENV = "TEST_DATABASE_URL"
 
@@ -142,14 +138,6 @@ def database(app):
 @pytest.fixture()
 def client(app) -> object:
     return app.test_client()
-
-
-@pytest.fixture()
-def database_path(tmp_path: Path) -> Iterator[Path]:
-    """Legacy SQLite database for the tests still migrated in T11."""
-    path = tmp_path / "appointment.db"
-    init_db(path)
-    yield path
 
 
 @pytest.fixture()

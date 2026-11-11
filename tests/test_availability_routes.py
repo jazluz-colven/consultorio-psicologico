@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 
+from consultorio import DATABASE_EXTENSION_KEY
 from consultorio.content.appointment_content import (
     BOOKING_HOURS,
     MSG_INVALID_PARAMS,
@@ -40,7 +41,7 @@ def test_horarios_json_claves_available_y_occupied(client, app) -> None:
     with app.app_context():
         from consultorio.services.appointment_service import create_booking
 
-        create_booking(_form(), app.config["DATABASE_PATH"])
+        create_booking(_form(), app.extensions[DATABASE_EXTENSION_KEY])
     response = client.get(
         f"/citas/horarios?service=nutrition&date={booking_date}"
     )
@@ -110,7 +111,7 @@ def test_disponibilidad_dia_lleno_ausente_en_a_presente_en_b(
         for hour in hours:
             create_booking(
                 _form(service="psychology_integral", date=booking_date, time=hour),
-                app.config["DATABASE_PATH"],
+                app.extensions[DATABASE_EXTENSION_KEY],
             )
     month = _month_key(booking_date)
     days_a = client.get(

@@ -20,7 +20,7 @@ from consultorio.content.appointment_content import (
     MSG_SLOT_TAKEN,
     STATUS_CONFIRMED_LABEL,
 )
-from consultorio.persistence import appointments_repository as repository
+from consultorio import DATABASE_EXTENSION_KEY
 from tests import expected_content as expected
 
 VALID_FORM = {
@@ -54,12 +54,12 @@ def _main_html(html: str) -> str:
 
 
 def _count_appointments(app) -> int:
-    with app.app_context():
-        path = app.config["DATABASE_PATH"]
-    with repository.get_connection(path) as connection:
-        return connection.execute(
+    database = app.extensions[DATABASE_EXTENSION_KEY]
+    with database.connection() as connection:
+        row = connection.execute(
             "SELECT COUNT(*) AS total FROM appointments"
-        ).fetchone()["total"]
+        ).fetchone()
+    return int(row["total"])
 
 
 def test_get_citas_muestra_formulario_completo(client) -> None:

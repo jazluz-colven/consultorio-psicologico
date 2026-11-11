@@ -15,15 +15,12 @@ HTTP request is made.
 
 import datetime
 import re
-import sqlite3
 from datetime import date, timedelta
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
-from consultorio import create_app
-from consultorio.config import TestConfig
+from consultorio import DATABASE_EXTENSION_KEY
 from consultorio.content import admin_content as ac
 from consultorio.content.appointment_content import (
     MSG_INVALID_DATE,
@@ -63,8 +60,8 @@ def _future_weekday(days_ahead: int = 2) -> str:
     return candidate.isoformat()
 
 
-def _database_path(app) -> Path:
-    return Path(app.config["DATABASE_PATH"])
+def _database(app):
+    return app.extensions[DATABASE_EXTENSION_KEY]
 
 
 def _insert_appointment(
@@ -83,37 +80,35 @@ def _insert_appointment(
         "date": booking_date or _future_weekday(),
         "time": slot,
     }
-    return repository.insert_appointment(data, _database_path(app))
+    return repository.insert_appointment(data, _database(app))
 
 
 def _current(app, appointment_id: int) -> Appointment:
     current = repository.get_appointment_by_id(
-        appointment_id, _database_path(app)
+        appointment_id, _database(app)
     )
     assert current is not None
     return current
 
 
 def _appointment_count(app) -> int:
-    connection = sqlite3.connect(str(_database_path(app)))
-    try:
-        return connection.execute(
-            "SELECT COUNT(*) FROM appointments"
-        ).fetchone()[0]
-    finally:
-        connection.close()
+    with _database(app).connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM appointments"
+        ).fetchone()
+    return int(row["total"])
 
 
 def _event_rows(app) -> list[tuple[str, str, int]]:
-    connection = sqlite3.connect(str(_database_path(app)))
-    try:
+    with _database(app).connection() as connection:
         rows = connection.execute(
             "SELECT event_type, status, appointment_id"
             " FROM automation_events ORDER BY id"
         ).fetchall()
-    finally:
-        connection.close()
-    return [(row[0], row[1], row[2]) for row in rows]
+    return [
+        (row["event_type"], row["status"], row["appointment_id"])
+        for row in rows
+    ]
 
 
 def _events_of(app, event_type: str) -> list[tuple[str, str, int]]:
@@ -146,16 +141,13 @@ def _reschedule_payload(
 
 
 @pytest.fixture()
-def hu_app(tmp_path: Path):
-    class TempConfig(TestConfig):
-        DATABASE_PATH: Path = tmp_path / "hu-018.db"
-        CONSULTORIO_ADMIN_TOKEN: str = TOKEN
-        AUTOMATION_WEBHOOK_URL: str = WEBHOOK_URL
-        AUTOMATION_WEBHOOK_AUTH_HEADER: str = ""
-
-    application = create_app(TempConfig)
-    application.config.update(TESTING=True)
-    yield application
+def hu_app(app):
+    app.config.update(
+        CONSULTORIO_ADMIN_TOKEN=TOKEN,
+        AUTOMATION_WEBHOOK_URL=WEBHOOK_URL,
+        AUTOMATION_WEBHOOK_AUTH_HEADER="",
+    )
+    return app
 
 
 @pytest.fixture()

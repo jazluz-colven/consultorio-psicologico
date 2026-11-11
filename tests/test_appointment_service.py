@@ -1,5 +1,4 @@
 from datetime import date, timedelta
-from pathlib import Path
 
 from consultorio.content.appointment_content import (
     BOOKING_HOURS,
@@ -109,49 +108,49 @@ def test_validate_booking_servicio_fuera_de_catalogo() -> None:
 
 
 def test_get_available_hours_catalogo_completo_y_finde_o_pasada_vacio(
-    database_path: Path,
+    database,
 ) -> None:
     booking_date = _future_weekday()
     assert service.get_available_hours(
-        "nutrition", booking_date, database_path
+        "nutrition", booking_date, database
     ) == BOOKING_HOURS
     assert service.get_available_hours(
-        "nutrition", _future_weekend(), database_path
+        "nutrition", _future_weekend(), database
     ) == []
     assert service.get_available_hours(
-        "nutrition", _past_weekday(), database_path
+        "nutrition", _past_weekday(), database
     ) == []
     assert service.get_available_hours(
-        "nutrition", "no-fecha", database_path
+        "nutrition", "no-fecha", database
     ) == []
 
 
 def test_create_booking_hora_desaparece_de_disponibilidad(
-    database_path: Path,
+    database,
 ) -> None:
     data = _data()
-    created = service.create_booking(data, database_path)
+    created = service.create_booking(data, database)
     assert created.status == "confirmed"
     hours = service.get_available_hours(
-        data["service"], data["date"], database_path
+        data["service"], data["date"], database
     )
     assert data["time"] not in hours
     assert hours == BOOKING_HOURS[1:]
 
 
 def test_create_booking_sobre_horario_ocupado_slot_taken_sin_insert(
-    database_path: Path,
+    database,
 ) -> None:
     data = _data()
-    service.create_booking(data, database_path)
-    result = service.create_booking(data, database_path)
+    service.create_booking(data, database)
+    result = service.create_booking(data, database)
     assert result == service.SLOT_TAKEN
     assert MSG_SLOT_TAKEN
     hours = service.get_available_hours(
-        data["service"], data["date"], database_path
+        data["service"], data["date"], database
     )
     assert data["time"] not in hours
     booked = repository.list_booked_times(
-        data["service"], data["date"], database_path
+        data["service"], data["date"], database
     )
     assert booked.count(data["time"]) == 1

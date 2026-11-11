@@ -3,7 +3,6 @@
 import re
 import urllib.error
 from datetime import date, timedelta
-from pathlib import Path
 from unittest import mock
 
 from consultorio.persistence import appointments_repository as repository
@@ -61,11 +60,11 @@ def _email_posts(post: mock.MagicMock) -> list[mock.call]:
 
 
 def test_tc_008_001_mensaje_completo_legible_y_paleta(
-    database_path: Path,
+    database,
 ) -> None:
     booking_date = _future_weekday()
     appointment = booking.create_booking(
-        _booking_data(booking_date), database_path
+        _booking_data(booking_date), database
     )
     message = email.build_confirmation_message(appointment)
 
@@ -95,12 +94,12 @@ def test_tc_008_001_mensaje_completo_legible_y_paleta(
         assert forbidden not in message["html"]
 
 
-def test_tc_008_002_2xx_marca_sent_y_un_post_del_tipo(database_path: Path) -> None:
+def test_tc_008_002_2xx_marca_sent_y_un_post_del_tipo(database) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         appointment = booking.create_booking(
             _booking_data(booking_date),
-            database_path,
+            database,
             WEBHOOK_URL,
             TIMEOUT,
         )
@@ -117,7 +116,7 @@ def test_tc_008_002_2xx_marca_sent_y_un_post_del_tipo(database_path: Path) -> No
     assert set(payload["message"].keys()) == {"subject", "text", "html"}
     assert payload["appointment"]["id"] == appointment.id
     event = email.events_repository.get_by_event_id(
-        _event_id(appointment.id), database_path
+        _event_id(appointment.id), database
     )
     assert event is not None
     assert event.status == "sent"
@@ -125,15 +124,15 @@ def test_tc_008_002_2xx_marca_sent_y_un_post_del_tipo(database_path: Path) -> No
     assert event.sent_at is not None
 
 
-def test_tc_008_003_url_vacia_skipped_sin_post(database_path: Path) -> None:
+def test_tc_008_003_url_vacia_skipped_sin_post(database) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         appointment = booking.create_booking(
-            _booking_data(booking_date), database_path
+            _booking_data(booking_date), database
         )
     assert len(_email_posts(post)) == 0
     event = email.events_repository.get_by_event_id(
-        _event_id(appointment.id), database_path
+        _event_id(appointment.id), database
     )
     assert event is not None
     assert event.status == "skipped"
@@ -141,7 +140,7 @@ def test_tc_008_003_url_vacia_skipped_sin_post(database_path: Path) -> None:
     assert appointment.status == "confirmed"
 
 
-def test_tc_008_004_urlerror_failed_sin_excepcion(database_path: Path) -> None:
+def test_tc_008_004_urlerror_failed_sin_excepcion(database) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(
         automation,
@@ -150,65 +149,61 @@ def test_tc_008_004_urlerror_failed_sin_excepcion(database_path: Path) -> None:
     ):
         appointment = booking.create_booking(
             _booking_data(booking_date),
-            database_path,
+            database,
             WEBHOOK_URL,
             TIMEOUT,
         )
     assert appointment.status == "confirmed"
     event = email.events_repository.get_by_event_id(
-        _event_id(appointment.id), database_path
+        _event_id(appointment.id), database
     )
     assert event is not None
     assert event.status == "failed"
     assert event.detail == "Servicio de automatización no disponible."
 
 
-def test_tc_008_005_timeout_failed_cita_intacta(database_path: Path) -> None:
+def test_tc_008_005_timeout_failed_cita_intacta(database) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", side_effect=TimeoutError):
         appointment = booking.create_booking(
             _booking_data(booking_date),
-            database_path,
+            database,
             WEBHOOK_URL,
             TIMEOUT,
         )
     assert appointment.status == "confirmed"
     event = email.events_repository.get_by_event_id(
-        _event_id(appointment.id), database_path
+        _event_id(appointment.id), database
     )
     assert event is not None
     assert event.status == "failed"
     assert event.detail == "Tiempo de espera agotado (timeout)."
 
 
-def test_tc_008_006_reproceso_un_evento_un_post(database_path: Path) -> None:
+def test_tc_008_006_reproceso_un_evento_un_post(database) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         appointment = booking.create_booking(
             _booking_data(booking_date),
-            database_path,
+            database,
             WEBHOOK_URL,
             TIMEOUT,
         )
         email.send_confirmation(
-            appointment, database_path, WEBHOOK_URL, TIMEOUT
+            appointment, database, WEBHOOK_URL, TIMEOUT
         )
     assert len(_email_posts(post)) == 1
-    import sqlite3
-
-    connection = sqlite3.connect(str(database_path))
-    try:
-        count = connection.execute(
-            "SELECT COUNT(*) FROM automation_events WHERE event_id = ?",
+    with database.connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM automation_events"
+            " WHERE event_id = %s",
             (_event_id(appointment.id),),
-        ).fetchone()[0]
-    finally:
-        connection.close()
-    assert count == 1
+        ).fetchone()
+    assert int(row["total"]) == 1
 
 
 def test_tc_008_007_aislamiento_repositorio_caido_reserva_ok(
-    database_path: Path,
+    database,
 ) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(
@@ -218,7 +213,7 @@ def test_tc_008_007_aislamiento_repositorio_caido_reserva_ok(
     ):
         appointment = booking.create_booking(
             _booking_data(booking_date),
-            database_path,
+            database,
             WEBHOOK_URL,
             TIMEOUT,
         )
@@ -226,7 +221,7 @@ def test_tc_008_007_aislamiento_repositorio_caido_reserva_ok(
     assert appointment.status == "confirmed"
 
 
-def test_tc_008_008_datos_incompletos_failed_sin_post(database_path: Path) -> None:
+def test_tc_008_008_datos_incompletos_failed_sin_post(database) -> None:
     incomplete = Appointment(
         id=1,
         document_type="CC",
@@ -242,18 +237,18 @@ def test_tc_008_008_datos_incompletos_failed_sin_post(database_path: Path) -> No
     )
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         email.send_confirmation(
-            incomplete, str(database_path), WEBHOOK_URL, TIMEOUT
+            incomplete, database, WEBHOOK_URL, TIMEOUT
         )
     assert len(_email_posts(post)) == 0
     event = email.events_repository.get_by_event_id(
-        _event_id(incomplete.id), database_path
+        _event_id(incomplete.id), database
     )
     assert event is not None
     assert event.status == "failed"
     assert event.detail == "Datos de la cita incompletos."
 
 
-def test_tc_008_009_email_invalido_failed_sin_post(database_path: Path) -> None:
+def test_tc_008_009_email_invalido_failed_sin_post(database) -> None:
     booking_date = _future_weekday()
     for index, bad_email in enumerate(("", "sin-arroba", "a@b"), start=1):
         appointment = Appointment(
@@ -273,11 +268,11 @@ def test_tc_008_009_email_invalido_failed_sin_post(database_path: Path) -> None:
             automation, "_post_webhook", return_value=200
         ) as post:
             email.send_confirmation(
-                appointment, str(database_path), WEBHOOK_URL, TIMEOUT
+                appointment, database, WEBHOOK_URL, TIMEOUT
             )
         assert len(_email_posts(post)) == 0
         event = email.events_repository.get_by_event_id(
-            _event_id(appointment.id), database_path
+            _event_id(appointment.id), database
         )
         assert event is not None
         assert event.status == "failed"
@@ -287,18 +282,18 @@ def test_tc_008_009_email_invalido_failed_sin_post(database_path: Path) -> None:
         # the same deterministic event_id cannot be registered twice
         assert not email.events_repository.insert_event(
             _event_id(appointment.id), email.EVENT_TYPE, 1, appointment.id,
-            str(database_path),
+            database,
         )
 
 
 def test_tc_d010_13_send_confirmation_http_error_400_failed_cita_intacta(
-    database_path: Path,
+    database,
 ) -> None:
     """TC-D010-13 (D-010-01, RF-10, DP-04): el correo de confirmación debe
     clasificar un `HTTPError` 400 real y dejar la reserva intacta."""
     booking_date = _future_weekday()
     appointment = repository.insert_appointment(
-        _booking_data(booking_date), database_path
+        _booking_data(booking_date), database
     )
     http_error = urllib.error.HTTPError(
         WEBHOOK_URL, 400, "Bad Request", hdrs=None, fp=None
@@ -307,14 +302,14 @@ def test_tc_d010_13_send_confirmation_http_error_400_failed_cita_intacta(
         automation, "_post_webhook", side_effect=http_error
     ):
         email.send_confirmation(
-            appointment, str(database_path), WEBHOOK_URL, TIMEOUT
+            appointment, database, WEBHOOK_URL, TIMEOUT
         )
 
-    stored = repository.get_appointment_by_id(appointment.id, database_path)
+    stored = repository.get_appointment_by_id(appointment.id, database)
     assert stored is not None
     assert stored.status == "confirmed"
     event = email.events_repository.get_by_event_id(
-        _event_id(appointment.id), database_path
+        _event_id(appointment.id), database
     )
     assert event is not None
     assert event.status == "failed"
@@ -322,16 +317,16 @@ def test_tc_d010_13_send_confirmation_http_error_400_failed_cita_intacta(
 
 
 def test_tc_d010_14_send_cancellation_http_error_400_failed_cancelacion_intacta(
-    database_path: Path,
+    database,
 ) -> None:
     """TC-D010-14 (D-010-01, RF-10, DP-04): el correo de cancelación debe
     clasificar un `HTTPError` 400 real y no revertir la cancelación."""
     booking_date = _future_weekday()
     appointment = repository.insert_appointment(
-        _booking_data(booking_date), database_path
+        _booking_data(booking_date), database
     )
     cancelled = repository.update_appointment_status(
-        appointment.id, "cancelled", database_path
+        appointment.id, "cancelled", database
     )
     assert cancelled is not None
     assert cancelled.status == "cancelled"
@@ -343,14 +338,14 @@ def test_tc_d010_14_send_cancellation_http_error_400_failed_cancelacion_intacta(
         automation, "_post_webhook", side_effect=http_error
     ):
         email.send_cancellation(
-            cancelled, str(database_path), WEBHOOK_URL, TIMEOUT
+            cancelled, database, WEBHOOK_URL, TIMEOUT
         )
 
-    stored = repository.get_appointment_by_id(appointment.id, database_path)
+    stored = repository.get_appointment_by_id(appointment.id, database)
     assert stored is not None
     assert stored.status == "cancelled"
     event = email.events_repository.get_by_event_id(
-        f"appointment.cancellation_email:{appointment.id}:v1", database_path
+        f"appointment.cancellation_email:{appointment.id}:v1", database
     )
     assert event is not None
     assert event.status == "failed"
@@ -358,11 +353,11 @@ def test_tc_d010_14_send_cancellation_http_error_400_failed_cancelacion_intacta(
 
 
 def test_tc_008_010_payload_allowlist_event_id_determinista(
-    database_path: Path,
+    database,
 ) -> None:
     booking_date = _future_weekday()
     appointment = booking.create_booking(
-        _booking_data(booking_date), database_path
+        _booking_data(booking_date), database
     )
     event = email.build_event(appointment)
     assert set(event.keys()) == {

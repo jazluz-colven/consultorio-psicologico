@@ -14,9 +14,12 @@ T3 (capa de conexiones y traducción de errores), T4 (DDL PostgreSQL
 idempotente, advisory lock, arranque tolerante y recuperación perezosa), T5
 (repositorios de citas y eventos en dialecto PostgreSQL con adaptador SQLite
 de rollback), T6 (servicios y rutas con el objeto `Database`), T7 (atomicidad
-de la cancelación 010/017/018), T8 (literal coordinado de indisponibilidad) y
-T9 (errores HTTP/UX de indisponibilidad). La suite general sigue en SQLite
-hasta T10/T11; la ruta SQLite se conserva como rollback temporal.
+de la cancelación 010/017/018), T8 (literal coordinado de indisponibilidad),
+T9 (errores HTTP/UX de indisponibilidad) y T10/T11 (fixtures PostgreSQL y
+migración de la suite de paridad). Desde T11, los tests de servicios, rutas y
+HU de las Specs 004–018 se ejecutan contra PostgreSQL; la ruta SQLite se
+conserva únicamente como rollback temporal y su evidencia vive en
+`tests/test_rollback_sqlite.py`.
 
 ## Requisitos
 
@@ -198,8 +201,8 @@ Notas:
   `skip`** para ocultar la ausencia de base de datos.
 - Desde **T4**, los tests de esquema (`tests/test_pg_schema.py`) y el caso de
   resiliencia `TC-019-016` se ejecutan contra PostgreSQL real y exigen esta
-  variable. El resto de la suite sigue en SQLite hasta T10–T11 (convivencia
-  transitoria).
+  variable. Desde **T11**, toda la suite de paridad (Specs 004–018) usa la
+  misma base y el mismo esquema aislado.
 - Las pruebas usan un esquema aislado por test (`test_hu019_<uuid>`), no la base
   `consultorio_dev` directamente, pero comparten este servidor; el esquema se
   elimina con `DROP SCHEMA … CASCADE` al terminar.
@@ -263,10 +266,13 @@ solo juego de sentencias** escrito en dialecto PostgreSQL (plan D8):
 
 La única expresión que difiere por motor es `sent_at` en `mark_sent()`:
 PostgreSQL usa `to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')` y
-SQLite `datetime('now')`, también UTC. Durante T5 ambos caminos conviven: los
-servicios y la mayoría de la suite siguen pasando `DATABASE_PATH`, mientras los
-repositorios ya aceptan también un objeto `Database`/`DatabaseTarget`. T6
-cambia los servicios y T10 la suite.
+SQLite `datetime('now')`, también UTC. Desde T6 los servicios y rutas usan el
+objeto `Database`, y desde T11 la suite de paridad pasa ese mismo objeto; la
+ruta SQLite solo se ejerce en `tests/test_rollback_sqlite.py`, en los casos de
+configuración y errores del backend SQLite de `tests/test_pg_resilience.py` y
+en el contrato del repositorio de
+`tests/test_hu_019.py::test_sqlite_rollback_route_keeps_repository_contract`,
+además del adaptador de rollback (T18 retirará la convivencia).
 
 Para inspeccionar el resultado (sustituir `<schema>` por el esquema real):
 
@@ -299,9 +305,10 @@ Salida esperada (PostgreSQL 16.15): `UNIQUE (event_id)`, el índice
   segundo plano (RF-23). Desde T5, los repositorios llaman a `ensure_schema()`
   cuando reciben un `Database`/`DatabaseTarget`; las rutas web lo harán al
   pasar al nuevo objeto de persistencia en T6.
-- Mientras dure la convivencia transitoria, la aplicación también sigue
-  llamando a `init_db(DATABASE_PATH)` para los servicios que aún pasan la ruta
-  SQLite.
+- Mientras dure la convivencia transitoria, la aplicación sigue inicializando
+  el esquema SQLite de rollback con `init_db(DATABASE_PATH)`; las rutas y
+  servicios ya operan con el objeto `Database`. La retirada de esta llamada
+  pertenece a T18.
 
 ## Indisponibilidad de la base de datos (503)
 

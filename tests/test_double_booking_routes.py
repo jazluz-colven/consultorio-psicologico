@@ -5,11 +5,11 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 
+from consultorio import DATABASE_EXTENSION_KEY
 from consultorio.content.appointment_content import (
     MSG_OCCUPIED_HOUR,
     MSG_SLOT_TAKEN,
 )
-from consultorio.persistence import appointments_repository as repository
 from tests import expected_content as expected
 
 VALID_FORM = {
@@ -43,12 +43,12 @@ def _main_html(html: str) -> str:
 
 
 def _count_appointments(app) -> int:
-    with app.app_context():
-        path = app.config["DATABASE_PATH"]
-    with repository.get_connection(path) as connection:
-        return connection.execute(
+    database = app.extensions[DATABASE_EXTENSION_KEY]
+    with database.connection() as connection:
+        row = connection.execute(
             "SELECT COUNT(*) AS total FROM appointments"
-        ).fetchone()["total"]
+        ).fetchone()
+    return int(row["total"])
 
 
 def _selectable_radio(html: str, hour: str) -> bool:

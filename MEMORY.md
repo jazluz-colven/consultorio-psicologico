@@ -802,5 +802,23 @@ aporte.
   `config.py` aún describen la etapa SQLite (T16/cierre); `pytest_configure`
   bloquea también `--collect-only` sin BD (coherente con D9/CL-10);
   `pg_schema` silencia fallos de `DROP`; la fixture copia el DSN local a
-  `config` (no imprimirlo). **T10 marcada `[x]` en `tasks.md`. Commit de T10
-  no autorizado aún; sin push.**
+  `config` (no imprimirlo). **T10 marcada `[x]` en `tasks.md` y commiteada en
+  `673d799` (2026-11-10, autorizada por la usuaria); sin push.**
+- **Spec 019 — T11 COMPLETADA Y APROBADA (2026-11-11)**: migrada a PostgreSQL
+  la persistencia de los tests de servicios, rutas y HU de las Specs 004–018
+  (`conftest.py` retira la fixture `database_path`; `Database.connection()`/
+  `transaction()`, placeholders `%s`, catálogos PG e
+  `is_slot_uniqueness_violation`). Sin cambios de producción
+  (`git diff -- consultorio templates static app.py` vacío). **Suite completa:
+  396 PASS / 0 FAIL / 0 skipped** (coordinador 406,69 s; revisor 181,51 s y
+  180,17 s), 18 casos TC-018 (7 `test_hu_018.py`, 9 `test_admin_routes.py`,
+  2 `test_admin_content.py`). Aislamiento verificado: 0 esquemas
+  `test_hu019_*`, `public` con 0 filas y `schema_migrations` en 4. Revisor:
+  **APROBADO**, con recuento mecánico de `assert` (sin relajaciones) y CL-10
+  reprobado con DSN ausente/inalcanzable (exit 1, sin `skip`). Evidencia:
+  `docs/evidencias/hu-019/t11-suite.md` y `suite-postgres.txt` (corrida real).
+  Imprecisones documentales detectadas por el revisor (inventario de archivos,
+  reparto de TC-018 y mención de la ruta SQLite) corregidas después en
+  `t11-suite.md` y `docs/operaciones/postgresql.md`; solo documentación, sin
+  efecto en código ni pruebas. **T11 marcada `[x]` en `tasks.md`. Commit de
+  T11 pendiente de autorización; T12+ no autorizadas; sin push.**

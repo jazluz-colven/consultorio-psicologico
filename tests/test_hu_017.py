@@ -9,14 +9,13 @@ office schedule.
 """
 
 import re
-import sqlite3
 import urllib.error
 from datetime import date, datetime, timedelta
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
+from consultorio import DATABASE_EXTENSION_KEY
 from consultorio.content import appointment_content
 from consultorio.content import cancellation_content as cc
 from consultorio.content import email_content
@@ -48,8 +47,8 @@ MESSAGE_LITERALS = (
 )
 
 
-def _database_path(app) -> Path:
-    return Path(app.config["DATABASE_PATH"])
+def _database(app):
+    return app.extensions[DATABASE_EXTENSION_KEY]
 
 
 def _insert_appointment(app, hours_from_now: int) -> Appointment:
@@ -65,11 +64,11 @@ def _insert_appointment(app, hours_from_now: int) -> Appointment:
         "date": start.date().isoformat(),
         "time": start.strftime("%H:%M"),
     }
-    return repository.insert_appointment(data, _database_path(app))
+    return repository.insert_appointment(data, _database(app))
 
 
 def _current(app, appointment_id: int) -> Appointment:
-    current = repository.get_appointment_by_id(appointment_id, _database_path(app))
+    current = repository.get_appointment_by_id(appointment_id, _database(app))
     assert current is not None
     return current
 
@@ -79,7 +78,7 @@ def _cancel_in_database(app, appointment_id: int) -> Appointment:
     updated = repository.update_appointment_status(
         appointment_id,
         appointment_content.STATUS_CANCELLED,
-        _database_path(app),
+        _database(app),
     )
     assert updated is not None
     return updated
@@ -124,7 +123,7 @@ def _insert_appointment_on(
         "date": booking_date,
         "time": slot,
     }
-    return repository.insert_appointment(data, _database_path(app))
+    return repository.insert_appointment(data, _database(app))
 
 
 def _booking_payload(
@@ -152,26 +151,22 @@ def _cancelled_event_id(cita_id: int) -> str:
 
 
 def _count_events(app, event_id: str) -> int:
-    connection = sqlite3.connect(str(_database_path(app)))
-    try:
-        return connection.execute(
-            "SELECT COUNT(*) FROM automation_events WHERE event_id = ?",
+    with _database(app).connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM automation_events"
+            " WHERE event_id = %s",
             (event_id,),
-        ).fetchone()[0]
-    finally:
-        connection.close()
+        ).fetchone()
+    return int(row["total"])
 
 
 def _event_status(app, event_id: str) -> str | None:
-    connection = sqlite3.connect(str(_database_path(app)))
-    try:
+    with _database(app).connection() as connection:
         row = connection.execute(
-            "SELECT status FROM automation_events WHERE event_id = ?",
+            "SELECT status FROM automation_events WHERE event_id = %s",
             (event_id,),
         ).fetchone()
-    finally:
-        connection.close()
-    return row[0] if row is not None else None
+    return row["status"] if row is not None else None
 
 
 def _cancellation_posts(post: mock.MagicMock) -> list[mock.call]:
@@ -785,14 +780,14 @@ def test_tc_017_009_correo_incluye_enlace_absoluto_en_texto_y_html(
     assert f'href="{expected_url}"' in message["html"]
 
 
-def test_tc_017_009_sin_url_no_anade_fila_ni_enlace(database_path) -> None:
+def test_tc_017_009_sin_url_no_anade_fila_ni_enlace(database) -> None:
     """D9: without a builder (old callers/tests) the e-mail keeps exactly the
     Spec 008 content: no link row and the same footer."""
     booking_date = _future_weekday()
 
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         appointment = booking.create_booking(
-            _booking_payload(booking_date), database_path, WEBHOOK_URL, 3.0
+            _booking_payload(booking_date), database, WEBHOOK_URL, 3.0
         )
 
     assert isinstance(appointment, Appointment)

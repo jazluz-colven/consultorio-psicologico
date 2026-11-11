@@ -1,10 +1,10 @@
 """HU-008 — registration, config, mirror, stdlib and regression (spec 008)."""
 
-import sqlite3
 from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
+from consultorio import DATABASE_EXTENSION_KEY
 from consultorio.config import Config
 from consultorio.content import email_content
 from consultorio.services import automation_service as automation
@@ -37,51 +37,46 @@ def _booking_data(booking_date: str, time: str = SLOT) -> dict[str, str]:
     }
 
 
-def _events_of_type(database_path: Path, event_type: str) -> list[sqlite3.Row]:
-    connection = sqlite3.connect(str(database_path))
-    connection.row_factory = sqlite3.Row
-    try:
+def _events_of_type(database, event_type: str) -> list[dict]:
+    with database.connection() as connection:
         return connection.execute(
-            "SELECT * FROM automation_events WHERE event_type = ? ORDER BY id",
+            "SELECT * FROM automation_events WHERE event_type = %s ORDER BY id",
             (event_type,),
         ).fetchall()
-    finally:
-        connection.close()
 
 
-def _count_event_id(database_path: Path, event_id: str) -> int:
-    connection = sqlite3.connect(str(database_path))
-    try:
-        return connection.execute(
-            "SELECT COUNT(*) FROM automation_events WHERE event_id = ?",
+def _count_event_id(database, event_id: str) -> int:
+    with database.connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM automation_events"
+            " WHERE event_id = %s",
             (event_id,),
-        ).fetchone()[0]
-    finally:
-        connection.close()
+        ).fetchone()
+    return int(row["total"])
 
 
-def test_tc_008_011_dos_eventos_por_reserva_y_dedup(database_path: Path) -> None:
+def test_tc_008_011_dos_eventos_por_reserva_y_dedup(database) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         appointment = booking.create_booking(
             _booking_data(booking_date),
-            database_path,
+            database,
             WEBHOOK_URL,
             3.0,
         )
         # reprocess the same reservation: no duplicated events nor POSTs
         automation.on_appointment_confirmed(
-            appointment, database_path, WEBHOOK_URL, 3.0
+            appointment, database, WEBHOOK_URL, 3.0
         )
-        email.send_confirmation(appointment, str(database_path), WEBHOOK_URL, 3.0)
-    confirmed = _events_of_type(database_path, "appointment.confirmed")
+        email.send_confirmation(appointment, database, WEBHOOK_URL, 3.0)
+    confirmed = _events_of_type(database, "appointment.confirmed")
     email_events = _events_of_type(
-        database_path, "appointment.confirmation_email"
+        database, "appointment.confirmation_email"
     )
     assert len(confirmed) == 1
     assert len(email_events) == 1
     assert _count_event_id(
-        database_path, f"appointment.confirmation_email:{appointment.id}:v1"
+        database, f"appointment.confirmation_email:{appointment.id}:v1"
     ) == 1
     assert len(confirmed) + len(email_events) == 2  # two rows, two event_ids
     event_types_posted = [
@@ -178,16 +173,16 @@ def test_tc_008_015_http_end_to_end_303_y_evento_sent(client, app) -> None:
     assert payload["appointment"]["id"] == cita_id
     assert payload["message"]["subject"].startswith("Confirmación de tu cita —")
 
-    database_path = Path(app.config["DATABASE_PATH"])
+    database = app.extensions[DATABASE_EXTENSION_KEY]
     event = email.events_repository.get_by_event_id(
-        f"appointment.confirmation_email:{cita_id}:v1", database_path
+        f"appointment.confirmation_email:{cita_id}:v1", database
     )
     assert event is not None
     assert event.status == "sent"
     assert event.sent_at is not None
 
 
-def test_tc_008_016_regresion_funcional_y_email_invalido(client, app, tmp_path) -> None:
+def test_tc_008_016_regresion_funcional_y_email_invalido(client, app) -> None:
     booking_date = _future_weekday()
 
     # HU-004: required-field validation still renders 200 with errors
@@ -210,12 +205,12 @@ def test_tc_008_016_regresion_funcional_y_email_invalido(client, app, tmp_path) 
     assert disponibilidad.status_code == 200
 
     # HU-007: appointment.confirmed contract intact (no personal data)
-    database_path = Path(app.config["DATABASE_PATH"])
-    confirmed_rows = _events_of_type(database_path, "appointment.confirmed")
+    database = app.extensions[DATABASE_EXTENSION_KEY]
+    confirmed_rows = _events_of_type(database, "appointment.confirmed")
     assert len(confirmed_rows) == 1
     confirmed = automation.build_event(
         booking.repository.get_appointment_by_id(
-            confirmed_rows[0]["appointment_id"], database_path
+            confirmed_rows[0]["appointment_id"], database
         )
     )
     assert set(confirmed.keys()) == {
@@ -230,12 +225,12 @@ def test_tc_008_016_regresion_funcional_y_email_invalido(client, app, tmp_path) 
 
     # HU-008: invalid e-mail → form 200 and zero new confirmation e-mail events
     app.config["AUTOMATION_WEBHOOK_URL"] = WEBHOOK_URL
-    database_path = Path(app.config["DATABASE_PATH"])
-    before = len(_events_of_type(database_path, "appointment.confirmation_email"))
+    database = app.extensions[DATABASE_EXTENSION_KEY]
+    before = len(_events_of_type(database, "appointment.confirmation_email"))
     bad = _booking_data(booking_date, "08:30")
     bad["email"] = "no-es-un-correo"
     with mock.patch.object(automation, "_post_webhook", return_value=200):
         response = client.post("/citas", data=bad)
     assert response.status_code == 200
-    after = len(_events_of_type(database_path, "appointment.confirmation_email"))
+    after = len(_events_of_type(database, "appointment.confirmation_email"))
     assert after == before

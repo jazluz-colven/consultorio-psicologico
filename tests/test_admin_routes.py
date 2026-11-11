@@ -9,15 +9,13 @@ lives in the environment (spec 018 RNF).
 """
 
 import re
-import sqlite3
 from datetime import date, timedelta
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
-from consultorio import create_app
-from consultorio.config import Config, TestConfig
+from consultorio import DATABASE_EXTENSION_KEY
+from consultorio.config import Config
 from consultorio.content import admin_content as ac
 from consultorio.content.appointment_content import (
     BOOKING_HOURS,
@@ -50,8 +48,8 @@ def _future_weekday() -> str:
     return candidate.isoformat()
 
 
-def _database_path(app) -> Path:
-    return Path(app.config["DATABASE_PATH"])
+def _database(app):
+    return app.extensions[DATABASE_EXTENSION_KEY]
 
 
 def _insert_appointment(app, slot: str = "09:00") -> Appointment:
@@ -65,30 +63,25 @@ def _insert_appointment(app, slot: str = "09:00") -> Appointment:
         "date": _future_weekday(),
         "time": slot,
     }
-    return repository.insert_appointment(data, _database_path(app))
+    return repository.insert_appointment(data, _database(app))
 
 
 def _appointment_count(app) -> int:
-    connection = sqlite3.connect(str(_database_path(app)))
-    try:
-        return connection.execute(
-            "SELECT COUNT(*) FROM appointments"
-        ).fetchone()[0]
-    finally:
-        connection.close()
+    with _database(app).connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM appointments"
+        ).fetchone()
+    return int(row["total"])
 
 
 def _event_counts(app) -> dict[str, int]:
     """Rows per ``event_type``; avoids counting unrelated events blindly."""
-    connection = sqlite3.connect(str(_database_path(app)))
-    try:
+    with _database(app).connection() as connection:
         rows = connection.execute(
-            "SELECT event_type, COUNT(*) FROM automation_events"
+            "SELECT event_type, COUNT(*) AS total FROM automation_events"
             " GROUP BY event_type"
         ).fetchall()
-    finally:
-        connection.close()
-    return {row[0]: row[1] for row in rows}
+    return {row["event_type"]: int(row["total"]) for row in rows}
 
 
 def _reschedule_data(
@@ -115,16 +108,13 @@ def _assert_denied(response, forbidden: tuple[str, ...]) -> None:
 
 
 @pytest.fixture()
-def admin_app(tmp_path: Path):
-    class TempConfig(TestConfig):
-        DATABASE_PATH: Path = tmp_path / "admin.db"
-        CONSULTORIO_ADMIN_TOKEN: str = TOKEN
-        AUTOMATION_WEBHOOK_URL: str = ""
-        AUTOMATION_WEBHOOK_AUTH_HEADER: str = ""
-
-    application = create_app(TempConfig)
-    application.config.update(TESTING=True)
-    yield application
+def admin_app(app):
+    app.config.update(
+        CONSULTORIO_ADMIN_TOKEN=TOKEN,
+        AUTOMATION_WEBHOOK_URL="",
+        AUTOMATION_WEBHOOK_AUTH_HEADER="",
+    )
+    return app
 
 
 @pytest.fixture()
@@ -133,7 +123,7 @@ def admin_client(admin_app):
 
 
 def test_tc_018_001_token_ausente_incorrecto_none_no_ascii_y_config_vacia(
-    admin_app, admin_client, tmp_path: Path
+    admin_app, admin_client
 ) -> None:
     created = _insert_appointment(admin_app)
     detail_path = f"/admin/citas/{created.id}"
@@ -166,24 +156,22 @@ def test_tc_018_001_token_ausente_incorrecto_none_no_ascii_y_config_vacia(
         _assert_denied(getattr(admin_client, method)(**kwargs), forbidden)
 
     # An empty configured token disables the surface, even with the right text.
-    class EmptyTokenConfig(TestConfig):
-        DATABASE_PATH: Path = tmp_path / "empty.db"
-        CONSULTORIO_ADMIN_TOKEN: str = ""
-
-    empty_app = create_app(EmptyTokenConfig)
-    empty_client = empty_app.test_client()
-    _assert_denied(
-        empty_client.get(detail_path, headers={"X-Admin-Token": TOKEN}),
-        forbidden,
-    )
-    _assert_denied(
-        empty_client.post(cancel_path, data={"admin_token": TOKEN}),
-        forbidden,
-    )
+    admin_app.config["CONSULTORIO_ADMIN_TOKEN"] = ""
+    try:
+        _assert_denied(
+            admin_client.get(detail_path, headers={"X-Admin-Token": TOKEN}),
+            forbidden,
+        )
+        _assert_denied(
+            admin_client.post(cancel_path, data={"admin_token": TOKEN}),
+            forbidden,
+        )
+    finally:
+        admin_app.config["CONSULTORIO_ADMIN_TOKEN"] = TOKEN
 
     # No cancellation happened while rejecting every request.
     current = repository.get_appointment_by_id(
-        created.id, _database_path(admin_app)
+        created.id, _database(admin_app)
     )
     assert current is not None
     assert current.status == "confirmed"
@@ -241,7 +229,7 @@ def test_tc_018_002_get_detalle_con_token_resumen_formularios_y_cancelada(
 
     # A cancelled appointment keeps the summary but loses the operative forms.
     repository.update_appointment_status(
-        created.id, STATUS_CANCELLED, _database_path(admin_app)
+        created.id, STATUS_CANCELLED, _database(admin_app)
     )
     cancelled = admin_client.get(path, headers={"X-Admin-Token": TOKEN})
     assert cancelled.status_code == 200
@@ -301,7 +289,7 @@ def test_tc_018_004_post_cancelar_con_cabecera_y_con_campo_oculto(
 
     for appointment in (with_header, with_field):
         current = repository.get_appointment_by_id(
-            appointment.id, _database_path(admin_app)
+            appointment.id, _database(admin_app)
         )
         assert current is not None
         assert current.status == STATUS_CANCELLED
@@ -383,7 +371,7 @@ def test_tc_018_006_cancelar_inexistente_ya_cancelada_y_reprogramar_cancelada(
     assert repeat_cancel.status_code == 200
     assert ac.ADMIN_MSG_ALREADY_CANCELLED in repeat_cancel.get_data(as_text=True)
     current = repository.get_appointment_by_id(
-        created.id, _database_path(admin_app)
+        created.id, _database(admin_app)
     )
     assert current is not None and current.status == STATUS_CANCELLED
     assert _appointment_count(admin_app) == appointments_after_cancel
@@ -405,7 +393,7 @@ def test_tc_018_006_cancelar_inexistente_ya_cancelada_y_reprogramar_cancelada(
     assert rescheduled.status_code == 200
     assert ac.ADMIN_MSG_ALREADY_CANCELLED in rescheduled.get_data(as_text=True)
     current = repository.get_appointment_by_id(
-        created.id, _database_path(admin_app)
+        created.id, _database(admin_app)
     )
     assert current is not None and current.status == STATUS_CANCELLED
     assert _appointment_count(admin_app) == appointments_after_cancel
@@ -438,8 +426,8 @@ def test_tc_018_008_reprogramacion_exitosa_copia_paciente_y_usa_id_real(
     new_id = int(match.group(1))
     assert ac.ADMIN_RESCHEDULE_SUCCESS_TEMPLATE.format(id=new_id) in html
 
-    old = repository.get_appointment_by_id(created.id, _database_path(admin_app))
-    new = repository.get_appointment_by_id(new_id, _database_path(admin_app))
+    old = repository.get_appointment_by_id(created.id, _database(admin_app))
+    new = repository.get_appointment_by_id(new_id, _database(admin_app))
     assert old is not None and old.status == STATUS_CANCELLED
     assert new is not None and new.status == "confirmed"
     assert new.id != old.id
@@ -534,8 +522,8 @@ def test_tc_018_019_segundo_post_identico_no_duplica_cita_ni_eventos(
     assert _event_counts(admin_app) == events_after_first
 
     old = repository.get_appointment_by_id(
-        previous.id, _database_path(admin_app)
+        previous.id, _database(admin_app)
     )
-    created = repository.get_appointment_by_id(new_id, _database_path(admin_app))
+    created = repository.get_appointment_by_id(new_id, _database(admin_app))
     assert old is not None and old.status == STATUS_CANCELLED
     assert created is not None and created.status == "confirmed"

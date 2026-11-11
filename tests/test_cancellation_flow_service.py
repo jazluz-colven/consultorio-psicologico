@@ -14,7 +14,6 @@ the transition, the slot release and the notifications belong to
 """
 
 import re
-import sqlite3
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from unittest import mock
@@ -57,8 +56,8 @@ def _booking_data(booking_date: str, slot: str = SLOT) -> dict[str, str]:
     }
 
 
-def _create(database_path: Path) -> Appointment:
-    created = booking.create_booking(_booking_data(_future_weekday()), database_path)
+def _create(database) -> Appointment:
+    created = booking.create_booking(_booking_data(_future_weekday()), database)
     assert isinstance(created, Appointment)
     return created
 
@@ -71,21 +70,21 @@ def _start(appointment: Appointment) -> datetime:
     )
 
 
-def _verify(appointment: Appointment, database_path: Path, now: datetime,
+def _verify(appointment: Appointment, database, now: datetime,
             document: str = DOCUMENT_NUMBER) -> Appointment | str:
     return flow.verify_cancellation_request(
-        appointment.id, document, database_path, now
+        appointment.id, document, database, now
     )
 
 
-def _status(appointment_id: int, database_path: Path) -> str:
-    current = repository.get_appointment_by_id(appointment_id, database_path)
+def _status(appointment_id: int, database) -> str:
+    current = repository.get_appointment_by_id(appointment_id, database)
     assert current is not None
     return current.status
 
 
 def _assert_failed_without_appointment_data(
-    result: object, appointment: Appointment, database_path: Path
+    result: object, appointment: Appointment, database
 ) -> None:
     """D4: the FAILED output must not leak any appointment data."""
     assert result == flow.FAILED
@@ -101,7 +100,7 @@ def _assert_failed_without_appointment_data(
     ):
         assert forbidden not in leaked
     # RF-1: verification never changes the row
-    assert _status(appointment.id, database_path) == "confirmed"
+    assert _status(appointment.id, database) == "confirmed"
 
 
 def _cancellation_event_id(appointment_id: int) -> str:
@@ -109,25 +108,22 @@ def _cancellation_event_id(appointment_id: int) -> str:
     return f"appointment.cancellation_email:{appointment_id}:v1"
 
 
-def _count_events(event_id: str, database_path: Path) -> int:
-    connection = sqlite3.connect(str(database_path))
-    try:
-        return connection.execute(
-            "SELECT COUNT(*) FROM automation_events WHERE event_id = ?",
+def _count_events(event_id: str, database) -> int:
+    with database.connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM automation_events"
+            " WHERE event_id = %s",
             (event_id,),
-        ).fetchone()[0]
-    finally:
-        connection.close()
+        ).fetchone()
+    return int(row["total"])
 
 
-def _count_all_events(database_path: Path) -> int:
-    connection = sqlite3.connect(str(database_path))
-    try:
-        return connection.execute(
-            "SELECT COUNT(*) FROM automation_events"
-        ).fetchone()[0]
-    finally:
-        connection.close()
+def _count_all_events(database) -> int:
+    with database.connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM automation_events"
+        ).fetchone()
+    return int(row["total"])
 
 
 def _cancellation_posts(post: mock.MagicMock) -> list[mock.call]:
@@ -142,7 +138,7 @@ def _cancellation_posts(post: mock.MagicMock) -> list[mock.call]:
 
 def _execute(
     appointment: Appointment,
-    database_path: Path,
+    database,
     now: datetime,
     document: str = DOCUMENT_NUMBER,
     url: str = WEBHOOK_URL,
@@ -150,7 +146,7 @@ def _execute(
     """Run cancel_verified_request() with the webhook intercepted."""
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         result = flow.cancel_verified_request(
-            appointment.id, document, database_path, now, url, TIMEOUT, AUTH_HEADER
+            appointment.id, document, database, now, url, TIMEOUT, AUTH_HEADER
         )
     return result, post
 
@@ -159,78 +155,78 @@ def _execute(
 # --- RF-4 / TC-017-003: 3-hour window -------------------------------------
 
 
-def test_tc_017_003_borde_exacto_tres_horas_listo(database_path: Path) -> None:
-    appointment = _create(database_path)
-    result = _verify(appointment, database_path, _start(appointment) - timedelta(hours=3))
+def test_tc_017_003_borde_exacto_tres_horas_listo(database) -> None:
+    appointment = _create(database)
+    result = _verify(appointment, database, _start(appointment) - timedelta(hours=3))
     assert isinstance(result, Appointment)
     assert result.id == appointment.id
     assert result.status == "confirmed"
-    assert _status(appointment.id, database_path) == "confirmed"
+    assert _status(appointment.id, database) == "confirmed"
 
 
-def test_tc_017_003_dos_horas_59_minutos_rechazada(database_path: Path) -> None:
-    appointment = _create(database_path)
+def test_tc_017_003_dos_horas_59_minutos_rechazada(database) -> None:
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=2, minutes=59)
-    result = _verify(appointment, database_path, now)
+    result = _verify(appointment, database, now)
     assert result == flow.TOO_SOON
-    assert _status(appointment.id, database_path) == "confirmed"
+    assert _status(appointment.id, database) == "confirmed"
 
 
-def test_tc_017_003_hora_iniciada_rechazada(database_path: Path) -> None:
-    appointment = _create(database_path)
-    result = _verify(appointment, database_path, _start(appointment))
+def test_tc_017_003_hora_iniciada_rechazada(database) -> None:
+    appointment = _create(database)
+    result = _verify(appointment, database, _start(appointment))
     assert result == flow.TOO_SOON
 
 
-def test_tc_017_003_hora_pasada_rechazada(database_path: Path) -> None:
-    appointment = _create(database_path)
-    result = _verify(appointment, database_path, _start(appointment) + timedelta(hours=2))
+def test_tc_017_003_hora_pasada_rechazada(database) -> None:
+    appointment = _create(database)
+    result = _verify(appointment, database, _start(appointment) + timedelta(hours=2))
     assert result == flow.TOO_SOON
 
 
 # --- RF-1 / RF-2 / TC-017-001: ownership ----------------------------------
 
 
-def test_tc_017_001_referencia_inexistente_fallida(database_path: Path) -> None:
-    appointment = _create(database_path)
+def test_tc_017_001_referencia_inexistente_fallida(database) -> None:
+    appointment = _create(database)
     missing_id = appointment.id + 999
     result = flow.verify_cancellation_request(
-        missing_id, DOCUMENT_NUMBER, database_path, _start(appointment)
+        missing_id, DOCUMENT_NUMBER, database, _start(appointment)
     )
     assert result == flow.FAILED
 
 
 def test_tc_017_001_documento_incorrecto_fallida_sin_datos(
-    database_path: Path,
+    database,
 ) -> None:
-    appointment = _create(database_path)
+    appointment = _create(database)
     result = _verify(
-        appointment, database_path, _start(appointment) - timedelta(hours=6),
+        appointment, database, _start(appointment) - timedelta(hours=6),
         document=OTHER_DOCUMENT,
     )
-    _assert_failed_without_appointment_data(result, appointment, database_path)
+    _assert_failed_without_appointment_data(result, appointment, database)
 
 
 def test_tc_017_001_inexistente_e_incorrecto_indistinguibles(
-    database_path: Path,
+    database,
 ) -> None:
     """D4: one single result for «unknown reference» and «wrong document»."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=6)
     unknown = flow.verify_cancellation_request(
-        appointment.id + 999, OTHER_DOCUMENT, database_path, now
+        appointment.id + 999, OTHER_DOCUMENT, database, now
     )
-    mismatch = _verify(appointment, database_path, now, document=OTHER_DOCUMENT)
+    mismatch = _verify(appointment, database, now, document=OTHER_DOCUMENT)
     assert unknown == mismatch == flow.FAILED
 
 
 def test_tc_017_001_documento_con_espacios_se_compara_tras_strip(
-    database_path: Path,
+    database,
 ) -> None:
     """D3: the document number is compared exactly, after strip()."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     result = _verify(
-        appointment, database_path, _start(appointment) - timedelta(hours=6),
+        appointment, database, _start(appointment) - timedelta(hours=6),
         document=f"  {DOCUMENT_NUMBER}\t",
     )
     assert isinstance(result, Appointment)
@@ -240,25 +236,25 @@ def test_tc_017_001_documento_con_espacios_se_compara_tras_strip(
 
 
 def test_tc_017_006_cita_ya_cancelada_antes_de_la_ventana(
-    database_path: Path,
+    database,
 ) -> None:
     """The cancelled state is evaluated before the 3-hour window (§5 order):
     an already cancelled appointment never reports TOO_SOON."""
-    appointment = _create(database_path)
-    cancelled = booking.cancel_appointment(appointment.id, database_path)
+    appointment = _create(database)
+    cancelled = booking.cancel_appointment(appointment.id, database)
     assert isinstance(cancelled, Appointment)
 
-    past = _verify(appointment, database_path, _start(appointment) + timedelta(hours=1))
+    past = _verify(appointment, database, _start(appointment) + timedelta(hours=1))
     assert past == flow.ALREADY_CANCELLED
 
     soon = _verify(
-        appointment, database_path, _start(appointment) - timedelta(hours=1)
+        appointment, database, _start(appointment) - timedelta(hours=1)
     )
     assert soon == flow.ALREADY_CANCELLED
 
     # and a wrong document still hides that state (D4)
     mismatch = _verify(
-        appointment, database_path, _start(appointment) - timedelta(hours=6),
+        appointment, database, _start(appointment) - timedelta(hours=6),
         document=OTHER_DOCUMENT,
     )
     assert mismatch == flow.FAILED
@@ -268,29 +264,29 @@ def test_tc_017_006_cita_ya_cancelada_antes_de_la_ventana(
 
 
 def test_tc_017_004_flujo_feliz_delega_y_queda_cancelada_en_bd(
-    database_path: Path,
+    database,
 ) -> None:
     """RF-5: verification READY → cancel_verified_request() → the row is
     `cancelled` in the database, and the notification goes out once (RF-8)."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=6)
 
-    result, post = _execute(appointment, database_path, now)
+    result, post = _execute(appointment, database, now)
 
     assert isinstance(result, Appointment)
     assert result.id == appointment.id
     assert result.status == "cancelled"
-    assert _status(appointment.id, database_path) == "cancelled"
+    assert _status(appointment.id, database) == "cancelled"
     assert len(_cancellation_posts(post)) == 1
-    assert _count_events(_cancellation_event_id(appointment.id), database_path) == 1
+    assert _count_events(_cancellation_event_id(appointment.id), database) == 1
 
 
 def test_tc_017_004_delega_con_la_configuracion_recibida(
-    database_path: Path,
+    database,
 ) -> None:
     """RF-5: the automation settings received as parameters are forwarded
     verbatim to cancel_appointment() (same pattern as web/appointments.py)."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=6)
 
     with mock.patch.object(automation, "_post_webhook", return_value=200):
@@ -298,36 +294,36 @@ def test_tc_017_004_delega_con_la_configuracion_recibida(
             flow, "cancel_appointment", wraps=booking.cancel_appointment
         ) as delegate:
             result = flow.cancel_verified_request(
-                appointment.id, DOCUMENT_NUMBER, database_path, now,
+                appointment.id, DOCUMENT_NUMBER, database, now,
                 WEBHOOK_URL, TIMEOUT, AUTH_HEADER,
             )
 
     assert isinstance(result, Appointment)
     delegate.assert_called_once_with(
-        appointment.id, database_path, WEBHOOK_URL, TIMEOUT, AUTH_HEADER
+        appointment.id, database, WEBHOOK_URL, TIMEOUT, AUTH_HEADER
     )
-    assert _status(appointment.id, database_path) == "cancelled"
+    assert _status(appointment.id, database) == "cancelled"
 
 
 def test_tc_017_006_segundo_intento_una_sola_fila_y_cero_posts_nuevos(
-    database_path: Path,
+    database,
 ) -> None:
     """RF-9 / RF-8: a second request over the same appointment answers
     ALREADY_CANCELLED with exactly 1 `appointment.cancellation_email` row and
     0 additional POSTs to the webhook (TC-017-006)."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=6)
 
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         first = flow.cancel_verified_request(
-            appointment.id, DOCUMENT_NUMBER, database_path, now,
+            appointment.id, DOCUMENT_NUMBER, database, now,
             WEBHOOK_URL, TIMEOUT, AUTH_HEADER,
         )
         assert isinstance(first, Appointment)
         posts_after_first = post.call_count
 
         second = flow.cancel_verified_request(
-            appointment.id, DOCUMENT_NUMBER, database_path, now,
+            appointment.id, DOCUMENT_NUMBER, database, now,
             WEBHOOK_URL, TIMEOUT, AUTH_HEADER,
         )
 
@@ -336,68 +332,68 @@ def test_tc_017_006_segundo_intento_una_sola_fila_y_cero_posts_nuevos(
     # 0 POSTs added by the retry (the first attempt already sent them)
     assert post.call_count == posts_after_first
     assert len(_cancellation_posts(post)) == 1
-    assert _count_events(_cancellation_event_id(appointment.id), database_path) == 1
-    assert _status(appointment.id, database_path) == "cancelled"
+    assert _count_events(_cancellation_event_id(appointment.id), database) == 1
+    assert _status(appointment.id, database) == "cancelled"
 
 
 def test_tc_017_004_documento_incorrecto_no_cancela_ni_notifica(
-    database_path: Path,
+    database,
 ) -> None:
     """RF-1 / RF-8: a failed verification returns FAILED without writing a
     single row and without any POST."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=6)
-    events_before = _count_all_events(database_path)
+    events_before = _count_all_events(database)
 
     result, post = _execute(
-        appointment, database_path, now, document=OTHER_DOCUMENT
+        appointment, database, now, document=OTHER_DOCUMENT
     )
 
     assert result == flow.FAILED
-    assert _status(appointment.id, database_path) == "confirmed"
+    assert _status(appointment.id, database) == "confirmed"
     assert post.call_count == 0
-    assert _count_all_events(database_path) == events_before
-    assert _count_events(_cancellation_event_id(appointment.id), database_path) == 0
+    assert _count_all_events(database) == events_before
+    assert _count_events(_cancellation_event_id(appointment.id), database) == 0
 
 
 def test_tc_017_003_ventana_insuficiente_no_cancela_ni_notifica(
-    database_path: Path,
+    database,
 ) -> None:
     """RF-4 / RF-8: inside the 3-hour window the execution returns TOO_SOON
     without writing a single row and without any POST."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=2, minutes=59)
-    events_before = _count_all_events(database_path)
+    events_before = _count_all_events(database)
 
-    result, post = _execute(appointment, database_path, now)
+    result, post = _execute(appointment, database, now)
 
     assert result == flow.TOO_SOON
-    assert _status(appointment.id, database_path) == "confirmed"
+    assert _status(appointment.id, database) == "confirmed"
     assert post.call_count == 0
-    assert _count_all_events(database_path) == events_before
-    assert _count_events(_cancellation_event_id(appointment.id), database_path) == 0
+    assert _count_all_events(database) == events_before
+    assert _count_events(_cancellation_event_id(appointment.id), database) == 0
 
 
 def test_tc_017_004_cita_inexistente_en_la_delegacion_mapea_a_failed(
-    database_path: Path,
+    database,
 ) -> None:
     """Plan D7 mapping: APPOINTMENT_NOT_FOUND coming from the delegated call
     is reported as FAILED (the module never invents another sentinel)."""
-    appointment = _create(database_path)
+    appointment = _create(database)
     now = _start(appointment) - timedelta(hours=6)
 
     with mock.patch.object(
         flow, "cancel_appointment", return_value=booking.APPOINTMENT_NOT_FOUND
     ) as delegate:
         result = flow.cancel_verified_request(
-            appointment.id, DOCUMENT_NUMBER, database_path, now,
+            appointment.id, DOCUMENT_NUMBER, database, now,
             WEBHOOK_URL, TIMEOUT, AUTH_HEADER,
         )
 
     assert result == flow.FAILED
     delegate.assert_called_once()
     # verification itself never changed anything (RF-1)
-    assert _status(appointment.id, database_path) == "confirmed"
+    assert _status(appointment.id, database) == "confirmed"
 
 
 def test_tc_017_011_cancellation_flow_service_delega_sin_logica_propia() -> None:
