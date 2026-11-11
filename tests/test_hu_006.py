@@ -1,12 +1,14 @@
 """HU-006 — user story checks: submit guard, schema and literals (spec 006)."""
 
 import re
-import sqlite3
 from datetime import date, timedelta
-from pathlib import Path
 
 from consultorio.config import Config
 from consultorio.content import appointment_content as content
+from consultorio.persistence.database import (
+    Database,
+    PG_APPOINTMENTS_TABLE_SQL,
+)
 
 from tests import expected_content as expected
 
@@ -47,11 +49,6 @@ def _form(**overrides: str) -> dict[str, str]:
     }
     base.update(overrides)
     return base
-
-
-def _database_path(app) -> Path:
-    with app.app_context():
-        return Path(app.config["DATABASE_PATH"])
 
 
 def test_tc_006_011_js_guard_de_envio_en_curso() -> None:
@@ -99,7 +96,9 @@ def test_tc_006_012_css_estado_en_curso_paleta_justificado_y_sin_desborde() -> N
     assert all(width <= 375 for width in fixed_widths)
 
 
-def test_tc_006_013_esquema_unico_y_diagnostico_sin_duplicados(app, client) -> None:
+def test_tc_006_013_esquema_unico_y_diagnostico_sin_duplicados(
+    app, client, database
+) -> None:
     for index, hour in enumerate(FREE_HOURS):
         assert (
             client.post("/citas", data=_form(time=hour, document_number=f"12345{index}"))
@@ -119,23 +118,39 @@ def test_tc_006_013_esquema_unico_y_diagnostico_sin_duplicados(app, client) -> N
             == 303
         )
 
-    path = _database_path(app)
-    connection = sqlite3.connect(str(path))
-    try:
-        schema = connection.execute(
-            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'appointments'"
-        ).fetchone()[0]
-        assert "UNIQUE" not in schema.upper()
+    schema = database.target.schema
+    with database.connection() as connection:
+        # HU-010 (spec 010 amended): uniqueness lives in the partial unique
+        # index, not in an inline table constraint.
+        unique_constraints = connection.execute(
+            """
+            SELECT pg_get_constraintdef(c.oid) AS definition
+            FROM pg_constraint AS c
+            JOIN pg_class AS t ON t.oid = c.conrelid
+            JOIN pg_namespace AS n ON n.oid = t.relnamespace
+            WHERE n.nspname = %s
+              AND t.relname = 'appointments'
+              AND c.contype = 'u'
+            """,
+            (schema,),
+        ).fetchall()
+        assert not any(
+            "UNIQUE" in row["definition"].upper()
+            for row in unique_constraints
+        )
         index = connection.execute(
-            "SELECT sql FROM sqlite_master WHERE type = 'index'"
-            " AND name = 'ux_appointments_slot_open'"
+            """
+            SELECT indexdef
+            FROM pg_indexes
+            WHERE schemaname = %s
+              AND tablename = 'appointments'
+              AND indexname = 'ux_appointments_slot_open'
+            """,
+            (schema,),
         ).fetchone()
-        # HU-010 (spec 010 amended): the uniqueness moved from the table
-        # constraint to a partial unique index that ignores cancelled rows.
-        assert index is not None and "status <> 'cancelled'" in index[0]
+        assert index is not None
+        assert "status <> 'cancelled'" in index["indexdef"]
         duplicates = connection.execute(DIAGNOSTIC).fetchall()
-    finally:
-        connection.close()
     assert duplicates == []
 
 
@@ -164,45 +179,39 @@ def test_tc_006_014_espejo_msg_submitting_y_slot_taken_identicos() -> None:
     assert content.MSG_SLOT_TAKEN not in spec_005
 
 
-def test_tc_006_015_diagnostico_detecta_duplicados_sin_indice(tmp_path) -> None:
-    path = tmp_path / "without_index.db"
-    connection = sqlite3.connect(str(path))
-    try:
-        connection.execute(
-            """
-            CREATE TABLE appointments (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                document_type   TEXT NOT NULL,
-                document_number TEXT NOT NULL,
-                patient_name    TEXT NOT NULL,
-                email           TEXT NOT NULL,
-                phone           TEXT NOT NULL,
-                service     TEXT NOT NULL,
-                date        TEXT NOT NULL,
-                time        TEXT NOT NULL,
-                status      TEXT NOT NULL DEFAULT 'confirmed',
-                created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
-            )
-            """
-        )
-        insert = """
-            INSERT INTO appointments (
-                document_type, document_number, patient_name, email, phone,
-                service, date, time
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        row = ("CC", "1234567890", "Ana Pérez", "ana@correo.com", "3001234567",
-               "nutrition", "2026-10-12", "08:00")
+def test_tc_006_015_diagnostico_detecta_duplicados_sin_indice(
+    pg_target,
+) -> None:
+    """The diagnostic query catches duplicates when the partial index is absent.
+
+    A throwaway PostgreSQL schema is created with the appointments table only
+    (no ``ux_appointments_slot_open``), so two identical rows can be inserted.
+    The same ``DIAGNOSTIC`` query used by TC-006-013 must report exactly one
+    duplicated slot with total 2.
+    """
+    database = Database(pg_target)
+    insert = """
+        INSERT INTO appointments (
+            document_type, document_number, patient_name, email, phone,
+            service, date, time
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    row = ("CC", "1234567890", "Ana Pérez", "ana@correo.com", "3001234567",
+           "nutrition", "2026-10-12", "08:00")
+    with database.transaction() as connection:
+        connection.execute(PG_APPOINTMENTS_TABLE_SQL)
         connection.execute(insert, row)
         connection.execute(insert, row)
         duplicates = connection.execute(DIAGNOSTIC).fetchall()
-    finally:
-        connection.close()
 
     assert len(duplicates) == 1
-    service, day, hour, total = duplicates[0]
-    assert (service, day, hour) == ("nutrition", "2026-10-12", "08:00")
-    assert total == 2
+    duplicate = duplicates[0]
+    assert (duplicate["service"], duplicate["date"], duplicate["time"]) == (
+        "nutrition",
+        "2026-10-12",
+        "08:00",
+    )
+    assert duplicate["total"] == 2
 
 
 def test_tc_006_017_js_duracion_minima_visible_del_estado_en_curso() -> None:

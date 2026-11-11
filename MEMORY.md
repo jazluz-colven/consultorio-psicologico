@@ -771,4 +771,36 @@ aporte.
   reprogramado admin sigue sin atomicidad entre cancelar y crear (preexistente,
   plan D4/RF-6, para T12/T13). **Aceptación funcional de la usuaria:
   2026-11-10**, con esas observaciones no bloqueantes. **Commit de T9
-  autorizado el 2026-11-10.** **T10 autorizada el 2026-11-10.** Sin push.
+   autorizado el 2026-11-10.** **T10 autorizada el 2026-11-10.** Sin push.
+- **Spec 019 — T10 COMPLETADA Y APROBADA (2026-11-10)**:
+  `tests/conftest.py` valida `TEST_DATABASE_URL` en `pytest_configure` (conexión
+  real `SELECT 1`; sin `skip`; `pytest.exit` código 1 con instrucciones si falta
+  o no conecta). Fixture `app`: `create_app(TempConfig)` con SQLite temporal
+  (bootstrap sin tocar `public`), luego `Database(pg_target)` +
+  `ensure_schema()`, sustitución en `app.extensions`, `PERSISTENCE_BACKEND=
+  "postgres"` y cierre `close_request()` antes del `DROP SCHEMA`; esquema aislado
+  `test_hu019_<uuid>` por test; nueva fixture `database`; `database_path` se
+  conserva para T11. Migrados a PG: `test_appointment_persistence.py`,
+  `test_hu_006.py`, `test_hu_007.py` y `test_hu_010.py` (catálogos
+  `information_schema`/`pg_*`, `psycopg.errors.UniqueViolation`; sin
+  `sqlite3.connect` directo). `TC-010-014` se reubicó sin cambios a
+  `tests/test_rollback_sqlite.py` (verificación de rollback para T15, no
+  paridad); la idempotencia PG sigue en TC-019-004/018. Resultados reales:
+  T10+rollback **18 PASS**; PG existente+T10+rollback **32 PASS**; suite
+  completa **372 PASS / 24 FAIL** (base 396), 24 fallos solo en archivos T11
+  (`test_appointment_routes.py`, `test_availability_routes.py`,
+  `test_double_booking_routes.py`, `test_hu_008.py`, `test_hu_017.py`) porque
+  aún leen `app.config["DATABASE_PATH"]` (SQLite) mientras las rutas usan
+  PostgreSQL. Sin esquemas `test_hu019_*` residuales; `public` con 0 filas de
+  test. Evidencia: `docs/evidencias/hu-019/t10-fixtures.md` y
+  `suite-postgres.txt`. Pendiente: T11 debe migrar esos 5 archivos y los que aún
+  usan `database_path`; T15 registra el rollback aparte. **`@revisor` emitió
+  APROBADO** (aislamiento y `public` intactos verificados; `TC-010-014`
+  reubicado con cuerpo idéntico; lista de 24 fallos coincide con la evidencia;
+  sin aserciones relajadas). Observaciones no bloqueantes: la suite sigue roja
+  hasta T11; `docs/operaciones/postgresql.md` y un comentario de
+  `config.py` aún describen la etapa SQLite (T16/cierre); `pytest_configure`
+  bloquea también `--collect-only` sin BD (coherente con D9/CL-10);
+  `pg_schema` silencia fallos de `DROP`; la fixture copia el DSN local a
+  `config` (no imprimirlo). **T10 marcada `[x]` en `tasks.md`. Commit de T10
+  no autorizado aún; sin push.**

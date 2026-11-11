@@ -1,8 +1,6 @@
 """HU-007 — schema, config and functional regression for the automation event."""
 
-import sqlite3
 from datetime import date, timedelta
-from pathlib import Path
 from unittest import mock
 
 from consultorio.config import Config, _parse_timeout_seconds
@@ -35,36 +33,45 @@ def _booking_data(booking_date: str, time: str = SLOT) -> dict[str, str]:
     }
 
 
-def test_tc_007_010_esquema_unique_y_dedup(database_path: Path) -> None:
-    connection = sqlite3.connect(str(database_path))
-    try:
-        sql = connection.execute(
-            "SELECT sql FROM sqlite_master WHERE name = 'automation_events'"
-        ).fetchone()[0]
-        assert "UNIQUE" in sql
-        assert "event_id" in sql
-    finally:
-        connection.close()
+def test_tc_007_010_esquema_unique_y_dedup(database) -> None:
+    schema = database.target.schema
+    with database.connection() as connection:
+        constraints = connection.execute(
+            """
+            SELECT pg_get_constraintdef(c.oid) AS definition
+            FROM pg_constraint AS c
+            JOIN pg_class AS t ON t.oid = c.conrelid
+            JOIN pg_namespace AS n ON n.oid = t.relnamespace
+            WHERE n.nspname = %s
+              AND t.relname = 'automation_events'
+              AND c.contype = 'u'
+            """,
+            (schema,),
+        ).fetchall()
+    assert any(
+        "UNIQUE" in row["definition"] and "event_id" in row["definition"]
+        for row in constraints
+    )
+
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", return_value=200):
         appointment = booking.create_booking(
             _booking_data(booking_date),
-            database_path,
+            database,
             WEBHOOK_URL,
             3.0,
         )
         automation.on_appointment_confirmed(
-            appointment, database_path, WEBHOOK_URL, 3.0
+            appointment, database, WEBHOOK_URL, 3.0
         )
-    connection = sqlite3.connect(str(database_path))
-    try:
-        count = connection.execute(
-            "SELECT COUNT(*) FROM automation_events WHERE event_id = ?",
+
+    with database.connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM automation_events"
+            " WHERE event_id = %s",
             (f"appointment.confirmed:{appointment.id}:v1",),
-        ).fetchone()[0]
-    finally:
-        connection.close()
-    assert count == 1
+        ).fetchone()
+    assert row["total"] == 1
 
 
 def test_tc_007_011_config_defaults_y_parse_defensivo() -> None:
@@ -77,7 +84,9 @@ def test_tc_007_011_config_defaults_y_parse_defensivo() -> None:
     assert _parse_timeout_seconds("5") == 5.0
 
 
-def test_tc_007_012_regresion_agendamiento_con_y_sin_webhook(client, app, tmp_path) -> None:
+def test_tc_007_012_regresion_agendamiento_con_y_sin_webhook(
+    client, app, database
+) -> None:
     booking_date = _future_weekday()
     with mock.patch.object(automation, "_post_webhook", return_value=200):
         response = client.post("/citas", data=_booking_data(booking_date))
@@ -102,7 +111,7 @@ def test_tc_007_012_regresion_agendamiento_con_y_sin_webhook(client, app, tmp_pa
     with mock.patch.object(automation, "_post_webhook", return_value=200) as post:
         retry = client.post("/citas", data=_booking_data(booking_date))
         second = booking.create_booking(
-            _booking_data(booking_date, "08:30"), Path(app.config["DATABASE_PATH"])
+            _booking_data(booking_date, "08:30"), database
         )
     assert retry.status_code == 200
     assert second != SLOT_TAKEN

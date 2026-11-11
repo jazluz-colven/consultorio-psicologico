@@ -285,7 +285,7 @@
 
 ## Fase B — Validación y despliegue
 
-- [ ] **T10. Migrar las fixtures y los tests de persistencia a PostgreSQL. [NO AUTORIZADA]**
+- [x] **T10. Migrar las fixtures y los tests de persistencia a PostgreSQL. [COMPLETADA Y APROBADA por @revisor 2026-11-10 — T10 18 PASS; suite 372/24, fallos de T11]**
   - **Objetivo:** hacer que la suite use siempre PostgreSQL, con esquema
     aislado por test y sin accesos directos a SQLite.
   - **Cubre:** RF-28, RF-29; RNF-5; CL-10.
