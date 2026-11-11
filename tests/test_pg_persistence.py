@@ -26,11 +26,13 @@ instructions instead of skipping (plan D9/CL-10). The ``pg_schema``/
 """
 
 import threading
+import time
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from unittest import mock
 from zoneinfo import ZoneInfo
 
+import psycopg
 import psycopg.errors as pg_errors
 import pytest
 
@@ -80,6 +82,38 @@ def _parse_utc(value: str) -> datetime:
 
 def _cancel_event_id(appointment_id: int) -> str:
     return f"appointment.cancelled:{appointment_id}:v1"
+
+
+def _wait_for_blocked_booking_insert(dsn: str, timeout: float = 10.0) -> None:
+    """Wait until the application INSERT is blocked on the conflicting slot.
+
+    The observer reads ``pg_stat_activity`` (public server state). The booking
+    connection uses ``application_name='consultorio-web'``; a blocked INSERT on
+    the partial unique index shows ``wait_event_type='Lock'``. Polling this
+    makes the real race deterministic without mocking persistence.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        with psycopg.connect(
+            dsn, connect_timeout=5, autocommit=True
+        ) as observer:
+            row = observer.execute(
+                """
+                SELECT count(*) AS total
+                  FROM pg_stat_activity
+                 WHERE application_name = 'consultorio-web'
+                   AND state = 'active'
+                   AND wait_event_type = 'Lock'
+                   AND position('INSERT INTO appointments' in query) > 0
+                """
+            ).fetchone()
+        if int(row[0]) > 0:
+            return
+        time.sleep(0.02)
+    pytest.fail(
+        "The application INSERT never blocked on the conflicting slot; "
+        "the real race could not be established."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -208,13 +242,67 @@ def test_tc_019_006_sql_sent_to_postgres_uses_percent_s_and_returning(
 def test_tc_019_008_booking_service_maps_only_slot_uniqueness(
     pg_database: Database,
 ) -> None:
-    """D6: UniqueViolation(slot) -> SLOT_TAKEN; outage never is a taken slot."""
-    appointments.insert_appointment(VALID_DATA, pg_database)
+    """D6: a REAL unique violation -> ``SLOT_TAKEN``; an outage never is.
 
-    with mock.patch.object(
-        booking.repository, "is_slot_taken", return_value=False
-    ):
-        assert booking.create_booking(VALID_DATA, pg_database) == booking.SLOT_TAKEN
+    A second real PostgreSQL connection inserts the same slot and keeps the
+    transaction open. ``create_booking()`` passes its availability pre-check
+    (the uncommitted row is invisible) and blocks on the partial unique index;
+    when the blocker commits, the engine raises ``UniqueViolation`` and the
+    service maps it to ``SLOT_TAKEN``. No persistence function is mocked.
+    """
+    dsn = pg_database.target.dsn
+    schema = pg_database.target.schema
+    assert dsn is not None and schema is not None
+
+    blocker = psycopg.connect(
+        dsn,
+        connect_timeout=5,
+        autocommit=False,
+        options=f"-c search_path={schema}",
+    )
+    results: list[object] = []
+    errors: list[BaseException] = []
+    thread: threading.Thread | None = None
+    try:
+        blocker.execute(
+            """
+            INSERT INTO appointments (
+                document_type, document_number, patient_name, email, phone,
+                service, date, time, status
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'confirmed')
+            """,
+            (
+                VALID_DATA["document_type"],
+                VALID_DATA["document_number"],
+                VALID_DATA["patient_name"],
+                VALID_DATA["email"],
+                VALID_DATA["phone"],
+                VALID_DATA["service"],
+                VALID_DATA["date"],
+                VALID_DATA["time"],
+            ),
+        )
+
+        def attempt() -> None:
+            try:
+                results.append(booking.create_booking(VALID_DATA, pg_database))
+            except BaseException as error:  # noqa: BLE001 - asserted below
+                errors.append(error)
+
+        thread = threading.Thread(target=attempt)
+        thread.start()
+        _wait_for_blocked_booking_insert(dsn)
+        blocker.commit()
+        thread.join(timeout=30)
+    finally:
+        blocker.close()
+        if thread is not None:
+            thread.join(timeout=30)
+
+    assert thread is not None
+    assert not thread.is_alive()
+    assert errors == []
+    assert results == [booking.SLOT_TAKEN]
     assert _count(pg_database, "appointments") == 1
 
     unavailable = Database(

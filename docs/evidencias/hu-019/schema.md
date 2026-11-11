@@ -264,3 +264,34 @@ sigue ejercitando.
 - No se implementó T5 ni tareas posteriores.
 - No se hizo commit ni push.
 - Esta evidencia no contiene contraseñas ni PII.
+
+---
+
+## T12 — revisión de no vacuidad (TC-019-003, 004, 005, 018)
+
+> Sección añadida el **2026-11-11** al implementar T12. No reescribe el cierre
+> de T4; documenta la auditoría de T12 y los refuerzos aplicados.
+
+**Resultado real:** `python -m pytest -q tests/test_pg_schema.py` → **4 passed**
+(además, los cuatro archivos T12 dieron **77 passed** y la suite completa
+**397 passed**; ver `suite-postgres.txt` y `resilience.md`).
+
+| TC | Prueba (`tests/test_pg_schema.py`) | Resultado | Argumento de no vacuidad |
+|---|---|---|---|
+| TC-019-003 | `test_tc_019_003_empty_database_creates_expected_schema` | PASS | Crea el esquema en PostgreSQL real y lee `information_schema.tables`, `pg_constraint`, `pg_indexes` y `information_schema.columns`. Comprueba el índice parcial exacto, `UNIQUE(event_id)`, `BIGSERIAL` y defaults UTC; no usa SQLite ni introspección simulada. |
+| TC-019-004 | `test_tc_019_004_second_run_is_idempotent_and_keeps_data` | PASS | Inserta una cita y un evento reales entre dos `ensure_schema()` ejecutados por instancias distintas (`_schema_ready` reiniciado) y verifica que tablas, índices, filas y marcadores de migración no cambian. |
+| TC-019-005 | `test_tc_019_005_concurrent_bootstrap_leaves_single_object_set` | PASS | Dos conexiones/instancias reales arrancan simultáneamente tras un `threading.Barrier`; el advisory lock serializa el DDL y el test comprueba que no hay errores ni objetos duplicados. |
+| TC-019-018 | `test_tc_019_018_reapply_over_data_preserves_rows_and_integrity` | PASS | Aplica un **paso aditivo real** (versión 5, `ALTER TABLE … ADD COLUMN IF NOT EXISTS`) sobre una tabla con datos, verifica filas/columnas y que la unicidad del slot y de `event_id` siguen impuestas por el motor; una tercera aplicación es idempotente. |
+
+**Refuerzos T12:**
+
+- **TC-019-003 y TC-019-005** pasan de comprobar un subconjunto a exigir
+  igualdad exacta de tablas (`EXPECTED_TABLES`) e índices (`EXPECTED_INDEXES`).
+  Así un objeto extra o duplicado también hace fallar la prueba.
+- **TC-019-018** antes solo reaplicaba el mismo DDL. Ahora simula un cambio
+  aditivo real con `monkeypatch` sobre `PG_SCHEMA_STEPS` en el proceso de test
+  (la producción conserva sus cuatro pasos), conserva los datos y vuelve a
+  comprobar la integridad y la idempotencia.
+
+No se modificó el DDL de producción, `public` no se tocó y el esquema temporal
+se elimina con `DROP SCHEMA … CASCADE` al finalizar cada test.

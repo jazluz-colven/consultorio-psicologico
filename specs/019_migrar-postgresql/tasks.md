@@ -345,10 +345,11 @@
     cubre los criterios de las Specs 004–018 y se reporta el número real
     verificado.
 
-- [ ] **T12. Añadir las pruebas nuevas de integridad, concurrencia, atomicidad, cold start y errores. [NO AUTORIZADA]**
+- [x] **T12. Añadir las pruebas nuevas de integridad, concurrencia, atomicidad, cold start y errores. [COMPLETADA Y APROBADA por @revisor 2026-11-11 — 397 PASS / 0 FAIL / 0 skipped]**
   - **Objetivo:** demostrar con pruebas no vacuas las garantías nuevas y los
     casos límite de la Spec 019.
-  - **Cubre:** RF-10..RF-14, RF-20..RF-23, RF-30; CL-1..CL-11.
+  - **Cubre:** RF-10..RF-14, RF-20..RF-23, RF-30; CL-1..CL-5, CL-7..CL-11
+    (CL-6 se verifica en T15 con TC-019-021).
   - **Depende de:** T10, T11.
   - **Archivos previstos:** `tests/test_pg_schema.py`,
     `tests/test_pg_persistence.py`, `tests/test_pg_resilience.py`,

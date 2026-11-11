@@ -24,6 +24,13 @@ from consultorio.persistence.database import Database, DatabaseTarget
 
 PARTIAL_INDEX_NAME = "ux_appointments_slot_open"
 EXPECTED_TABLES = {"appointments", "automation_events", "schema_migrations"}
+EXPECTED_INDEXES = {
+    "appointments_pkey",
+    "automation_events_event_id_key",
+    "automation_events_pkey",
+    "schema_migrations_pkey",
+    PARTIAL_INDEX_NAME,
+}
 EXPECTED_MIGRATION_VERSIONS = [1, 2, 3, 4]
 
 
@@ -152,8 +159,10 @@ def test_tc_019_003_empty_database_creates_expected_schema(
 
     Database(pg_target).ensure_schema()
 
-    # Tables exist in the catalogs.
-    assert EXPECTED_TABLES <= _table_names(url, schema)
+    # Tables exist in the catalogs. Exact equality rejects extra/duplicated
+    # objects, not just a missing one.
+    assert _table_names(url, schema) == EXPECTED_TABLES
+    assert _index_names(url, schema) == EXPECTED_INDEXES
 
     # ``automation_events.event_id`` is unique at the engine level.
     constraints = _fetch(
@@ -281,7 +290,8 @@ def test_tc_019_005_concurrent_bootstrap_leaves_single_object_set(
 
     assert not any(thread.is_alive() for thread in threads)
     assert errors == []
-    assert EXPECTED_TABLES <= _table_names(url, schema)
+    assert _table_names(url, schema) == EXPECTED_TABLES
+    assert _index_names(url, schema) == EXPECTED_INDEXES
 
     index_rows = _fetch(
         url,
@@ -302,9 +312,11 @@ def test_tc_019_005_concurrent_bootstrap_leaves_single_object_set(
 
 
 def test_tc_019_018_reapply_over_data_preserves_rows_and_integrity(
-    pg_target: DatabaseTarget,
+    pg_target: DatabaseTarget, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import psycopg.errors as pg_errors
+
+    import consultorio.persistence.database as database_module
 
     url, schema = pg_target.dsn, pg_target.schema
     assert url is not None and schema is not None
@@ -315,13 +327,21 @@ def test_tc_019_018_reapply_over_data_preserves_rows_and_integrity(
         appointment_id = _insert_appointment(connection)
         _insert_event(connection, "evt-preserved", appointment_id)
 
-    # Reapply with a fresh instance over the populated schema.
+    # Real additive migration over populated data (RF-26/CL-5). The approved
+    # DDL is a tuple of idempotent steps, so appending a NEW step and running
+    # the bootstrap again is exactly what a future additive change does. The
+    # monkeypatch only touches the test process; production keeps four steps.
+    additive_steps = database_module.PG_SCHEMA_STEPS + (
+        (5, "ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notes TEXT"),
+    )
+    monkeypatch.setattr(database_module, "PG_SCHEMA_STEPS", additive_steps)
+
     second = Database(pg_target)
     second.ensure_schema()
 
     with second.connection() as connection:
         appointment = connection.execute(
-            "SELECT id, service, date, time, status FROM appointments"
+            "SELECT id, service, date, time, status, notes FROM appointments"
         ).fetchone()
         event = connection.execute(
             "SELECT event_id, appointment_id FROM automation_events"
@@ -330,10 +350,14 @@ def test_tc_019_018_reapply_over_data_preserves_rows_and_integrity(
     assert appointment["id"] == appointment_id
     assert appointment["service"] == "terapia-individual"
     assert appointment["status"] == "confirmed"
+    assert appointment["notes"] is None
     assert event["event_id"] == "evt-preserved"
     assert event["appointment_id"] == appointment_id
+    assert _migration_versions(url, schema) == EXPECTED_MIGRATION_VERSIONS + [5]
+    assert "notes" in _columns(url, schema, "appointments")
 
-    # Integrity survives the reapplication: no duplicate active slot.
+    # Integrity survives the reapplication and the additive change: no
+    # duplicate active slot.
     with pytest.raises(pg_errors.UniqueViolation):
         with second.transaction() as connection:
             _insert_appointment(connection)
@@ -342,3 +366,17 @@ def test_tc_019_018_reapply_over_data_preserves_rows_and_integrity(
     with pytest.raises(pg_errors.UniqueViolation):
         with second.transaction() as connection:
             _insert_event(connection, "evt-preserved", appointment_id)
+
+    # Reapplying the extended batch is still idempotent: no new rows, no
+    # duplicated markers and the data is intact.
+    third = Database(pg_target)
+    third.ensure_schema()
+    assert _migration_versions(url, schema) == EXPECTED_MIGRATION_VERSIONS + [5]
+    assert _count(url, schema, "appointments") == 1
+    assert _count(url, schema, "automation_events") == 1
+    with third.connection() as connection:
+        preserved = connection.execute(
+            "SELECT id, notes FROM appointments"
+        ).fetchone()
+    assert preserved["id"] == appointment_id
+    assert preserved["notes"] is None

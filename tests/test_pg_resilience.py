@@ -1,9 +1,11 @@
-"""TC-019-001 — configuración PostgreSQL por entorno (Spec 019, T2).
+"""TC-019-001/002/010/016 — configuración, conexiones y resiliencia (Spec 019).
 
-Estas pruebas no abren una conexión real: validan que ``consultorio.config``
-lee y valida ``DATABASE_URL``, ``PERSISTENCE_BACKEND`` y los límites/timeouts
-sin exponer secretos. La conexión real se verifica en la evidencia de T2 y las
-pruebas de conexión pertenecen a T3/T12.
+``TC-019-001``/``TC-019-002`` validan la configuración por entorno y la capa de
+conexiones con fábricas controladas (T2/T3); no abren una conexión real por
+diseño. ``TC-019-010`` usa un DSN PostgreSQL real pero inalcanzable
+(``127.0.0.1:1``) para recorrer la ruta completa hasta el 503. ``TC-019-016``
+usa PostgreSQL real: arranque sin BD, recuperación perezosa y, desde T12, un
+cold start simulado cerrando la conexión recuperada y forzando una nueva.
 """
 
 import importlib
@@ -783,6 +785,36 @@ def test_tc_019_016_startup_tolerates_outage_and_recovers(
     )
     with database.connection() as connection:
         assert connection.execute("SELECT 1 AS ok").fetchone()["ok"] == 1
+
+    # Part C (T12, RNF-4/CL-2): simulate a cold start by closing every recovered
+    # connection and forcing a brand-new one. The write below proves the new
+    # session is fully usable against the schema created during the recovery.
+    # The real scale-to-zero of Neon belongs to T13.
+    with database.transaction() as warm_connection:
+        warm_connection.execute(
+            """
+            INSERT INTO appointments (
+                document_type, document_number, patient_name, email, phone,
+                service, date, time, status
+            ) VALUES ('CC', '123456789', 'Paciente cold start',
+                      'cold-start@ejemplo.test', '3000000000', 'nutrition',
+                      '2026-11-10', '08:00', 'confirmed')
+            """
+        )
+        assert warm_connection.execute(
+            "SELECT 1 AS ok"
+        ).fetchone()["ok"] == 1
+    # ``transaction`` outside a Flask app context closes the connection at the
+    # end of the block, so the next operation must open a different one.
+    assert warm_connection.closed is True
+
+    with database.connection() as cold_connection:
+        assert cold_connection.closed is False
+        assert cold_connection.execute("SELECT 1 AS ok").fetchone()["ok"] == 1
+        assert cold_connection.execute(
+            "SELECT count(*) AS total FROM appointments"
+        ).fetchone()["total"] == 1
+    assert cold_connection.closed is True
 
 
 # ---------------------------------------------------------------------------

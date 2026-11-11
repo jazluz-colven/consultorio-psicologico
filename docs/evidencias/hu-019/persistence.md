@@ -262,3 +262,58 @@ bootstrap perezoso) permanece intacto. No se modificó `schema.md`.
   T11/T7.
 - **Estado:** T5 completada y aprobada técnicamente. **T6+ no autorizadas.** No
   hay aceptación funcional de la usuaria ni commit/push.
+
+---
+
+## T12 — revisión de no vacuidad (TC-019-006 a 009, 011, 013 a 015, 017)
+
+> Sección añadida el **2026-11-11** al implementar T12. No reescribe el cierre
+> de T5; documenta la auditoría de T12, el nuevo TC-019-014 y los refuerzos.
+
+**Resultado real:** `python -m pytest -q tests/test_pg_persistence.py
+tests/test_hu_019.py` → **16 passed**. Los cuatro archivos T12 dieron
+**77 passed** y la suite completa **397 passed** (ver `suite-postgres.txt`).
+
+| TC | Prueba | Resultado | Argumento de no vacuidad |
+|---|---|---|---|
+| TC-019-006 | `test_tc_019_006_appointments_repository_contract`; `test_tc_019_006_sql_sent_to_postgres_uses_percent_s_and_returning` | PASS | Repositorio real: `INSERT … RETURNING id`, `rowcount`, disponibilidad que excluye `cancelled` e índice parcial que rechaza duplicados activos. El segundo test envuelve la conexión PostgreSQL real con un registrador que delega en ella y exige `%s`/`RETURNING id` (no `?`). |
+| TC-019-007 | `test_tc_019_007_events_repository_dedup_and_claim`; `test_tc_019_007_claim_failed_event_retryability_patterns` | PASS | `UNIQUE(event_id)` real, segundo `insert_event()` → `False` con una sola fila, `mark_sent`, `claim_failed_event` con `rowcount` y patrones permanente/retryable. |
+| TC-019-008 | `test_tc_019_008_booking_service_maps_only_slot_uniqueness`; `test_tc_019_008_eight_threads_create_exactly_one_booking` | PASS | **Refuerzo T12:** la violación de unicidad ya no se fuerza con un mock. Una segunda conexión real inserta el mismo slot y mantiene la transacción abierta; se espera con `pg_stat_activity` a que el `INSERT` de `create_booking()` quede bloqueado, se confirma el bloqueador y el motor lanza `UniqueViolation` → `SLOT_TAKEN`. La indisponibilidad usa un DSN inalcanzable real (`127.0.0.1:1`). La concurrencia usa 8 conexiones reales y `Barrier`. |
+| TC-019-009 | `test_tc_019_009_update_and_event_share_connection_and_single_commit`; `test_tc_019_009_real_event_insert_failure_rolls_back_cancellation`; `test_tc_019_009_publication_runs_only_after_commit` | PASS | El fallo es real: un `event_id` ya persistido hace que el `INSERT` interno vulnere `UNIQUE(event_id)`; se verifica el nombre de la restricción, que la cita sigue `confirmed`, que no hay evento huérfano y que no se publica nada. Los mocks de publicación/correo solo observan el orden; no sustituyen la persistencia. |
+| TC-019-011 | `test_tc_019_011_persistence_unavailable_literal_and_unchanged_mirror` | PASS | Prueba contractual (no de persistencia): fija el literal exacto, su espejo en `tests/expected_content.py` y que los literales 004/005 no cambian. Su no vacuidad es textual; es el literal que la ruta 503 devuelve en TC-019-010. |
+| TC-019-013 | `test_tc_019_013_slot_integrity_and_cancelled_release` | PASS | `INSERT` directo duplicado en slot activo falla en PostgreSQL; el slot confirmado sigue bloqueado; tras cancelar se re-reserva y quedan dos filas (una cancelada y una activa). |
+| TC-019-014 | `test_tc_019_014_eight_threads_one_booking_seven_slot_taken` | PASS | **Nuevo en T12.** Ocho hilos reales con `threading.Barrier` llaman a `create_booking()` sobre el mismo `service + date + time`: exactamente 1 cita, 7 `SLOT_TAKEN`, 0 excepciones no controladas, 2 eventos `skipped` del ganador y ninguna fila extra. Sin mocks. El esquema aislado se elimina y se comprueba su ausencia. |
+| TC-019-015 | `test_tc_019_015_event_dedup_single_row_without_second_send` | PASS | Segundo `insert_event()` → `False`, una sola fila y el evento ya enviado no se reinicia (no hay segundo envío). |
+| TC-019-017 | `test_tc_019_017_created_at_and_sent_at_are_utc` | PASS | Compara las marcas reales con el reloj UTC y con el de `America/Bogota`; exige formato `YYYY-MM-DD HH:MM:SS` y una diferencia horaria real, sin conversión. |
+
+### TC-019-014 — evidencia de reproducibilidad y no vacuidad
+
+- Repetido **3 veces**: `1 passed` en cada corrida (0,93 s / 1,14 s / 0,64 s).
+- Control sobre los cuatro archivos T12 con `--deselect` de TC-019-014:
+  **76 passed / 1 deselected** frente a **77 passed** con él; el conteo baja
+  exactamente en 1.
+- **Mutación de no vacuidad (fuera del repo, esquema temporal):** se aplicó el
+  esquema aprobado **sin el paso 4** (índice parcial) y se ejecutó la misma
+  carrera de 8 hilos. Resultado real: **8 filas persistidas, 8 ganadores y 0
+  `SLOT_TAKEN`**. Es decir, sin el índice real la prueba fallaría; el resultado
+  depende de PostgreSQL, no del azar ni de un mock.
+
+### Auditoría de mocks de persistencia
+
+- **TC-019-008:** el mock de `booking.repository.is_slot_taken` que existía
+  desde T5 se **eliminó en T12**; ahora la carrera es real (transacción
+  bloqueante + `pg_stat_activity`).
+- **TC-019-008 (concurrencia) y TC-019-009:** quedan mocks de
+  `automation_service`/`email_service` para evitar envíos externos y observar
+  el orden de publicación. **No mockean la capa de persistencia**: las filas,
+  transacciones, `rowcount` y violaciones las produce PostgreSQL.
+- **TC-019-018:** `monkeypatch` sustituye únicamente la tupla de pasos DDL en el
+  proceso de test para simular una migración aditiva; el DDL se ejecuta en
+  PostgreSQL real y la producción no se toca.
+- Los mocks aprobados en T10/T11 de `tests/test_double_booking_service.py`
+  (unicidad/indisponibilidad) no forman parte de T12 y no se han modificado.
+- Fuera de T12 quedan la prueba de rollback SQLite de `test_hu_019.py` y los
+  casos de configuración/errores SQLite de `test_pg_resilience.py` (T2/T3).
+
+No se modificó producción (`consultorio/`, `templates/`, `static/`, `app.py`)
+ni se añadieron dependencias.

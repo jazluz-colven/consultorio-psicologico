@@ -820,5 +820,28 @@ aporte.
   Imprecisones documentales detectadas por el revisor (inventario de archivos,
   reparto de TC-018 y mención de la ruta SQLite) corregidas después en
   `t11-suite.md` y `docs/operaciones/postgresql.md`; solo documentación, sin
-  efecto en código ni pruebas. **T11 marcada `[x]` en `tasks.md`. Commit de
-  T11 pendiente de autorización; T12+ no autorizadas; sin push.**
+  efecto en código ni pruebas. **T11 marcada `[x]` en `tasks.md` y commiteada en
+  `5419d4a` (2026-11-11, autorizada por la usuaria); sin push.**
+- **Spec 019 — T12 COMPLETADA Y APROBADA (2026-11-11)**: añadido
+  **TC-019-014** (`tests/test_hu_019.py`): 8 hilos reales con
+  `threading.Barrier` sobre el mismo slot PostgreSQL → 1 cita, 7 `SLOT_TAKEN`,
+  0 excepciones no controladas, 2 eventos `skipped` del ganador y limpieza
+  efectiva del esquema aislado. Auditoría de no vacuidad TC-019-003..018:
+  TC-019-003/005 refuerzan la igualdad exacta de tablas e índices; TC-019-018
+  añade un paso aditivo real (versión 5, `ADD COLUMN IF NOT EXISTS`) sobre
+  datos; TC-019-008 elimina el mock de `is_slot_taken` y provoca la violación
+  real con una transacción bloqueante (poll de `pg_stat_activity`); TC-019-016
+  añade el tramo de cold start. Mutación de no vacuidad reproducida por el
+  revisor: sin el índice parcial, 8/8 reservas ganan; con él, 1 cita y 7
+  `SLOT_TAKEN`. Suite: **397 PASS / 0 FAIL / 0 skipped** (coordinador 180,04 s;
+  revisor 170,99 s). 0 esquemas residuales, `public` 0 filas y
+  `schema_migrations` en 4. Revisor: **APROBADO**, sin aserciones relajadas.
+  Evidencia: `suite-postgres.txt`, `schema.md`, `persistence.md`,
+  `resilience.md` (nuevo, untracked hasta el commit). **T12 marcada `[x]` en
+  `tasks.md`. Commit de T12 pendiente de autorización; T13+ no autorizadas.**
+  Observaciones no bloqueantes: `tasks.md` T12 declara «CL-1..CL-11» pero CL-6
+  (rollback) pertenece a T15/TC-019-021 según el plan → requiere decisión
+  documental; CL-1/CL-3 se cubren de forma indirecta vía TC-019-010; el helper
+  `_wait_for_blocked_booking_insert` usa un `sleep` de 0,02 s con timeout (sin
+  flakiness observada); TC-019-014 hace `DROP SCHEMA` manual además del
+  fixture. Sin cambios de producción ni dependencias; sin push.

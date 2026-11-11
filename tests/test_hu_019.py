@@ -1,20 +1,27 @@
-"""Spec 019 (T5/T8) integrity, deduplication and contractual literal.
+"""Spec 019 (T5/T8/T12) integrity, concurrency, dedup and contractual literal.
 
 * TC-019-011 — ``MSG_PERSISTENCE_UNAVAILABLE`` equals the approved literal and
   its mirror, without changing other Spec 004/005 literals (RF-20; RNF-5).
 * TC-019-013 — direct duplicate insert in an active slot fails at the engine;
   after cancelling, the slot can be booked again; a confirmed slot remains
   blocked (RF-10, RF-11).
+* TC-019-014 — eight real threads behind a ``threading.Barrier`` book the same
+  ``service + date + time`` against PostgreSQL: exactly one persisted booking,
+  seven ``SLOT_TAKEN`` results, no unhandled exception and no extra rows
+  (RF-14; CL-8).
 * TC-019-015 — event deduplication: the second ``insert_event`` returns
   ``False``, only one row exists and the stored event is not reset (no second
   send) (RF-12).
 
-The final test keeps the adapted repositories compatible with the temporary
-SQLite rollback route (both the legacy ``database_path`` and the ``Database``
-facade), without duplicating the whole existing suite.
+The SQLite test keeps the adapted repositories compatible with the temporary
+rollback route (both the legacy ``database_path`` and the ``Database``
+facade), without duplicating the whole existing suite. It is evidence of T5,
+not of PostgreSQL parity.
 """
 
+import threading
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import psycopg
@@ -24,11 +31,13 @@ import pytest
 from consultorio.content import appointment_content
 from consultorio.persistence import appointments_repository as appointments
 from consultorio.persistence import automation_events_repository as events
+from consultorio.persistence.appointments_repository import Appointment
 from consultorio.persistence.database import (
     Database,
     DatabaseTarget,
     init_db,
 )
+from consultorio.services import appointment_service as booking
 from tests import expected_content
 
 VALID_DATA = {
@@ -111,6 +120,103 @@ def test_tc_019_013_slot_integrity_and_cancelled_release(
         "nutrition", "2026-11-10", "08:00", pg_database
     )
     assert _count(pg_database, "appointments") == 2
+
+
+# ---------------------------------------------------------------------------
+# TC-019-014 — eight concurrent bookings on the same slot (RF-14; CL-8)
+# ---------------------------------------------------------------------------
+
+
+def test_tc_019_014_eight_threads_one_booking_seven_slot_taken(
+    database: Database,
+    pg_target: DatabaseTarget,
+    pg_schema: tuple[str, str],
+) -> None:
+    """RF-14/CL-8 with real PostgreSQL connections and a real ``Barrier``.
+
+    Eight threads call ``create_booking()`` with the same ``service + date +
+    time``. The partial unique index is the only arbiter: exactly one row is
+    persisted and the other seven callers receive ``SLOT_TAKEN``. No thread may
+    escape with an unhandled exception.
+
+    Automation and e-mail are left disabled (empty webhook URL), so the winner
+    produces the two real ``skipped`` event rows and the test uses no mock at
+    all. Finally the isolated schema is dropped with the same statement the
+    fixture executes, proving the cleanup path works; the fixture repeats it
+    idempotently as a safety net.
+    """
+    concurrent_database = Database(
+        replace(
+            pg_target,
+            max_connections=8,
+            acquire_timeout=10.0,
+        )
+    )
+    # The schema is created once, before the race, so the Barrier synchronises
+    # the bookings themselves and not the bootstrap.
+    concurrent_database.ensure_schema()
+
+    data = {**VALID_DATA, "time": "10:00"}
+    barrier = threading.Barrier(8)
+    lock = threading.Lock()
+    results: list[object] = []
+    errors: list[BaseException] = []
+
+    def worker() -> None:
+        barrier.wait(timeout=10)
+        try:
+            result = booking.create_booking(data, concurrent_database)
+        except BaseException as error:  # noqa: BLE001 - asserted below
+            with lock:
+                errors.append(error)
+        else:
+            with lock:
+                results.append(result)
+
+    threads = [threading.Thread(target=worker) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+
+    assert all(not thread.is_alive() for thread in threads)
+    assert errors == []
+    assert len(results) == 8
+    assert sum(result == booking.SLOT_TAKEN for result in results) == 7
+    winners = [result for result in results if isinstance(result, Appointment)]
+    assert len(winners) == 1
+    winner = winners[0]
+
+    # Exactly one appointment row and no orphan event rows from losing races.
+    assert _count(database, "appointments") == 1
+    assert appointments.get_appointment_by_id(winner.id, database) == winner
+    assert appointments.list_booked_times(
+        data["service"], data["date"], database
+    ) == [data["time"]]
+    with database.connection() as connection:
+        event_rows = connection.execute(
+            "SELECT appointment_id, status FROM automation_events ORDER BY id"
+        ).fetchall()
+    assert len(event_rows) == 2  # confirmed event + confirmation e-mail
+    assert {row["appointment_id"] for row in event_rows} == {winner.id}
+    assert {row["status"] for row in event_rows} == {"skipped"}
+
+    # The isolated schema is removed and no table survives the cleanup.
+    from psycopg import sql
+
+    url, schema = pg_schema
+    with psycopg.connect(url, connect_timeout=5, autocommit=True) as connection:
+        connection.execute(
+            sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(
+                sql.Identifier(schema)
+            )
+        )
+    with psycopg.connect(url, connect_timeout=5, autocommit=True) as connection:
+        remaining = connection.execute(
+            "SELECT 1 FROM information_schema.schemata WHERE schema_name = %s",
+            (schema,),
+        ).fetchone()
+    assert remaining is None
 
 
 # ---------------------------------------------------------------------------
