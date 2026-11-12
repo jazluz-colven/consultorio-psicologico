@@ -2,6 +2,8 @@ services:
   - type: web
     name: consultorio-psicologico
     runtime: python
+    # Spec 019 (T14, RNF-3): misma región que Neon Free (aws-us-east-2).
+    region: ohio
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
@@ -10,8 +12,11 @@ services:
         value: 3.12.7
       - key: SECRET_KEY
         generateValue: true
-      # Ruta relativa al directorio de trabajo. Si se monta un disco
-      # persistente en Render, cambiar a <mount>/consultorio.db
-      - key: DATABASE_PATH
-        value: data/consultorio.db
+      # Spec 019 (T14, D11): PostgreSQL es el backend de persistencia.
+      - key: PERSISTENCE_BACKEND
+        value: postgres
+      # DSN de Neon (endpoint directo, sin -pooler). Se configura como secreto
+      # en el panel de Render; nunca se versiona en este archivo.
+      - key: DATABASE_URL
+        sync: false
     healthCheckPath: /

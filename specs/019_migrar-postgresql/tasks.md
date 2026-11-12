@@ -398,7 +398,7 @@
     verificados contra Neon o, si no se pueden verificar, se registran como NO
     VERIFICADO sin declarar PASS.
 
-- [ ] **T14. Desplegar en Render con Neon y verificar la persistencia. [NO AUTORIZADA]**
+- [ ] **T14. Desplegar en Render con Neon y verificar la persistencia. [EN IMPLEMENTACIÓN 2026-11-12 — autorizada por la usuaria; recreación del servicio en Ohio y verificación pendientes de panel]**
   - **Objetivo:** dejar la aplicación desplegada con `DATABASE_URL` secreta,
     región coincidente y backend PostgreSQL, y verificar que las citas y eventos
     persisten tras un redespliegue y tras un spin-down del servicio web.

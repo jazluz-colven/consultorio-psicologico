@@ -882,3 +882,22 @@ aporte.
   de que el harness E2E no está versionado. **T13 marcada `[x]` en
   `tasks.md`. Commit de T13 pendiente de autorización; T14 no autorizada.**
   Sin push.
+
+- **Spec 019 — T14 PREPARADA (2026-11-12, parte local)**: `render.yaml` con
+  `region: ohio`, `PERSISTENCE_BACKEND=postgres`, `DATABASE_URL` con
+  `sync: false` y sin valor, sin `DATABASE_PATH`, y se conservan `plan: free`,
+  `PYTHON_VERSION=3.12.7`, `buildCommand`, `startCommand`, `healthCheckPath: /`
+  y `SECRET_KEY` con `generateValue`. Nuevo `tests/test_render_manifest.py`
+  (solo stdlib, sin PyYAML) que fija el contrato del manifiesto y la ausencia de
+  DSN/credenciales. Documentado el despliegue en
+  `docs/operaciones/postgresql.md` («Despliegue en Render», pasos 1–9:
+  borrar/recrear en Ohio, secreto con endpoint directo, esquema, reserva,
+  redespliegue y spin-down). Evidencia preliminar
+  `docs/evidencias/hu-019/render-deploy.md` con despliegue, reserva, redespliegue
+  y spin-down marcados **PENDIENTE**. Suite local PostgreSQL Docker:
+  **398 PASS / 0 FAIL** (397 + 1). Sin cambios en producción (`consultorio/`,
+  `templates/`, `static/`, `app.py`). **T14 NO completada**: requiere panel de
+  Render (sin acceso desde el implementador) y que el `render.yaml` llegue a la
+  rama del Blueprint. **Riesgo operativo:** borrar el servicio pierde las
+  variables configuradas solo en el panel (webhook n8n, token admin);
+  anotarlas antes y reintroducirlas sin registrarlas. Sin commit ni push.

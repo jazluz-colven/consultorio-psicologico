@@ -17,10 +17,12 @@ de rollback), T6 (servicios y rutas con el objeto `Database`), T7 (atomicidad
 de la cancelación 010/017/018), T8 (literal coordinado de indisponibilidad),
 T9 (errores HTTP/UX de indisponibilidad), T10/T11 (fixtures PostgreSQL y
 migración de la suite de paridad), T12 (pruebas no vacuas de integridad,
-concurrencia, atomicidad, cold start y errores) y T13 (E2E contra Neon desde
-entorno controlado). Desde T11, los tests de servicios, rutas y HU de las Specs
-004–018 se ejecutan contra PostgreSQL; la ruta SQLite se conserva únicamente
-como rollback temporal y su evidencia vive en `tests/test_rollback_sqlite.py`.
+concurrencia, atomicidad, cold start y errores), T13 (E2E contra Neon desde
+entorno controlado) y T14 (recreación del servicio en Render con Neon y
+verificación de persistencia tras redespliegue y spin-down). Desde T11, los
+tests de servicios, rutas y HU de las Specs 004–018 se ejecutan contra
+PostgreSQL; la ruta SQLite se conserva únicamente como rollback temporal y su
+evidencia vive en `tests/test_rollback_sqlite.py`.
 
 ## Requisitos
 
@@ -492,6 +494,180 @@ disponibilidad respondió 200 en ~1,5 s; una reserva posterior terminó con
 normalidad. No hay que confundir este cold start de la base con el spin-down del
 servicio web de Render (T14).
 
+### Despliegue en Render (T14)
+
+> Trazabilidad: RF-1, RF-2, RF-3, RF-15; RNF-1, RNF-3, RNF-6, RNF-7 → plan
+> D11 → `tasks.md` T14 → evidencia
+> `docs/evidencias/hu-019/render-deploy.md`.
+
+Esta sección describe la **recreación del servicio web** en Render con Neon. Las
+acciones del panel las ejecuta la usuaria; el repositorio solo aporta
+`render.yaml` y este procedimiento. Aquí no se guardan DSN, contraseñas ni
+tokens.
+
+#### Requisitos previos
+
+- Proyecto/base de Neon Free en `aws-us-east-2` (**Ohio**), PostgreSQL 18
+  (verificado en T13) y el **endpoint directo** (host sin `-pooler`).
+- La rama que sincroniza el Blueprint contiene el `render.yaml` actualizado:
+  `region: ohio`, `PERSISTENCE_BACKEND=postgres`, `DATABASE_URL` con
+  `sync: false` y sin `DATABASE_PATH`. Si el cambio está solo en una rama
+  `feature/*`, primero debe llegar a la rama del Blueprint; ese push lo
+  coordina el responsable del repositorio.
+- El DSN de Neon **no** se pega en el repositorio, la documentación, el chat ni
+  la evidencia.
+
+#### Paso 1 — Borrar el servicio actual
+
+`region` no se puede modificar después de crear un servicio. En
+<https://dashboard.render.com>:
+
+> **Antes de borrar:** revisar **Environment** y anotar, sin copiar valores a
+> documentos, las variables configuradas manualmente que no estén en
+> `render.yaml` (por ejemplo `AUTOMATION_WEBHOOK_URL`,
+> `AUTOMATION_WEBHOOK_AUTH_HEADER` y `CONSULTORIO_ADMIN_TOKEN`). Al recrear el
+> servicio hay que volver a introducirlas en el panel si se necesitan; sus
+> valores son secretos y no se versionan.
+
+1. Abrir el Blueprint `exs-db6f05gn74is73aq3070` (o el Blueprint vinculado al
+   repositorio).
+2. Entrar en el servicio `consultorio-psicologico`.
+3. En **Settings**, borrar el servicio web (**Delete Web Service**).
+
+Borrar el servicio no borra el repositorio ni el Blueprint. La URL pública deja
+de responder hasta terminar el paso 2 y **puede cambiar**: anotar la que asigne
+Render.
+
+#### Paso 2 — Sincronizar el Blueprint
+
+1. En el Blueprint, ejecutar **Manual Sync** (o **Sync**).
+2. Revisar el diff que muestra Render: debe incluir `region: ohio`,
+   `PERSISTENCE_BACKEND=postgres`, `DATABASE_URL` y la desaparición de
+   `DATABASE_PATH`.
+3. Cuando Render pida el valor de `DATABASE_URL` (`sync: false`), introducir el
+   DSN del **endpoint directo** de Neon. Forma, sin valores reales:
+
+   ```text
+   postgresql://<usuario>:<contraseña>@<host>.us-east-2.aws.neon.tech/<base>?sslmode=require
+   ```
+
+   - El host **no** lleva `-pooler`.
+   - `sslmode=require` debe aparecer **una sola vez**; no añadir un segundo
+     `sslmode` con otro valor.
+   - No pegar el DSN en ningún otro campo, documento ni conversación.
+4. Aplicar el Blueprint (**Apply**).
+
+#### Paso 3 — Comprobar región y variables
+
+En el servicio recién creado:
+
+- **Settings → Region**: `Ohio (us-east-2)`.
+- **Environment**:
+  - `PYTHON_VERSION` = `3.12.7`
+  - `PERSISTENCE_BACKEND` = `postgres`
+  - `DATABASE_URL` presente, con valor oculto (secreto)
+  - `SECRET_KEY` presente (generada por Render)
+  - **no** debe existir `DATABASE_PATH`
+- **Logs** del build: `Python 3.12.7` y la instalación de
+  `psycopg[binary]==3.3.8` sin errores (RNF-3; riesgo R-01 del plan).
+
+#### Paso 4 — Verificar el arranque
+
+- Esperar a que el deploy termine en **Live**.
+- Abrir `/` y comprobar que responde 200.
+- Abrir `/citas` y comprobar que responde 200 (no 503).
+- En los logs no debe aparecer el aviso de persistencia no disponible ni un
+  DSN.
+
+#### Paso 5 — Verificar el esquema en Neon
+
+En el **SQL Editor** del proyecto de Neon (no desde la app), comprobar:
+
+```sql
+SELECT version, applied_at FROM schema_migrations ORDER BY version;
+SELECT indexname FROM pg_indexes
+ WHERE schemaname = 'public' AND indexname = 'ux_appointments_slot_open';
+SELECT conname FROM pg_constraint c
+  JOIN pg_class t ON t.oid = c.conrelid
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+ WHERE n.nspname = 'public' AND t.relname = 'automation_events'
+   AND c.contype = 'u';
+```
+
+Resultado esperado: versiones `1..4`, el índice `ux_appointments_slot_open` y la
+restricción `UNIQUE (event_id)`.
+
+#### Paso 6 — Reserva completa
+
+En la web desplegada, en `/citas`:
+
+1. Elegir servicio, fecha y hora.
+2. Enviar el formulario con datos **ficticios** (por ejemplo
+   `Paciente Prueba Render`, documento `900000002`,
+   `render.e2e@example.invalid`, teléfono `3000000001`).
+3. Comprobar la redirección 303 a `/citas/confirmada/<id>` y la página de
+   confirmación con «Confirmada».
+4. Comprobar que el horario aparece como ocupado en `/citas/horarios`.
+5. En Neon, verificar la cita y sus eventos:
+
+   ```sql
+   SELECT id, service, date, time, status, created_at
+     FROM appointments ORDER BY id DESC LIMIT 5;
+   SELECT event_id, event_type, status, detail
+     FROM automation_events ORDER BY id DESC LIMIT 10;
+   ```
+
+Cada cita debe tener dos eventos (`appointment.confirmed` y
+`appointment.confirmation_email`). El estado depende de la configuración de
+automatización (sin webhook: `skipped`); lo importante es que queden
+persistidos.
+
+#### Paso 7 — Persistencia tras redespliegue
+
+1. En Render, **Manual Deploy → Deploy latest commit** (o **Clear build cache &
+   deploy**).
+2. Esperar a **Live**.
+3. Abrir `/citas/confirmada/<id>` y comprobar que la cita sigue existiendo.
+4. Repetir las consultas del paso 6: la cita y sus eventos deben seguir ahí.
+
+Antes de la migración, un redeploy vaciaba la base SQLite efímera; con
+PostgreSQL la cita debe sobrevivir (RF-2).
+
+#### Paso 8 — Persistencia tras spin-down
+
+El plan Free suspende el servicio web tras ~15 minutos sin tráfico (esto es
+distinto del cold start de Neon ya verificado en T13).
+
+1. Dejar de enviar tráfico y esperar a que el servicio muestre el estado de
+   suspendido (≥ 15 min).
+2. Hacer una petición a `/` (puede tardar ~1 min en despertar).
+3. Abrir `/citas/confirmada/<id>` y comprobar que la cita sigue existiendo y que
+   la primera petición termina con éxito.
+4. Verificar de nuevo cita y eventos en Neon.
+
+#### Paso 9 — Limpieza (opcional)
+
+Si la cita de prueba no se conserva como evidencia, borrar solo las filas
+ficticias identificadas por su `id`:
+
+```sql
+DELETE FROM automation_events WHERE appointment_id IN (<ids>);
+DELETE FROM appointments WHERE id IN (<ids>);
+```
+
+No borrar tablas ni el esquema: `schema_migrations` y el DDL deben permanecer.
+
+> **Advertencia — pooler:** si `DATABASE_URL` usa el host con `-pooler`,
+> `ensure_schema()` falla con `unsupported startup parameter in options:
+> statement_timeout` y la app responde 503 sin crear el esquema (T13). Usar
+> siempre el endpoint directo. **No** desactivar TLS ni usar
+> `sslmode=disable` fuera de `localhost`/`127.0.0.1`.
+
+> **Rotación de credenciales:** si hay que rotar la contraseña de Neon, se hace
+> en el panel de Neon (rol de la base) y se actualiza `DATABASE_URL` en Render;
+> después se redespliega. El valor nuevo no se registra en el repositorio ni en
+> la evidencia.
+
 ## Incidencias habituales
 
 - **`docker info` falla con `npipe:////./pipe/dockerDesktopLinuxEngine`**:
@@ -522,3 +698,5 @@ servicio web de Render (T14).
 - Evidencia real de T8: `docs/evidencias/hu-019/t8-literal.md`.
 - Evidencia real de T9: `docs/evidencias/hu-019/t9-unavailable.md`.
 - Evidencia real de T13 (Neon): `docs/evidencias/hu-019/e2e-neon.md`.
+- Evidencia de T14 (Render): `docs/evidencias/hu-019/render-deploy.md`
+  (preliminar; despliegue, reserva, redespliegue y spin-down pendientes).
