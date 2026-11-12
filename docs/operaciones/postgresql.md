@@ -15,11 +15,12 @@ idempotente, advisory lock, arranque tolerante y recuperación perezosa), T5
 (repositorios de citas y eventos en dialecto PostgreSQL con adaptador SQLite
 de rollback), T6 (servicios y rutas con el objeto `Database`), T7 (atomicidad
 de la cancelación 010/017/018), T8 (literal coordinado de indisponibilidad),
-T9 (errores HTTP/UX de indisponibilidad) y T10/T11 (fixtures PostgreSQL y
-migración de la suite de paridad). Desde T11, los tests de servicios, rutas y
-HU de las Specs 004–018 se ejecutan contra PostgreSQL; la ruta SQLite se
-conserva únicamente como rollback temporal y su evidencia vive en
-`tests/test_rollback_sqlite.py`.
+T9 (errores HTTP/UX de indisponibilidad), T10/T11 (fixtures PostgreSQL y
+migración de la suite de paridad), T12 (pruebas no vacuas de integridad,
+concurrencia, atomicidad, cold start y errores) y T13 (E2E contra Neon desde
+entorno controlado). Desde T11, los tests de servicios, rutas y HU de las Specs
+004–018 se ejecutan contra PostgreSQL; la ruta SQLite se conserva únicamente
+como rollback temporal y su evidencia vive en `tests/test_rollback_sqlite.py`.
 
 ## Requisitos
 
@@ -420,6 +421,77 @@ repositorio, en la documentación, en las pruebas o en las evidencias. La
 variable `DATABASE_URL` de producción se configura como secreto en Render
 (`sync: false`).
 
+### Endpoints y TLS
+
+Neon ofrece dos hosts para el mismo proyecto y base:
+
+| Endpoint | Host | Uso comprobado en T13 |
+|---|---|---|
+| Pooler | `<host>-pooler.<region>.aws.neon.tech` | Conexiones simples de verificación; **no** válido con la configuración actual de la app (ver más abajo) |
+| Directo | `<host>.<region>.aws.neon.tech` (sin `-pooler`) | Arranque real, `ensure_schema()`, reserva y cold start |
+
+- Ambos endpoints exigen TLS: `sslmode=require` (no se usa
+  `sslmode=disable` fuera de `localhost`/`127.0.0.1`).
+- En T13 se comprobó `pgconn.ssl_in_use=True` y `sslmode=require` efectivo en
+  ambos. El DSN debe contener `sslmode` **una sola vez**; el proyecto valida la
+  primera aparición. No introduzcas un segundo `sslmode` con otro valor.
+- `channel_binding=require` es compatible con la conexión observada.
+- Región verificada en T13: `us-east-2` (Ohio). Debe coincidir con la región de
+  Render en T14 (RNF-3).
+
+### Arranque y creación del esquema
+
+Con `PERSISTENCE_BACKEND=postgres` y `DATABASE_URL` apuntando a Neon, la
+aplicación ejecuta `ensure_schema()` en el arranque y aplica el mismo DDL
+idempotente de la sección anterior. En T13 se partió de `public` vacío y el
+esquema lo creó la app real, sin DDL manual:
+
+- tablas `appointments`, `automation_events`, `schema_migrations`;
+- índice parcial `ux_appointments_slot_open`;
+- `UNIQUE(event_id)` en `automation_events`;
+- migraciones 1..4 y defaults UTC.
+
+La evidencia completa está en
+`docs/evidencias/hu-019/e2e-neon.md`.
+
+### Limitación conocida: pooler y `statement_timeout`
+
+La app envía el timeout como parámetro de arranque de la conexión:
+
+```text
+options = "-c statement_timeout=15000"
+```
+
+El **pooler** de Neon rechaza ese parámetro:
+
+```text
+ERROR: unsupported startup parameter in options: statement_timeout.
+Please use unpooled connection or remove this parameter from the startup package.
+```
+
+Consecuencias:
+
+- `ensure_schema()` a través del pooler falla con `PersistenceUnavailable`
+  (causa subyacente: `psycopg.OperationalError`) antes de ejecutar el DDL.
+- El **endpoint directo** acepta el mismo `options` y funciona.
+- Una conexión simple al pooler **sin** `options` funciona; por eso las
+  consultas independientes y la limpieza de T13 pudieron usar el pooler.
+
+**Decisión 2026-11-12:** para la aplicación y para Render se usa el
+**endpoint directo** de Neon (host sin `-pooler`), que acepta el mismo
+`options` y conserva TLS. No desactives TLS para evitar el problema. La
+alternativa técnica —fijar `statement_timeout` con un `SET` después de
+conectar— queda descartada salvo que Render no alcance el endpoint directo;
+en ese caso requiere una tarea y una decisión documentada.
+
+### Cold start
+
+En T13 se dejó de consultar la base durante **360 s**. Neon detuvo y reinició el
+compute (`pg_postmaster_start_time()` cambió) y la primera consulta de
+disponibilidad respondió 200 en ~1,5 s; una reserva posterior terminó con
+normalidad. No hay que confundir este cold start de la base con el spin-down del
+servicio web de Render (T14).
+
 ## Incidencias habituales
 
 - **`docker info` falla con `npipe:////./pipe/dockerDesktopLinuxEngine`**:
@@ -449,3 +521,4 @@ variable `DATABASE_URL` de producción se configura como secreto en Render
 - Evidencia real de T7: `docs/evidencias/hu-019/t7-atomicity.md`.
 - Evidencia real de T8: `docs/evidencias/hu-019/t8-literal.md`.
 - Evidencia real de T9: `docs/evidencias/hu-019/t9-unavailable.md`.
+- Evidencia real de T13 (Neon): `docs/evidencias/hu-019/e2e-neon.md`.

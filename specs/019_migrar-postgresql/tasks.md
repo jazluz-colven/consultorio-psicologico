@@ -368,7 +368,8 @@
   - **Hecho cuando:** todos los TC nuevos PASS y la revisión de no vacuidad
     queda registrada.
 
-- [ ] **T13. Ejecutar el E2E contra Neon desde un entorno controlado. [NO AUTORIZADA]**
+- [x] **T13. Ejecutar el E2E contra Neon desde un entorno controlado. [COMPLETADA Y APROBADA por @revisor 2026-11-12 — E2E con endpoint directo; TLS, esquema, reserva, eventos y cold start PASS; pooler con `statement_timeout` bloquea T14]**
+  - **Hallazgo 2026-11-12:** el endpoint pooler rechaza `options=-c statement_timeout=...`; `ensure_schema` vía pooler queda sin verificar y requiere decisión antes de T14.
   - **Objetivo:** verificar contra la base gestionada real, sin desplegar el
     servicio web, la conexión TLS, la creación del esquema, una reserva con sus
     eventos y el cold start tras inactividad/scale-to-zero.
@@ -403,6 +404,9 @@
     persisten tras un redespliegue y tras un spin-down del servicio web.
   - **Cubre:** RF-1, RF-2, RF-3, RF-15; RNF-1, RNF-3, RNF-6, RNF-7.
   - **Depende de:** T13.
+  - **Decisión 2026-11-12 (T13):** `DATABASE_URL` en Render debe apuntar al
+    **endpoint directo** de Neon (sin `-pooler`); el pooler rechaza
+    `options=-c statement_timeout=...`. No se modifica el código ni TLS.
   - **Archivos previstos:** `render.yaml`, `docs/operaciones/postgresql.md`,
     `docs/evidencias/hu-019/render-deploy.md`.
   - **Criterios de aceptación:**

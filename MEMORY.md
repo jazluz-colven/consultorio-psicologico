@@ -844,4 +844,41 @@ aporte.
   documental; CL-1/CL-3 se cubren de forma indirecta vía TC-019-010; el helper
   `_wait_for_blocked_booking_insert` usa un `sleep` de 0,02 s con timeout (sin
   flakiness observada); TC-019-014 hace `DROP SCHEMA` manual además del
-  fixture. Sin cambios de producción ni dependencias; sin push.
+  fixture. Sin cambios de producción ni dependencias. **T12 commiteada en
+  `d1e7909` (2026-11-11); corrección autorizada de la línea «Cubre» de T12
+  (CL-6 pasa a T15) incluida en ese commit; sin push.**
+- **Spec 019 — T13 COMPLETADA Y APROBADA (2026-11-12)**: E2E real contra Neon
+  desde entorno controlado con `create_app` (sin Render). TLS verificado en
+  pooler y endpoint directo (`ssl_in_use=True`, `sslmode=require`); región
+  `us-east-2`. **Plan Free verificado por el coordinador vía API Neon**
+  (`subscription_type=free_v3`, proyecto `fragrant-silence-79082611`,
+  PostgreSQL 18). Esquema creado desde `public` vacío por `ensure_schema()` y
+  verificado contra el DDL aprobado (tablas, índice parcial,
+  `UNIQUE(event_id)`, migraciones 1..4, defaults UTC). Reserva HTTP 303 +
+  confirmación; cita y dos eventos `skipped` visibles desde conexión
+  independiente. Cold start real de 360 s (`pg_postmaster_start_time()` cambió;
+  disponibilidad 1,491 s y reserva 2,381 s). Limpieza: 0 filas y esquema
+  conservado. Revisor: **APROBADO** (RF-1, RF-16, RNF-2/4/6; reprodujo el 503
+  con pooler y el 200 con directo). Suite local: **397 PASS / 0 FAIL**
+  (coordinador 179,41 s; revisor 181,01 s). Evidencia:
+  `docs/evidencias/hu-019/e2e-neon.md`; operación:
+  `docs/operaciones/postgresql.md`.
+  **Bloqueo para T14 (riesgo alto, no defecto de T13):** la app envía
+  `statement_timeout` como parámetro de arranque (`options` en
+  `consultorio/persistence/database.py:728-742`) y el **pooler de Neon lo
+  rechaza** (`unsupported startup parameter`); el DSN entregado es pooler y no
+  sirve tal cual. **Decisión de la usuaria 2026-11-12: opción A**, usar el
+  **endpoint directo** en la app y en Render (sin `-pooler`), sin cambio de
+  código y sin tocar TLS; queda registrada en `plan.md` D11 y en `tasks.md`
+  T14. Si Render no alcanzara el endpoint directo, se detendrá T14 y se pedirá
+  decisión para fijar el timeout con `SET` tras conectar.
+  **Incidente local resuelto:** el implementador rotó la contraseña del
+  PostgreSQL Docker a un valor no registrado; el coordinador la restauró a
+  `devlocal_password` y verificó TCP + suite. Observaciones documentales del
+  revisor corregidas el 2026-11-12: plan Free/región verificados por API,
+  derivación explícita del endpoint directo (`$env:T13_DIRECT_DSN`), aclaración
+  de que `/citas/disponibilidad` no prueba la exclusión del slot (la prueba
+  fuerte es `/citas/horarios`), alcance de `docs/operaciones` hasta T13 y nota
+  de que el harness E2E no está versionado. **T13 marcada `[x]` en
+  `tasks.md`. Commit de T13 pendiente de autorización; T14 no autorizada.**
+  Sin push.

@@ -518,6 +518,13 @@ permanente.
   - `PERSISTENCE_BACKEND=postgres`;
   - retirada de `DATABASE_PATH`;
   - `PYTHON_VERSION=3.12.7` (RNF-3) y `healthCheckPath: /` sin cambios.
+- **Conexión a Neon (decisión 2026-11-12, tras T13):** la aplicación en Render
+  usará el **endpoint directo** de Neon (host sin `-pooler`), que conserva TLS
+  y acepta el parámetro de arranque `options=-c statement_timeout=...`. El
+  pooler rechaza ese parámetro (`unsupported startup parameter`); no se cambia
+  el código ni se desactiva TLS. Si en T14 Render no alcanzara el endpoint
+  directo, se detendrá la implementación y se solicitará una decisión para
+  fijar el timeout con `SET` tras conectar.
 - Orden de despliegue: 1) crear proyecto/base en Neon; 2) configurar
   `DATABASE_URL` en Render; 3) desplegar; 4) verificar el esquema y una reserva;
   5) redesplegar y verificar que la cita persiste; 6) provocar/esperar el
