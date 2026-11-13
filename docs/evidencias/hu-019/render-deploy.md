@@ -4,204 +4,197 @@
 > RF-15; RNF-1, RNF-3, RNF-6, RNF-7) → `plan.md` D11 (decisión 2026-11-12:
 > endpoint directo de Neon) → `tasks.md` T14 → este documento.
 >
-> **Fecha:** 2026-11-12. **Rama:** `feature/hu-019-migracion-postgres`.
-> **HEAD:** `6f5e132` (T13). **Sin commit ni push de T14.**
+> **Ejecución:** 2026-11-12 (UTC). **Rama:** `feature/hu-019-migracion-postgres`.
+> **HEAD:** `dde4461`, publicado en `main` (`9846613..dde4461`).
 >
-> **Estado global: PREPARADO — PENDIENTE DE ACCIONES EN EL PANEL DE RENDER Y
-> DE DESPLIEGUE.** Este documento no declara PASS del despliegue, la reserva, el
-> redespliegue ni el spin-down: esos pasos **no se han ejecutado** porque el
-> implementador no tiene acceso al panel de Render. Las secciones PENDIENTE se
-> completarán tras la ejecución real de la usuaria.
+> **Estado: EJECUTADO — PENDIENTE DE REVISIÓN TÉCNICA.** Todos los criterios de
+> aceptación de T14 se ejecutaron contra el servicio real de Render y Neon. El
+> veredicto final corresponde a `@revisor`.
 
-## 1. Alcance de esta parte
+## 1. Resultado del despliegue
 
-Parte local de T14, sin panel de Render ni despliegues:
-
-- actualizar `render.yaml` para el backend PostgreSQL y la región Ohio;
-- fijar el contrato del manifiesto en un test automatizado sin dependencias
-  nuevas;
-- documentar el procedimiento operativo que ejecutará la usuaria;
-- registrar lo ya verificable y dejar explícitas las comprobaciones pendientes.
-
-No se han tocado `consultorio/`, `templates/`, `static/` ni `app.py`. No se ha
-creado ni borrado ningún servicio de Render ni se ha usado la API de Render.
-
-## 2. Verificado en esta parte (local)
-
-| Comprobación | Resultado | Evidencia |
-|---|---|---|
-| `render.yaml` declara `region: ohio` | OK | `render.yaml` y `tests/test_render_manifest.py` |
-| `render.yaml` declara `plan: free` | OK | ídem |
-| `PYTHON_VERSION=3.12.7` se conserva | OK | ídem |
-| `PERSISTENCE_BACKEND=postgres` | OK | ídem |
-| `DATABASE_URL` con `sync: false` y sin valor | OK | ídem |
-| Ausencia de `DATABASE_PATH` | OK | ídem |
-| Ausencia de DSN, contraseña, host de Neon o API key en el manifiesto | OK | ídem |
-| `healthCheckPath: /`, `buildCommand` y `startCommand` se conservan | OK | ídem |
-| Test de contrato del manifiesto | **1 PASS** | `python -m pytest -q tests/test_render_manifest.py` |
-| Suite completa local con PostgreSQL en Docker | **398 PASS / 0 FAIL** | §5 |
-
-Contexto heredado de T13 (no reejecutado en T14):
-
-- Neon **Free** (`subscription_type=free_v3`) y región **`aws-us-east-2`
-  (Ohio)**, PostgreSQL 18, verificados por API el 2026-11-12.
-- Decisión 2026-11-12: la app y Render usan el **endpoint directo** de Neon
-  (host sin `-pooler`), porque el pooler rechaza el parámetro de arranque
-  `options=-c statement_timeout=...`.
-- TLS obligatorio (`sslmode=require`); no se desactiva TLS.
-
-## 3. Configuración esperada en Render
-
-| Elemento | Valor esperado |
+| Elemento | Valor real |
 |---|---|
-| Servicio | `consultorio-psicologico` (tipo web, runtime Python) |
-| Región | `ohio` (coincide con `aws-us-east-2` de Neon) |
-| Plan | `free` |
+| Servicio | `consultorio-psicologico` (`srv-dbr08jk9v7es73agc110`) |
+| URL pública | `https://consultorio-psicologico-z1o5.onrender.com` |
+| Región | **ohio** (`aws-us-east-2`, misma que Neon Free) |
+| Plan | **free** |
+| Runtime | Python **3.12.7** |
+| Backend | `PERSISTENCE_BACKEND=postgres` |
+| Blueprint | `exs-db6f05gn74is73aq3070`, estado `in_sync`, `lastSync` 2026-11-12T18:25:15Z |
+| Creado | 2026-11-12T18:24:14Z |
+| Servicio anterior | `srv-db6f4v0473hc73e9ovg0` (oregón, suspendido), **eliminado**; su URL `c6g6` responde 404 |
+
+La recreación fue necesaria porque Render no permite cambiar la región de un
+servicio existente (`services[0].region changing region not supported`). El
+Blueprint creó el servicio nuevo en Ohio sin recursos de pago.
+
+## 2. Configuración verificada por API de Render
+
+| Variable | Estado |
+|---|---|
 | `PYTHON_VERSION` | `3.12.7` |
 | `PERSISTENCE_BACKEND` | `postgres` |
-| `DATABASE_URL` | Secreto configurado en el panel; endpoint **directo** de Neon, `sslmode=require` |
-| `SECRET_KEY` | `generateValue: true` |
-| `DATABASE_PATH` | **No debe existir** |
-| `buildCommand` | `pip install -r requirements.txt` |
-| `startCommand` | `gunicorn app:app` |
-| `healthCheckPath` | `/` |
-
-`render.yaml` no contiene ningún valor secreto. El DSN se introduce únicamente
-en el panel de Render.
-
-## 4. Contrato del manifiesto
-
-`tests/test_render_manifest.py` lee `render.yaml` como texto con un parser
-mínimo de stdlib y comprueba de forma explícita los valores de §3. No se añade
-PyYAML ni ninguna otra dependencia (RNF-8 / D1).
-
-Resultado real de la ejecución aislada:
+| `DATABASE_URL` | Secreto presente (138 caracteres), endpoint **directo** de Neon, `sslmode=require`. Valor **no registrado** en este documento. |
+| `SECRET_KEY` | Generada por Render (44 caracteres), valor no registrado |
+| `DATABASE_PATH` | **No existe** |
+| `AUTOMATION_WEBHOOK_URL` / `AUTOMATION_WEBHOOK_AUTH_HEADER` | **No configuradas** tras la recreación (ver §8) |
+| `CONSULTORIO_ADMIN_TOKEN` | **No configurada** tras la recreación (ver §8) |
 
 ```text
-$ python -m pytest -q tests/test_render_manifest.py
-1 passed in 0.04s
+env-var keys: PERSISTENCE_BACKEND, SECRET_KEY, PYTHON_VERSION, DATABASE_URL
 ```
 
-El test falla si se reintroduce `DATABASE_PATH`, si `DATABASE_URL` lleva un
-valor versionado, si cambia la región o el plan, o si aparece un DSN,
-contraseña, host de Neon o API key en el manifiesto.
+La API key de Render se usó solo desde el entorno local de la usuaria; no está
+en el repositorio ni en esta evidencia.
 
-## 5. Suite local (PostgreSQL en Docker)
+## 3. Build y runtime
 
-```powershell
-$env:TEST_DATABASE_URL = "postgresql://consultorio_dev:<password-local>@127.0.0.1:55432/consultorio_dev?sslmode=disable"
-Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
-python -m pytest -q
+Logs de build reales (dos despliegues):
+
+```text
+==> Using Python version 3.12.7 via environment variable PYTHON_VERSION
+==> Installing Python version 3.12.7...
+Collecting psycopg==3.3.8 (from psycopg[binary]==3.3.8->-r requirements.txt)
+  Using cached psycopg_binary-3.3.8-cp312-cp312-manylinux2014_x86_64...whl
+Successfully installed Flask-3.1.3 ... psycopg-3.3.8 psycopg-binary-3.3.8 ...
 ```
 
-Resultado real:
+- `psycopg[binary]==3.3.8` instala correctamente en Python 3.12.7 (riesgo R-01
+  descartado).
+- En los 100 registros de log de aplicación más recientes no aparecieron
+  `Traceback`, `ERROR`, `Exception`, `statement_timeout` ni cadenas de DSN.
+
+## 4. Despliegues
+
+| Deploy | Commit | Creado (UTC) | Live (UTC) | Resultado |
+|---|---|---|---|---|
+| `dep-dbr08js9v7es73agc1i0` | `dde4461` | 18:24:15 | 18:24:54 | Live (sin secreto aún) |
+| `dep-dbr0a2e7bikc73c2q0dg` | `dde4461` | 18:27:22 | 18:27:59 | Live con `DATABASE_URL` directa |
+| `dep-dbr0aumc6qcc73dieh20` | `dde4461` | 18:29:14 | 18:30:07 | Live (redespliegue de verificación) |
+
+## 5. Arranque y esquema en Neon
+
+Con el servicio Live y el secreto configurado:
+
+| Comprobación | Resultado |
+|---|---|
+| `GET /` | **200** |
+| `GET /citas` | **200** |
+| `schema_migrations` | versiones **1, 2, 3, 4** |
+| Índice parcial | `ux_appointments_slot_open` con `WHERE (status <> 'cancelled'::text)` sobre `(service, date, "time")` |
+| Unicidad de eventos | `automation_events_event_id_key` `UNIQUE (event_id)` |
+| Claves primarias | `appointments_pkey`, `automation_events_pkey` |
+| Error de conexión/DSN en logs | No observado |
+
+El esquema ya existía desde T13 (`schema_migrations.applied_at` =
+2026-11-12T13:16:02Z, anterior a la creación del servicio a las 18:24:14Z).
+T14 verificó su **presencia e idempotencia** en el servicio desplegado; la
+creación inicial desde una base vacía corresponde a T13 y no se atribuye a T14.
+
+## 6. Reserva completa contra el servicio desplegado
+
+Petición real a la URL pública (datos ficticios, sin PII real):
+
+```text
+GET /citas/horarios?service=nutrition&date=2026-11-17  -> 200
+  available: 08:00 ... 16:30; occupied: []
+POST /citas (nutrition, 2026-11-17, 10:00, paciente ficticio) -> 303
+  Location: /citas/confirmada/3
+GET /citas/confirmada/3 -> 200
+  contiene «Confirmada», el nombre ficticio, la fecha y la hora
+GET /citas/horarios?... -> 200
+  occupied: ["10:00"]
+```
+
+Filas en Neon inmediatamente después de la reserva:
+
+```text
+appointments: (3, 'nutrition', '2026-11-17', '10:00', 'confirmed')
+events:
+  appointment.confirmation_email:3:v1 | appointment.confirmation_email | skipped
+  appointment.confirmed:3:v1          | appointment.confirmed          | skipped
+```
+
+Los dos eventos quedan `skipped` porque `AUTOMATION_WEBHOOK_URL` está vacía
+(comportamiento definido en HU-007). No se declara envío de correo.
+
+## 7. Persistencia tras redespliegue y spin-down
+
+### 7.1 Redespliegue
+
+- Deploy `dep-dbr0aumc6qcc73dieh20`: 18:29:14Z → 18:30:07Z (**Live**).
+- Tras el redespliegue, en Neon siguen la cita `id=3` y sus dos eventos.
+- `GET /citas/confirmada/3` → **200**; `/citas/horarios` sigue con
+  `occupied: ["10:00"]`.
+
+### 7.2 Spin-down del servicio web
+
+- Último tráfico: **2026-11-12T18:31:00Z**.
+- Primera petición tras 17 min sin tráfico: **2026-11-12T18:48:00Z**.
+- Resultado: **HTTP 200** en **32,7 s** (arranque del servicio web; no se mide
+  aquí el cold start de Neon, ya cubierto en T13).
+- Tras el arranque, la cita `id=3` y sus dos eventos siguen en Neon;
+  `/citas/confirmada/3` → 200 y el horario `10:00` sigue ocupado.
+
+### 7.3 Limpieza
+
+Tras las comprobaciones se eliminaron los datos ficticios:
+
+```text
+deleted_events = 2
+deleted_appointments = 1
+appointments = 0, automation_events = 0, schema_migrations = 4
+```
+
+## 8. Hallazgos y pendientes operativos
+
+1. **Servicio n8n eliminado por la usuaria.** La automatización de HU-007/008
+   no está operativa: por eso los eventos quedan `skipped`. La usuaria asume la
+   restauración de n8n; queda **fuera del alcance de T14/Spec 019**.
+2. **Variables manuales no reintroducidas:** `AUTOMATION_WEBHOOK_URL`,
+   `AUTOMATION_WEBHOOK_AUTH_HEADER` y `CONSULTORIO_ADMIN_TOKEN`. Se
+   reintroducirán cuando n8n esté restaurado y la usuaria lo indique. No se
+   registran valores.
+3. **URL pública nueva:** `https://consultorio-psicologico-z1o5.onrender.com`;
+   la anterior (`c6g6`) devuelve 404.
+4. **API key de Render:** usada solo durante esta verificación; debe revocarse
+   en el panel al cerrar T14.
+5. **Artefacto bruto del spin-down:** la evidencia registra horas y latencia;
+   para T17 conviene adjuntar un extracto fechado de la primera petición tras
+   el spin-down. No afecta al veredicto de T14.
+
+## 9. Coste y secretos
+
+| Comprobación | Resultado |
+|---|---|
+| Recursos de pago | **Ninguno**: único servicio web, `plan: free`; sin bases, cron jobs ni workers |
+| Facturación | **No verificada por API** (limitación): solo se inspeccionó el inventario de planes y recursos |
+| DSN/contraseña en repositorio o evidencia | **No** |
+| Tokens/API keys en repositorio | **No** |
+| PII real en la reserva de prueba | **No** (datos ficticios, eliminados) |
+
+## 10. Suite local (sin cambios en esta parte)
+
+No se modificó código de producción durante la verificación. Se mantiene el
+resultado de la suite local con PostgreSQL en Docker:
 
 ```text
 398 passed in 175.88s (0:02:55)
 ```
 
-- PostgreSQL local **16.15**, contenedor `consultorio-pg-019`,
-  `127.0.0.1:55432`.
-- Sin `skip`, `xfail` ni fallos.
-- La suite no usa Neon: `TEST_DATABASE_URL` apunta al Docker local.
-- Baseline previa a T14: **397 PASS**; el test del manifiesto añade **1 PASS**
-  (398).
+## 11. Riesgos y estado
 
-## 6. PENDIENTE — acciones en el panel y despliegue
+| # | Riesgo | Estado |
+|---|---|---|
+| 1 | Región inmutable | **Resuelto**: servicio recreado en Ohio desde el Blueprint |
+| 2 | Sync bloqueado por servicio anterior | **Resuelto**: servicio de Oregón eliminado; Blueprint `in_sync` |
+| 3 | Pooler rechaza `statement_timeout` | **Mitigado**: endpoint directo (D11) |
+| 4 | URL pública cambia al recrear | **Asumido**: URL nueva documentada |
+| 5 | n8n eliminado y variables de automatización ausentes | **Abierto**, fuera de T14; lo asume la usuaria |
+| 6 | `CONSULTORIO_ADMIN_TOKEN` ausente | **Abierto**: reintroducir si se necesita la superficie admin |
 
-Todo lo siguiente está **sin ejecutar** y **no se declara PASS**. El
-procedimiento exacto está en
-`docs/operaciones/postgresql.md`, sección «Despliegue en Render (T14)».
-
-### 6.1 Recreación del servicio
-
-- [ ] **PENDIENTE:** borrar el servicio actual y recrearlo desde el Blueprint
-      en **Ohio** (la región no se puede cambiar en caliente).
-- [ ] **PENDIENTE:** confirmar que el Blueprint sincroniza una rama con el
-      `render.yaml` actualizado.
-- [ ] **PENDIENTE:** introducir `DATABASE_URL` como secreto con el endpoint
-      **directo** de Neon (sin `-pooler`).
-- [ ] **PENDIENTE:** anotar la URL pública asignada al servicio nuevo.
-
-### 6.2 Región, variables y runtime
-
-- [ ] **PENDIENTE:** verificar en el panel `Region = Ohio (us-east-2)`.
-- [ ] **PENDIENTE:** verificar `PYTHON_VERSION=3.12.7`,
-      `PERSISTENCE_BACKEND=postgres`, `DATABASE_URL` y `SECRET_KEY`; confirmar
-      que **no** existe `DATABASE_PATH`.
-- [ ] **PENDIENTE:** confirmar en los logs del build Python 3.12.7 y la
-      instalación correcta de `psycopg[binary]==3.3.8` (riesgo R-01).
-- [ ] **PENDIENTE:** reintroducir/verificar, si se necesitan, las variables
-      manuales del panel (`AUTOMATION_WEBHOOK_URL`,
-      `AUTOMATION_WEBHOOK_AUTH_HEADER`, `CONSULTORIO_ADMIN_TOKEN`) sin registrar
-      sus valores.
-
-### 6.3 Arranque y esquema
-
-- [ ] **PENDIENTE:** deploy en estado **Live** y `/` + `/citas` con HTTP 200
-      (no 503).
-- [ ] **PENDIENTE:** `schema_migrations` con versiones `1..4` en Neon.
-- [ ] **PENDIENTE:** índice `ux_appointments_slot_open` y
-      `UNIQUE (event_id)` presentes en Neon.
-- [ ] **PENDIENTE:** ausencia de errores de conexión o de DSN en los logs.
-
-### 6.4 Reserva completa
-
-- [ ] **PENDIENTE:** reserva ficticia en `/citas` → 303 a
-      `/citas/confirmada/<id>` y página «Confirmada».
-- [ ] **PENDIENTE:** horario ocupado en `/citas/horarios` tras la reserva.
-- [ ] **PENDIENTE:** cita y sus dos eventos visibles en Neon
-      (`appointment.confirmed` y `appointment.confirmation_email`).
-
-### 6.5 Persistencia tras redespliegue
-
-- [ ] **PENDIENTE:** redesplegar el servicio y esperar **Live**.
-- [ ] **PENDIENTE:** la cita y sus eventos siguen existiendo tras el
-      redespliegue (RF-2).
-
-### 6.6 Persistencia tras spin-down
-
-- [ ] **PENDIENTE:** esperar el spin-down del servicio web (≥ 15 min sin
-      tráfico; distinto del cold start de Neon de T13).
-- [ ] **PENDIENTE:** primera petición tras el spin-down con éxito.
-- [ ] **PENDIENTE:** la cita y sus eventos siguen existiendo (RF-3).
-
-### 6.7 Coste y secretos
-
-- [ ] **PENDIENTE:** confirmar que no hay recursos de pago activos (RNF-1).
-- [ ] **PENDIENTE:** revisar que ni el repositorio ni esta evidencia contienen
-      DSN, contraseñas, tokens ni PII real (RNF-6).
-
-## 7. Procedimiento operativo
-
-El detalle paso a paso está en `docs/operaciones/postgresql.md`:
-
-- «Despliegue en Render (T14)» → pasos 1–9;
-- advertencia sobre el **pooler** y `statement_timeout`;
-- rotación de la credencial en Neon.
-
-## 8. Riesgos y bloqueos conocidos
-
-| # | Riesgo / bloqueo | Impacto | Mitigación |
-|---|---|---|---|
-| 1 | El implementador no tiene acceso al panel de Render ni API key | No puede ejecutar el despliegue | Lo ejecuta la usuaria; esta evidencia queda PREPARADA y PENDIENTE |
-| 2 | `render.yaml` actualizado vive en `feature/hu-019-migracion-postgres` y no se ha pusheado | El Blueprint no verá los cambios hasta que lleguen a su rama | El coordinador hará commit/push/merge cuando la usuaria prepare el panel |
-| 3 | La región no se puede modificar tras crear el servicio | El servicio actual (Oregón por defecto) no sirve | Borrar y recrear en Ohio (paso 1) |
-| 4 | El DSN del pooler no funciona con la app | `ensure_schema()` falla y `/citas` responde 503 | Usar el endpoint directo (sin `-pooler`), decisión D11 |
-| 5 | La URL pública puede cambiar al recrear el servicio | Enlaces o pruebas con la URL anterior fallan | Anotar la URL nueva y actualizarla en la evidencia |
-| 6 | El spin-down del servicio web no es el cold start de Neon | Confundir ambos ciclos | T13 ya verificó Neon; T14 verifica el servicio web |
-| 7 | Al borrar el servicio se pierden variables configuradas solo en el panel | Fallan automatización o superficie admin tras la recreación | Anotar antes del borrado las variables manuales (webhook, token admin) y reintroducirlas sin registrarlas en documentos |
-
-## 9. Criterio de cierre de T14
-
-T14 solo podrá marcarse como completada cuando la usuaria ejecute los pasos del
-panel y esta evidencia registre, con resultados reales:
-
-- región Ohio y variables correctas;
-- esquema creado en Neon;
-- reserva completa persistida;
-- persistencia tras **redespliegue**;
-- persistencia tras **spin-down**;
-- sin recursos de pago ni secretos en el repositorio.
-
-Hasta entonces, el estado es **PREPARADO — PENDIENTE**.
+**Criterio de cierre de T14:** los **ocho criterios de aceptación** de T14 en
+`tasks.md` están ejecutados y registrados con resultados reales. `@revisor`
+emitió veredicto **APROBADO**; queda pendiente la autorización de commit de la
+usuaria.

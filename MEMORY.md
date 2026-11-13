@@ -901,3 +901,34 @@ aporte.
   rama del Blueprint. **Riesgo operativo:** borrar el servicio pierde las
   variables configuradas solo en el panel (webhook n8n, token admin);
   anotarlas antes y reintroducirlas sin registrarlas. Sin commit ni push.
+
+- **Spec 019 — T14 EJECUTADA (2026-11-12, verificación real Render/Neon)**:
+  `main` publicado en `dde4461` (`9846613..dde4461` con la API key de la
+  usuaria). Servicio antiguo `srv-db6f4v0473hc73e9ovg0` (oregón, suspendido)
+  eliminado por API; su URL `c6g6` da 404. Blueprint
+  `exs-db6f05gn74is73aq3070` recreó `consultorio-psicologico`
+  (`srv-dbr08jk9v7es73agc110`) en **ohio**, plan free, URL
+  `https://consultorio-psicologico-z1o5.onrender.com`; estado `in_sync`.
+  `DATABASE_URL` (endpoint directo) configurada por API sin registrarla; sin
+  `DATABASE_PATH`; `PYTHON_VERSION=3.12.7`, `PERSISTENCE_BACKEND=postgres`.
+  Build real: Python 3.12.7 + `psycopg 3.3.8`. Esquema Neon 1..4, índice
+  parcial y `UNIQUE(event_id)`. Reserva ficticia `POST /citas` → 303 a
+  `/citas/confirmada/3`, slot 10:00 ocupado y 2 eventos `skipped` en Neon.
+  Redespliegue 18:29:14→18:30:07Z con cita y eventos intactos. Spin-down: 17 min
+  sin tráfico (18:31→18:48Z), primera petición 200 en 32,7 s y datos intactos.
+  Limpieza: 0 citas, 0 eventos, 4 migraciones. Evidencia completa en
+  `docs/evidencias/hu-019/render-deploy.md`.
+  **Incidente:** la usuaria borró el servicio de n8n en Render; asume su
+  restauración. `AUTOMATION_WEBHOOK_URL`, `AUTOMATION_WEBHOOK_AUTH_HEADER` y
+  `CONSULTORIO_ADMIN_TOKEN` no se reintrodujeron; los eventos quedan `skipped`.
+  Fuera del alcance de Spec 019.
+  **Revisión 2026-11-12:** `@revisor` emitió **APROBADO** (RF-1/2/3/15 y
+  RNF-1/3/6/7 PASS; sin defectos bloqueantes). Correcciones documentales
+  aplicadas: referencia a los 8 criterios de T14, nota de que el esquema se creó
+  en T13, limitación de facturación y artefacto bruto de spin-down pendiente
+  para T17. **T14 marcada `[x]` en `tasks.md`.**
+  **Pendiente:** autorización de commit de la evidencia y revocación de
+  `RENDER_API_KEY` (acción de la usuaria). Observaciones abiertas para T17:
+  n8n/variables de automatización y `CONSULTORIO_ADMIN_TOKEN` (RNF-5 y paridad
+  funcional), repetir la suite completa y adjuntar extracto del primer GET tras
+  el spin-down.
