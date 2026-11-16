@@ -18,8 +18,9 @@ de la cancelación 010/017/018), T8 (literal coordinado de indisponibilidad),
 T9 (errores HTTP/UX de indisponibilidad), T10/T11 (fixtures PostgreSQL y
 migración de la suite de paridad), T12 (pruebas no vacuas de integridad,
 concurrencia, atomicidad, cold start y errores), T13 (E2E contra Neon desde
-entorno controlado) y T14 (recreación del servicio en Render con Neon y
-verificación de persistencia tras redespliegue y spin-down). Desde T11, los
+entorno controlado), T14 (recreación del servicio en Render con Neon y
+verificación de persistencia tras redespliegue y spin-down) y T15 (rollback
+temporal a SQLite documentado y probado, sin evidencia de paridad). Desde T11, los
 tests de servicios, rutas y HU de las Specs 004–018 se ejecutan contra
 PostgreSQL; la ruta SQLite se conserva únicamente como rollback temporal y su
 evidencia vive en `tests/test_rollback_sqlite.py`.
@@ -667,6 +668,131 @@ No borrar tablas ni el esquema: `schema_migrations` y el DDL deben permanecer.
 > en el panel de Neon (rol de la base) y se actualiza `DATABASE_URL` en Render;
 > después se redespliega. El valor nuevo no se registra en el repositorio ni en
 > la evidencia.
+
+## Rollback temporal a SQLite
+
+> Trazabilidad: Spec 019 (RF-18, RF-19; RNF-7; CL-6) → `plan.md` D10 y riesgos
+> R-07/R-14 → `tasks.md` T15 → este documento y
+> `docs/evidencias/hu-019/rollback.md`.
+> Verificación automatizada: `tests/test_rollback_sqlite.py` (TC-010-014 y
+> TC-019-021).
+
+Esta es una **vía de repliegue temporal**, no una arquitectura permanente ni un
+modo de desarrollo o de pruebas. Sirve para volver al almacenamiento anterior
+mientras se investiga un problema de la migración. Tras la aceptación de la
+migración, **T18 retira** el interruptor, la ruta SQLite, el DDL SQLite y esta
+documentación de rollback (RF-18, R-14).
+
+El rollback **no es evidencia de paridad**: la suite de paridad se ejecuta
+siempre contra PostgreSQL (RF-28); `tests/test_rollback_sqlite.py` verifica solo
+la ruta de repliegue y su resultado se registra aparte.
+
+### Pérdida de datos aceptada
+
+No existe migración automática de datos en ninguna dirección (RF-19):
+
+- las filas creadas en **PostgreSQL después del corte no se trasladan** al
+  almacenamiento anterior y no son visibles durante el rollback; se pierden;
+- las filas creadas en **SQLite durante el rollback no se trasladan** a
+  PostgreSQL al volver;
+- la pérdida de las filas posteriores al corte está **aceptada por la usuaria**
+  (decisión de aprobación 6 de la Spec 019; CL-6).
+
+Por eso, antes de un rollback con datos reales se exige un **snapshot manual en
+Neon** y registrar la **hora de corte en UTC**. El snapshot permite restaurar el
+estado de PostgreSQL en el momento del corte; no es un sistema de backups
+automático ni recupera datos creados después del corte (RNF-7).
+
+### Procedimiento
+
+#### Paso 1 - Snapshot manual en Neon y hora de corte
+
+Se ejecuta **antes** de cambiar el interruptor. En el panel de Neon:
+
+1. Identificar el proyecto, la rama y la base que usa el servicio de Render
+   (endpoint directo de `DATABASE_URL`; no se copia el DSN a la documentación).
+2. Crear un **snapshot/rama de respaldo** de esa rama en el estado actual
+   (en Neon, una rama de restauración desde el punto actual). Ponerle un nombre
+   inequívoco, por ejemplo `rollback-<YYYYMMDD-HHMM>`.
+3. Registrar en el parte de incidencia, sin secretos:
+   - fecha y **hora de corte en UTC** (formato `YYYY-MM-DD HH:MM:SSZ`);
+   - nombre e identificador del snapshot/rama creada;
+   - rama y base de origen;
+   - commit desplegado en Render en ese momento;
+   - persona que ejecuta el rollback y motivo.
+4. Comprobar que el snapshot/rama existe antes de continuar. Si no se puede
+   crear, **no** se ejecuta el rollback con datos reales.
+
+#### Paso 2 - Activar el interruptor SQLite
+
+En Render, servicio `consultorio-psicologico`, **Environment**:
+
+| Variable | Valor para el rollback |
+|---|---|
+| `PERSISTENCE_BACKEND` | `sqlite` |
+| `DATABASE_PATH` | Ruta absoluta del fichero SQLite dentro del servicio, por ejemplo `/opt/render/project/src/data/consultorio-rollback.db` |
+| `DATABASE_URL` | Se conserva intacta (secreta) para la vuelta a PostgreSQL; mientras el backend es `sqlite` no se usa |
+
+No se cambia ningún fichero de código: la aplicación elige el almacenamiento por
+configuración (`DatabaseTarget.from_config`). `DATABASE_PATH` debe ser una ruta
+absoluta o relativa al directorio de trabajo del proceso; el directorio debe
+existir o ser creable.
+
+> **Aviso de disco efímero:** en el plan Free de Render el sistema de ficheros
+> del servicio es efímero. El fichero SQLite del rollback se pierde en un
+> redespliegue, reinicio o spin-down y no debe considerarse almacenamiento
+> duradero. El rollback es una medida de contingencia de corta duración.
+
+#### Paso 3 - Reiniciar o redesplegar
+
+Guardar las variables y ejecutar **Manual Deploy → Deploy latest commit** (o
+reiniciar el servicio). El cambio de `PERSISTENCE_BACKEND` exige reinicio: el
+valor se lee al arrancar el proceso.
+
+Comprobar en **Logs** que el arranque termina en **Live** y que no aparece el
+aviso de persistencia no disponible.
+
+#### Paso 4 - Verificar el rollback
+
+1. Abrir `/` y `/citas`; deben responder 200 (no 503).
+2. Comprobar en la interfaz que las citas visibles son las del almacenamiento
+   SQLite. Las citas que solo existían en PostgreSQL **no** aparecerán: es el
+   comportamiento aprobado (RF-19).
+3. Si se necesita una cita de prueba, crearla con datos ficticios y comprobar
+   que se persiste en el SQLite del servicio.
+
+#### Paso 5 - Volver a PostgreSQL
+
+1. Cambiar `PERSISTENCE_BACKEND` a `postgres` (mantener el `DATABASE_URL`
+   secreto del endpoint directo de Neon).
+2. Redesplegar y esperar a **Live**.
+3. Comprobar `/citas` y que las filas de PostgreSQL anteriores al corte siguen
+   ahí. Las filas creadas en SQLite durante el rollback **no** se trasladan y no
+   aparecerán: la pérdida está aceptada (CL-6).
+4. El snapshot del paso 1 permite volver al estado de PostgreSQL en el momento
+   del corte si la vuelta falla; no contiene las filas creadas después del
+   corte. Si hay que conservar filas creadas durante el rollback, exportarlas
+   manualmente del fichero SQLite antes de retirarlo; no se trasladan de forma
+   automática.
+5. Registrar en el parte la hora de vuelta a PostgreSQL y el resultado.
+
+### Verificación automatizada del rollback
+
+```powershell
+$env:TEST_DATABASE_URL = "postgresql://consultorio_dev:<password-local>@127.0.0.1:55432/consultorio_dev?sslmode=disable"
+Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+python -m pytest -q tests/test_rollback_sqlite.py
+```
+
+- `TC-019-021` crea una cita en PostgreSQL (esquema aislado), cambia el
+  interruptor a SQLite con un `DATABASE_PATH` temporal, comprueba que la cita de
+  PostgreSQL no es visible, crea una cita SQLite, vuelve a PostgreSQL y verifica
+  que la fila SQLite no se trasladó y que la cita original sigue intacta.
+  También arranca la app con la configuración SQLite y `DATABASE_URL` vacía.
+- `TC-010-014` conserva la cobertura de respaldo, idempotencia y aborto ante
+  duplicados de la migración del esquema SQLite legado.
+- Ambos se registran en `docs/evidencias/hu-019/rollback.md` **aparte** de la
+  suite de paridad (RF-28).
 
 ## Incidencias habituales
 

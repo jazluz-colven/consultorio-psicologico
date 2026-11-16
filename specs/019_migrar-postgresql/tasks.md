@@ -432,7 +432,9 @@
 
 ## Fase C — Cierre
 
-- [ ] **T15. Documentar y probar el rollback temporal a SQLite. [NO AUTORIZADA]**
+- [x] **T15. Documentar y probar el rollback temporal a SQLite. [COMPLETADA Y APROBADA por @revisor 2026-11-13 — TC-019-021 y TC-010-014 PASS; rollback local verificado, sin ejecución sobre producción]**
+
+
   - **Objetivo:** disponer de una vía de repliegue reproducible, con pérdida de
     filas aceptada y snapshot manual documentado.
   - **Cubre:** RF-18, RF-19; RNF-7; CL-6.

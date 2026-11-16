@@ -927,8 +927,26 @@ aporte.
   aplicadas: referencia a los 8 criterios de T14, nota de que el esquema se creó
   en T13, limitación de facturación y artefacto bruto de spin-down pendiente
   para T17. **T14 marcada `[x]` en `tasks.md`.**
-  **Pendiente:** autorización de commit de la evidencia y revocación de
-  `RENDER_API_KEY` (acción de la usuaria). Observaciones abiertas para T17:
-  n8n/variables de automatización y `CONSULTORIO_ADMIN_TOKEN` (RNF-5 y paridad
-  funcional), repetir la suite completa y adjuntar extracto del primer GET tras
-  el spin-down.
+  **Cierre:** commit `309a442` publicado en `main` (`dde4461..309a442`).
+  Queda pendiente revocar `RENDER_API_KEY` (acción de la usuaria). Observaciones
+  abiertas para T17: n8n/variables de automatización y
+  `CONSULTORIO_ADMIN_TOKEN` (RNF-5 y paridad funcional), repetir la suite
+  completa y adjuntar extracto del primer GET tras el spin-down.
+
+- **Spec 019 — T15 EJECUTADA (2026-11-13)**: rollback temporal a SQLite
+  documentado y probado en local. `tests/test_rollback_sqlite.py` añade
+  `TC-019-021`: cita en PostgreSQL aislado → cambio a `PERSISTENCE_BACKEND=sqlite`
+  + `DATABASE_PATH` → cita PostgreSQL no visible → cita SQLite → vuelta a
+  PostgreSQL con la cita original intacta y la fila SQLite **no** trasladada;
+  además `create_app` con configuración SQLite y `DATABASE_URL=""` persiste en
+  disco. `TC-010-014` se conserva íntegro. Suite completa: **399 PASS / 0 FAIL**
+  (total de `tests/`, no solo paridad). Archivo de rollback: **2 PASS**. Nuevo
+  procedimiento en `docs/operaciones/postgresql.md` (snapshot manual en Neon,
+  hora de corte UTC, pérdida aceptada, disco efímero de Render, vuelta a
+  PostgreSQL) y evidencia en `docs/evidencias/hu-019/rollback.md`.
+  **Revisión 2026-11-13:** `@revisor` emitió **APROBADO** (RF-18, RF-19, RNF-7,
+  CL-6 y RF-28 PASS; sin defectos bloqueantes). Observaciones no bloqueantes
+  corregidas en la evidencia: precisión de datos ficticios, encuadre de los 399
+  como total de suite y diferencia entre DSN conservado y `DATABASE_URL=""` en
+  el test. **T15 marcada `[x]`; pendiente autorización de commit.**
+  **No se ejecutó rollback real sobre Render/Neon** ni snapshot real.
