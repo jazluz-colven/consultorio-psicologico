@@ -1,6 +1,6 @@
 # HU-019 · T16 — Actualización documental de los planes 004/005/006/007/010
 
-**Estado:** revisada y aprobada por `@revisor` (veredicto `APROBADO`, 2026-11-16); pendiente de autorización de commit.
+**Estado:** revisada y aprobada por `@revisor` (veredicto `APROBADO`, 2026-11-16); commit `861e3f4` publicado en `main`.
 **Alcance:** solo `plan.md` de las specs 004, 005, 006, 007 y 010.
 **Referencia:** Spec 019 (`RF-1`, `RF-18`), decisión D15/D16 y tarea T16.
 **TC asociado:** TC-019-022 (revisión documental).

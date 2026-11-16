@@ -962,5 +962,5 @@ aporte.
   Decisiones D2 (004), D1/D2/D3 (006), D11 (007) y D5 (010) conservadas con
   marca histórica; sin cambios de RF/CA/CL/literales. `@revisor`: **APROBADO**
   tras dos ciclos de corrección. 201+/142− en 5 planes; P1 30 y P2 9
-  coincidencias, todas históricas o de rollback T15. **Sin commit ni push;
-  pendiente autorización de commit.**
+  coincidencias, todas históricas o de rollback T15. **Commit `861e3f4`
+  publicado en `main` (2026-11-16).**

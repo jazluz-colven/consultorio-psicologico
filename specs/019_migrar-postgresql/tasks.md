@@ -490,7 +490,7 @@
   - **Cierre (2026-11-16):** ejecutada en dos ciclos documentales; `@revisor`
     emitió **APROBADO**. DDL históricos marcados, `TC-010-014` ubicado en
     `tests/test_rollback_sqlite.py`, evidencia ampliada. Sin cambios en código,
-    requisitos ni literales. Pendiente de autorización de commit.
+    requisitos ni literales. Commit `861e3f4` publicado en `main`.
 
 - [ ] **T17. Ejecutar QA, reunir evidencias y solicitar la aceptación. [NO AUTORIZADA]**
   - **Objetivo:** cerrar la validación con resultados reales y solicitar la
