@@ -463,7 +463,7 @@
   - **Hecho cuando:** el rollback se ejecuta y documenta con el resultado real,
     incluida la pérdida aceptada y el resultado de `TC-010-014`.
 
-- [ ] **T16. Actualizar las menciones a SQLite en los planes 004/005/006/007/010. [NO AUTORIZADA]**
+- [x] **T16. Actualizar las menciones a SQLite en los planes 004/005/006/007/010. [COMPLETADA Y APROBADA por @revisor 2026-11-16 - planes 004/005/006/007/010 alineados con PostgreSQL; evidencia: `docs/evidencias/hu-019/plan-updates.md`]**
   - **Objetivo:** alinear la documentación técnica anterior con la migración,
     sin cambiar requisitos ni literales aprobados.
   - **Cubre:** RNF-7; trazabilidad de la Spec 019.
@@ -486,6 +486,11 @@
   - **Evidencia:** diff de los planes y `plan-updates.md`.
   - **Hecho cuando:** no quedan afirmaciones obsoletas que contradigan la
     migración y la revisión documental queda registrada.
+
+  - **Cierre (2026-11-16):** ejecutada en dos ciclos documentales; `@revisor`
+    emitió **APROBADO**. DDL históricos marcados, `TC-010-014` ubicado en
+    `tests/test_rollback_sqlite.py`, evidencia ampliada. Sin cambios en código,
+    requisitos ni literales. Pendiente de autorización de commit.
 
 - [ ] **T17. Ejecutar QA, reunir evidencias y solicitar la aceptación. [NO AUTORIZADA]**
   - **Objetivo:** cerrar la validación con resultados reales y solicitar la

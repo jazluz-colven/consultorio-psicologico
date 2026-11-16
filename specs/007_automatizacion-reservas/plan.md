@@ -28,11 +28,16 @@ invalidar la reserva (RF-4) y evitando duplicados ante reprocesos (RF-5).
 **Base existente (HU-001/002/003/016/004/005/006 aceptadas)**:
 - `create_booking()` con doble comprobación + `UNIQUE (service, date, time)`
   (D3 plan 006); PRG `POST /citas → 303 → /citas/confirmada/<id>`; estado `pending`.
-- Capa de persistencia stdlib (`consultorio/persistence/`, SQLite, sin ORM),
-  inyección de `database_path` en servicios; `Config`/`app.config` como única fuente
-  de configuración (`create_app()`).
+- Capa de persistencia (`consultorio/persistence/`, sin ORM), abstracción `Database`
+  e inyección de la conexión/transacción en servicios; `Config`/`app.config` como
+  única fuente de configuración (`create_app()`).
 - **Baseline: `python -m pytest -q` → 134 PASS / 0 FAIL** (declarado en MEMORY.md,
   2026-10-09; verificar en la rama).
+
+> **Actualización Spec 019 (T16)**: las menciones a SQLite y `database_path` que se
+> conservan en este plan describen el diseño histórico de HU-007; la capa vigente es
+> PostgreSQL mediante `Database` (`DATABASE_URL`/`PERSISTENCE_BACKEND`). Requisitos y
+> literales de esta HU no cambian (Spec 019 RF-1/RF-18).
 
 Esta HU **no reescribe lo que funciona**: el flujo de reserva, disponibilidad y
 protección de doble reserva quedan intactos (RF-7); solo se añade un disparo
@@ -84,8 +89,8 @@ siendo `pending` (sin cambio de modelo de `appointments`).
 
 `[RF-1..RF-7]` — Constitución #3: la lógica de automatización vive en `services/` +
 `persistence/`; la capa web solo inyecta la configuración (mismo patrón DI que
-`database_path`). Sin dependencias nuevas (constitución #1: solo stdlib
-`urllib.request`, `json`, `socket`). Solo se muestran los **cambios sobre lo
+la capa de persistencia). Sin dependencias nuevas para esta HU (constitución #1: solo
+stdlib `urllib.request`, `json`, `socket`). Solo se muestran los **cambios sobre lo
 existente**:
 
 ```text
@@ -126,8 +131,9 @@ Consultorio_Carolina/
 
 **Sin cambios**: esquema de `appointments`, `appointments_repository.py`,
 `availability.js`, plantillas, CSS, `base.html` (sin UI: no hay copy nuevo ni
-espejo en `expected_content.py`). `init_db()` sigue siendo `CREATE TABLE IF NOT
-EXISTES` → la tabla nueva se crea en BDs existentes **sin migración destructiva**.
+espejo en `expected_content.py`). `Database.ensure_schema()` sigue aplicando
+`CREATE TABLE IF NOT EXISTS` → la tabla nueva se crea en BDs existentes **sin
+migración destructiva**.
 
 Responsabilidades (solo módulos tocados):
 
@@ -151,8 +157,14 @@ sin spec y plan).
 
 ### 2.1 Modelo de datos — tabla `automation_events`
 
-`appointments` y su `UNIQUE (service, date, time)` quedan **intactos** (RF-7). Se
-añade:
+En el diseño original de HU-007, `appointments` y su `UNIQUE (service, date, time)`
+quedaban **intactos** (RF-7); el esquema vigente aplica el índice parcial
+`ux_appointments_slot_open` sobre slots abiertos (Spec 019 RF-1/RF-18). Se añade:
+
+> **Nota histórica (Spec 019, T16)**: el siguiente DDL es el esquema original de
+> `automation_events` de HU-007 sobre SQLite. **No es el DDL vigente**: en
+> PostgreSQL se aplica con `Database`/`ensure_schema()` y el DDL de la Spec 019.
+> Se conserva el contrato de `automation_events` (columnas y `UNIQUE(event_id)`).
 
 ```sql
 CREATE TABLE IF NOT EXISTS automation_events (
@@ -175,8 +187,8 @@ CREATE TABLE IF NOT EXISTS automation_events (
   POST (RF-5, CL-4, CL-5).
 - `status`: `pending` → `sent` | `skipped` | `failed` (identificadores en inglés,
   constitución #6). `detail` en español (documentación funcional).
-- Sin FK forzada (SQLite la ignora sin PRAGMA, como el resto del proyecto);
-  `appointment_id` documenta el vínculo.
+- Sin FK declarada: `appointment_id` documenta el vínculo sin restricción de
+  integridad referencial, como el resto del proyecto;
 
 ### 2.2 Contrato del evento (payload JSON, texto contractual de la spec enmendada)
 
@@ -234,7 +246,7 @@ el duplicado (RF-5).
   (solo valores falsos en los tests).
 - Se declaran en `Config` (visibles en `app.config`) y se **inyectan como
   parámetros** desde `web/appointments.py` a `create_booking()` →
-  `on_appointment_confirmed()`, mismo patrón de DI que `database_path`.
+  `on_appointment_confirmed()`, mismo patrón de DI que la capa de persistencia.
 
 ---
 
@@ -249,7 +261,7 @@ FUNCTION insert_event(event, db) -> bool:                 # True = creado
         INSERT INTO automation_events (event_id, event_type, event_version,
             appointment_id, status) VALUES (..., 'pending')
         RETURN True
-    CATCH sqlite3.IntegrityError:                          # UNIQUE (event_id)
+    CATCH IntegrityError / UniqueViolation:                # UNIQUE (event_id)
         RETURN False                                       [RF-5][CL-4][CL-5]
 
 FUNCTION mark_sent(event_id, db) / mark_skipped(event_id, detail, db)
@@ -309,7 +321,7 @@ FUNCTION create_booking(data, db, automation_url="", automation_timeout=3.0,
     IF repository.is_slot_taken(…): RETURN SLOT_TAKEN      # sin cambios (HU-006)
     TRY:
         appointment = repository.insert_appointment(data, db)  # 1 fila
-    CATCH sqlite3.IntegrityError / OperationalError:
+    CATCH IntegrityError / UniqueViolation:
         RETURN SLOT_TAKEN                                  # sin cambios (HU-006)
     automation_service.on_appointment_confirmed(
         appointment, db, automation_url, automation_timeout,
@@ -318,7 +330,7 @@ FUNCTION create_booking(data, db, automation_url="", automation_timeout=3.0,
                                                           # de la automatización [RF-2]
 
 # --- web/appointments.py (POST /citas) --------------------------------
-    result = create_booking(data, _database_path(),
+    result = create_booking(data, get_database(),
         current_app.config["AUTOMATION_WEBHOOK_URL"],
         current_app.config["AUTOMATION_TIMEOUT_SECONDS"],
         current_app.config["AUTOMATION_WEBHOOK_AUTH_HEADER"])     [RF-2][RF-6]
@@ -380,9 +392,9 @@ consulta en la BD; un panel sería otra HU).
 | D6 | **La capa de automatización nunca propaga excepciones** (try/except completo en `on_appointment_confirmed`, con caps en cada paso) | RF-2/RF-4/RF-7: un fallo de n8n, de red o de registro no puede ni tumbar la reserva ni el 303 | *Dejar propagar*: un 500 rompería la reserva ya creada. *`except Exception` en create_booking*: enmascararía errores ajenos (lección D3 plan 006) | RF-2, RF-4, RF-7 |
 | D7 | **Disparo = alta exitosa** («confirmada» = INSERT commitado → `/citas/confirmada/<id>`), sin cambio de `status` | Es el único momento de confirmación existente; no se inventa un flujo de estados (fuera de alcance) y no toca el modelo de HU-004 | *Nuevo estado `confirmed` + workflow*: alcance nuevo sin requisito; Specs 010/011/012 manejan estados posteriores | RF-1, RF-7 |
 | D8 | **Estados `pending/sent/skipped/failed` + `detail` en español** | Identificadores en inglés y mensajes en español (constitución #6); `skipped` distingue «no configurado» de un error real (no es incidencia) | *Solo sent/failed*: un fallo de configuración parecería incidencia. *Detalle en inglés*: rompe la constitución | RF-2, RF-4, RNF-3 |
-| D9 | **Config por variables de entorno en `Config` e inyectada por parámetros** (patrón DI de `database_path`) | Fuente única `app.config`, testeable sin `monkeypatch` de entorno, y deshabilitado por defecto = el sitio opera sin n8n (RF-2) | *`os.environ` directo en el servicio*: dos fuentes de verdad y tests más frágiles. *Config global importada*: acoplamiento | RF-2, RF-6 |
+| D9 | **Config por variables de entorno en `Config` e inyectada por parámetros** (patrón DI de la capa de persistencia) | Fuente única `app.config`, testeable sin `monkeypatch` de entorno, y deshabilitado por defecto = el sitio opera sin n8n (RF-2) | *`os.environ` directo en el servicio*: dos fuentes de verdad y tests más frágiles. *Config global importada*: acoplamiento | RF-2, RF-6 |
 | D10 | **Rama `feature/hu-007` desde `main`** (HU-006 aceptada y mergeada, baseline 134) | AGENTS.md: aislamiento de HU por rama; `main` está limpia | *Rama desde otra feature*: arrastra pendientes | regresión |
-| D11 | **Sin dependencias nuevas**: `urllib.request`, `json`, `sqlite3` de la stdlib | Constitución #1; todo lo necesario ya está en la stdlib | *requests, celery, colas*: dependencias sin aprobación escrita | todos |
+| D11 | **Sin dependencias nuevas**: `urllib.request`, `json`, `sqlite3` de la stdlib *(histórico; Spec 019 incorporó el driver PostgreSQL con aprobación explícita)* | Constitución #1; todo lo necesario ya está en la stdlib | *requests, celery, colas*: dependencias sin aprobación escrita | todos |
 | D12 | **Identificadores en inglés; literales de `automation_content.py` y `detail` en español**; sin espejo en `expected_content.py` (no hay UI) | Constitución #6; el espejo existe para textos visibles al usuario y esta HU no añade copy visible | *Texto hardcodeado en el servicio*: rompe la trazabilidad y la coherencia | todos |
 | D13 | **Tests deterministas parcheando `_post_webhook`/`urlopen`** (respuestas 2xx/500, `URLError`, `TimeoutError` simulados), sin red real ni `sleep` | La demo manual (§6.2) usa el webhook real; los tests no deben depender de n8n ni de la red (pytest-qa) | *Levantar un servidor real en los tests*: lentitud y fragilidad. *`sleep` para simular timeout*: flaky | RF-2, RF-4, CL-1..CL-3 |
 | D14 | **Cabecera de autenticación opcional vía `AUTOMATION_WEBHOOK_AUTH_HEADER`** (formato `Nombre: valor`, vacía por defecto), añadida al POST por `_post_webhook()` (enmienda 2, Q7) | n8n en la nube exige auth en el webhook (403 real de la usuaria, 2026-10-10); una sola variable de entorno permite usar Header Auth de n8n sin código específico y mantiene el token **fuera del repositorio** (seguridad: nunca en código, docs ni tests) | *Token hardcodeado o en la BD*: secreto en el repo/datos. *Soporte de Basic Auth/queries*: más alcance sin necesidad. *Parchear el código por instancia*: rompe la configuración por entorno (D9) | RF-2, RF-6, RNF-1 |
@@ -393,7 +405,7 @@ consulta en la BD; un panel sería otra HU).
 
 Ejecución: `python -m pytest -q` (suite) ·
 `python -m pytest tests/test_hu_007.py -v` (HU). Fixtures de `conftest.py` **sin
-cambios** (`app`, `client`, `database_path` con BD temporal). Arrange/Act/Assert,
+cambios** (`app`, `client` y base de datos de prueba aislada). Arrange/Act/Assert,
 sin dependencia del orden. Config de automatización pasada por parámetro (D9), sin
 tocar el entorno del proceso.
 
@@ -410,7 +422,7 @@ tocar el entorno del proceso.
 | TC-007-007 | `test_automation_service.py` | **CL-4/CL-5:** segunda llamada de `on_appointment_confirmed()` con la misma cita → **1 evento** total (UNIQUE) y **1 POST** acumulado | RF-5, CL-4, CL-5, RNF-4 |
 | TC-007-008 | `test_automation_service.py` | **RF-7 (aislamiento):** parchear el repositorio de eventos para que lance `RuntimeError` → `create_booking()` **devuelve la `Appointment`** (reserva válida) y el 303 no se ve afectado | RF-2, RF-4, RF-7 |
 | TC-007-009 | `test_automation_service.py` | Timeout **efectivo**: `timeout=0.01` con un `urlopen` que tarda (o parche que lanza `socket.timeout`) → `failed`, sin bloquear el retorno | RF-2, RF-4, CL-2 |
-| TC-007-010 | `test_hu_007.py` | **RF-5 (esquema):** `sqlite_master` con `automation_events` y `UNIQUE(event_id)`; tras flujo completo + reproceso, `COUNT(*)=1` por `event_id` | RF-5, RNF-3, RNF-4 |
+| TC-007-010 | `test_hu_007.py` | **RF-5 (esquema):** el catálogo del motor registra `automation_events` y `UNIQUE(event_id)`; tras flujo completo + reproceso, `COUNT(*)=1` por `event_id` | RF-5, RNF-3, RNF-4 |
 | TC-007-011 | `test_hu_007.py` | **Config:** `Config.AUTOMATION_WEBHOOK_URL == ""`, `AUTOMATION_TIMEOUT_SECONDS == 3.0` y `AUTOMATION_WEBHOOK_AUTH_HEADER == ""` por defecto; parse defensivo del timeout y de la cabecera | RF-2, RF-6 |
 | TC-007-012 | `test_hu_007.py` | **Regresión funcional HU-004/005/006:** flujo de reserva completo con webhook configurado y sin configurar → `/citas/horarios` (`available`+`occupied`), `/citas/disponibilidad`, `/citas/confirmada/<id>` y bloqueo de doble reserva **idénticos** al contrato vigente | RF-7 |
 | TC-007-013 | `test_hu_007.py` | **Regresión total:** `python -m pytest -q` → **0 FAIL** con los **134 tests previos** intactos (HU-001/002/003/016/004/005/006) | todos, finalización |
@@ -634,7 +646,7 @@ Evidencia: payload del POST capturado + dump de automation_events (demo §6.2)
    `appointment.cancellation_email` (RF-13).
 
 **Ejecutor único: n8n.** La data table la gestiona n8n; el backend Flask, el
-esquema SQLite, los tests y las variables de entorno **no cambian**.
+esquema de persistencia, los tests y las variables de entorno **no cambian**.
 
 **Fuera de alcance** de esta enmienda:
 
@@ -762,7 +774,7 @@ inexistente, la ejecución falla y la fila del evento puede quedarse en
   como historia. El workflow nuevo no vuelve a escribir ese valor.
 - Las filas antiguas sin las columnas nuevas quedan con el default (o vacío, que
   se interpreta como `none`).
-- No hay migración de esquema en SQLite ni cambios en `automation_events`: la
+- No hay migración de esquema en la base de datos ni cambios en `automation_events`: la
   data table es de n8n y su gestión es manual.
 
 ### 9.5 Diseño a nivel de nodo
@@ -1215,7 +1227,7 @@ evento debe estar realmente cancelado o ausente en Google Calendar).
 
 | # | Decisión | Justificación | Alternativa descartada | RF |
 |---|---|---|---|---|
-| **D-E1** | **n8n es el único ejecutor**; backend sin cambios | La Spec 010 ya emite el evento v1 con el contrato y la autenticación; duplicar la lógica en Flask rompería la separación y exigiría spec/plan de backend | *Persistir `calendar_event_id` en SQLite*: fuera de alcance y decidido en contra (spec 007) | RF-8 |
+| **D-E1** | **n8n es el único ejecutor**; backend sin cambios | La Spec 010 ya emite el evento v1 con el contrato y la autenticación; duplicar la lógica en Flask rompería la separación y exigiría spec/plan de backend | *Persistir `calendar_event_id` en la base de datos*: fuera de alcance y decidido en contra (spec 007) | RF-8 |
 | **D-E2** | **Solo dos columnas nuevas** (`cancellation_status`, `cancellation_detail`) | D3/D4; separa los tres estados sin tocar las columnas existentes y sin migrar nada | *Reutilizar `processing_status`*: fusiona estados (prohibido por RF-12). *Tabla nueva*: más superficie y otra fuente de verdad | RF-12, RF-8 |
 | **D-E3** | **Cadena única** con convergencia en `Preparar cancelación` y eliminación de la rama de reintento duplicada | Evita que normal y reintento diverjan (requisito explícito del encargo); reduce nodos y reglas duplicadas | *Mantener dos ramas espejo*: riesgo de correcciones asimétricas. *Sub-workflow*: otra pieza que versionar/importar y más riesgo operativo | RF-8, RF-10, RF-11 |
 | **D-E4** | **Clasificador Code + IF booleano** para 404/410, con `retryOnFail:false` en `Elimina cita` | El nodo de Google Calendar expone el error por la salida de error; una regla única y explícita evita bucles de 404. **Vigente solo para la salida de éxito desde la corrección 3**: la rama de error se resuelve por verificación del `status`/ausencia del evento (**D-E13/D-E14**) | *IF directo sobre `$json.error.httpCode`*: frágil ante variantes del error. *Dejar que n8n reintente*: reproduce el bucle del gap 3 | RF-10 |
@@ -1380,7 +1392,7 @@ versionar el export).
 | **R9** | Dos workflows con el mismo path de webhook | n8n rechaza la activación o recibe el tráfico el equivocado | Desactivar el anterior antes de activar la copia; solo uno activo con `hu-007-cita-creada` |
 | **R10** | Escrituras a la data table no transaccionales (fila C y fila X) y fallo de la propia escritura de fallo | Estado inconsistente que exige revisión manual | Orden de escritura y salidas de error hacia `Update row(s)3`; la cadena es idempotente y el reintento repara estados intermedios; si falla también la escritura de `failed`, revisión manual (sin recuperación automática) |
 | **R11** | Datos/eventos de prueba en Calendar y en la data table de producción | Contaminación de la tabla y del calendario de la usuaria | Citas de prueba identificables, fechas futuras, CSV de evidencia y nota de limpieza; no borrar filas históricas sin decisión (AGENTS.md) |
-| **R12** | Backend local apuntando a Render | Un push a `main` redeploya y **vacía la BD**; el E2E fallaría | Usar la app local con variables de entorno de sesión; no cambiar `DATABASE_PATH` ni Render; coordinar el push de docs |
+| **R12** | Backend local apuntando a producción | Un push a `main` puede desplegar y alterar la base de datos de producción; el E2E fallaría | Usar la app local con una base de datos de prueba y variables de entorno de sesión; no cambiar `DATABASE_URL` de producción ni Render; coordinar el push de docs |
 | **R13** | `Enrutar reintento por tipo` no cubre `appointment.cancellation_email` | Un reintento de correo se descarta (defecto previo) | Fuera de alcance (OQ-6); se registra como pendiente, no se corrige en esta enmienda |
 
 ### 9.9 Versionado del JSON del workflow (sin secretos)

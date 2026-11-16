@@ -42,12 +42,19 @@ independiente (Spec 006)»).
 **Fuera de alcance**: notificaciones (Specs 008/009), automatización n8n (Spec 007),
 cancelación de citas, agenda interna del psicólogo (Specs 011/012), cambio de estado
 de la cita más allá de `pending`, saneamiento automático de la base de datos,
-dependencias nuevas (constitución #1), cambios de esquema SQLite y rediseño del
+dependencias nuevas (constitución #1), cambios de esquema de persistencia y rediseño del
 formulario.
 
-**Sin cambios de modelo de datos**: tabla `appointments` e índice
-`UNIQUE (service, date, time)` intactos (constitución #5; AGENTS.md: nada de tablas
-sin spec).
+**Sin cambios de modelo de datos en el diseño de HU-006**: en el diseño original,
+la tabla `appointments` y el índice `UNIQUE (service, date, time)` quedaban
+intactos (constitución #5; AGENTS.md: nada de tablas sin spec). El esquema vigente
+aplica el índice parcial `ux_appointments_slot_open` sobre slots abiertos
+(Spec 019 RF-1/RF-18).
+
+> **Actualización Spec 019 (T16)**: el esquema y la concurrencia se describen con el
+> motor vigente (PostgreSQL, índice parcial `ux_appointments_slot_open`); las
+> decisiones D1–D3 conservan su justificación histórica. Requisitos y literales de
+> HU-006 no cambian (Spec 019 RF-1/RF-18).
 
 **Duda abierta de la spec** (debe cerrarse por enmienda antes de codificar):
 - **Q1 — duplicados históricos**: propuesta de cierre (§7.1): **prevenir (índice) +
@@ -60,7 +67,7 @@ sin spec).
 |----|---------------------|----------------|
 | RF-1 | Horario libre → se registra una única cita válida | §2.3 capas de protección; §3 `create_booking()`; §4 `POST /citas` → 303; §5 D2/D3; §6 TC-006-001/003/007 |
 | RF-2 | Horario reservado → impide otra cita sobre la misma combinación servicio+fecha+hora | §2.1 clave única; §2.3 SELECT previo; §3; §4 semántico; §5 D2/D3/D9; §6 TC-006-002/004/005/006/008 |
-| RF-3 | Dos intentos concurrentes → máximo una reserva válida, rechazo de las restantes | §3 `IntegrityError`/bloqueo → `SLOT_TAKEN`; §5 D3/D12; §6 TC-006-003/005/007 |
+| RF-3 | Dos intentos concurrentes → máximo una reserva válida, rechazo de las restantes | §3 `IntegrityError`/`UniqueViolation` → `SLOT_TAKEN`; §5 D3/D12; §6 TC-006-003/005/007 |
 | RF-4 | Horario deja de estar disponible tras mostrarse libre → rechaza e informa | §2.2 `MSG_SLOT_TAKEN` (reutilizado); §3 re-render con horas recalculadas; §4 semántico; §5 D5; §6 TC-006-006/008/010 |
 | RF-5 | Durante el procesamiento → estado «en curso» y sin acciones duplicadas | §2.2 `MSG_SUBMITTING`; §3 guard de submit en JS; §1 plantilla/JS/CSS; §5 D4/D6/D7; §6 TC-006-009/011/012/014 |
 | RF-6 | Integridad de las reservas frente a duplicados y solicitudes concurrentes | §2.1 índice + diagnóstico; §2.3/§3 doble comprobación; §5 D2/D3/D8; §6 TC-006-003/005/007/013/015/016 |
@@ -90,7 +97,7 @@ Consultorio_Carolina/
 │   │   └── appointment_content.py   # + MSG_SUBMITTING (§2.2)            [RF-5]
 │   ├── services/
 │   │   └── appointment_service.py   # create_booking(): capturar
-│   │                             #   sqlite3.IntegrityError y bloqueo
+│   │                             #   IntegrityError/UniqueViolation
 │   │                             #   → SLOT_TAKEN (§3)                [RF-2][RF-3][RF-6]
 │   └── web/
 │       └── appointments.py          # _render_form(): entrega
@@ -142,12 +149,19 @@ Responsabilidades (sin solaparse; solo módulos tocados):
 literal de §2.2 **ya fijado en la spec 006 (enmienda 2026-10-09)** (textos
 contractuales, AGENTS.md).
 
-### 2.1 Modelo de datos — sin cambios
+### 2.1 Modelo de datos — sin cambios en el diseño de HU-006
 
-La tabla `appointments` y el índice `UNIQUE (service, date, time)` de HU-004 se
-reutilizan tal cual; no hay migraciones. **Política de duplicados históricos (Q1)**:
+> **Nota histórica (Spec 019, T16)**: esta sección describe el diseño de HU-006
+> sobre SQLite. El esquema vigente es PostgreSQL y se aplica con
+> `Database`/`ensure_schema()`; la unicidad de slots abiertos la garantiza el
+> índice parcial `ux_appointments_slot_open` (Spec 019 RF-1/RF-18).
 
-- **Prevención**: el índice impide la creación de nuevos duplicados (constitución #5).
+En el diseño original de HU-006, la tabla `appointments` y el índice
+`UNIQUE (service, date, time)` de HU-004 se reutilizaban tal cual; no había
+migraciones. **Política de duplicados históricos (Q1)**:
+
+- **Prevención**: el índice parcial vigente impide la creación de nuevos duplicados
+  entre slots abiertos (constitución #5).
 - **Detección**: los tests ejecutan el diagnóstico
   `SELECT service, date, time FROM appointments GROUP BY service, date, time
   HAVING COUNT(*) > 1` y exigen **0 filas**.
@@ -170,8 +184,8 @@ MSG_SUBMITTING: str = "Registrando tu cita…"
 | Capa | Mecanismo | RF |
 |---|---|---|
 | Comprobación previa | `is_slot_taken()` (SELECT) → camino normal, sin excepciones ni mensaje técnico | RF-2, RF-4, CL-4 |
-| Punto de persistencia | Índice `UNIQUE (service, date, time)` → `sqlite3.IntegrityError` → `SLOT_TAKEN`, 0 filas nuevas | RF-3, RF-6, CL-1 |
-| Concurrencia | `busy_timeout` de la stdlib (5 s, por defecto) serializa las escrituras; un bloqueo no resuelto se traduce también a `SLOT_TAKEN` (nunca un 500) | RF-3, RF-6, RNF-2 |
+| Punto de persistencia | Índice único parcial `ux_appointments_slot_open` sobre `(service, date, time) WHERE status <> 'cancelled'` → `IntegrityError`/`UniqueViolation` → `SLOT_TAKEN`, 0 filas nuevas | RF-3, RF-6, CL-1 |
+| Concurrencia | PostgreSQL resuelve la carrera de escritura en el punto de persistencia; la violación de unicidad se traduce también a `SLOT_TAKEN` (nunca un 500). Sin esperas de bloqueo ni reintentos del motor anterior | RF-3, RF-6, RNF-2 |
 
 Clave de unicidad: **exclusivamente `(service, date, time)`** (D18 plan 004, D2 plan
 005, aprobados por la usuaria y coherentes con RF-2 de esta spec).
@@ -189,10 +203,8 @@ FUNCTION create_booking(data, db):
         RETURN SLOT_TAKEN                                     [RF-2][CL-4]
     TRY:
         RETURN repository.insert_appointment(data, db)        # RF-1: 1 fila
-    CATCH sqlite3.IntegrityError:                            # UNIQUE (service,date,time)
+    CATCH IntegrityError / UniqueViolation:                  # ux_appointments_slot_open
         RETURN SLOT_TAKEN                                     [RF-3][RF-6][CL-1][CL-4]
-    CATCH sqlite3.OperationalError (locked/busy):
-        RETURN SLOT_TAKEN                                     [RF-3][RF-6][RNF-2]
     # cualquier otra excepción se propaga (500 real, no silenciar)
 
 # --- capa web (POST /citas; contrato intacto) -------------------------
@@ -280,14 +292,14 @@ FUNCTION initBookingSubmit():
 
 | # | Decisión | Justificación | Alternativa descartada | RF |
 |---|---|---|---|---|
-| D1 | **Sin dependencias ni frameworks**: concurrencia con `threading`/`concurrent.futures` (stdlib) y SQLite nativo | Constitución #1 y AGENTS.md; las pruebas de concurrencia no necesitan nada más | *SQLAlchemy/pytest-xdist/Pool externo*: dependencia sin aprobación | RF-3, RF-6 |
-| D2 | **El índice `UNIQUE (service, date, time)` sigue siendo la garantía de unicidad**; sin migraciones ni objetos nuevos en la BD | Constitución #5: la integridad se protege en el punto de persistencia; la tabla nació con el índice (HU-004) y no hay duplicados posibles | *Tabla/clave de bloqueo*: más piezas móviles sin ganancia. *Índice adicional*: redundante | RF-2, RF-6 |
-| D3 | **`create_booking()` endurecido**: capturar `sqlite3.IntegrityError` de forma específica y mapear también `OperationalError` de bloqueo a `SLOT_TAKEN`; el resto de excepciones se propaga | Hoy captura `Exception` y busca la subcadena "UNIQUE", lo que puede enmascarar errores ajenos; RF-3/RF-6 exigen rechazar las restantes y RNF-2 prohíbe un 500 crudo por concurrencia | *Solo SELECT previo*: ventana sin protección (AGENTS.md). *Solo UNIQUE con 500*: viola RF-4/RNF-2. *Transacción `BEGIN IMMEDIATE`*: más código con el mismo resultado ya garantizado por el índice (constitución #1); se conserva la doble comprobación D9 de HU-004 | RF-2, RF-3, RF-4, RF-6, RNF-2 |
+| D1 | **Sin dependencias ni frameworks**: concurrencia con `threading`/`concurrent.futures` (stdlib) y SQLite nativo *(histórico; adaptado a PostgreSQL por Spec 019 RF-1/RF-18)* | Constitución #1 y AGENTS.md; las pruebas de concurrencia no necesitan nada más | *SQLAlchemy/pytest-xdist/Pool externo*: dependencia sin aprobación | RF-3, RF-6 |
+| D2 | **El índice `UNIQUE (service, date, time)` sigue siendo la garantía de unicidad**; sin migraciones ni objetos nuevos en la BD *(histórico; la Spec 010 lo evolucionó a índice único parcial y la Spec 019 lo aplica en PostgreSQL)* | Constitución #5: la integridad se protege en el punto de persistencia; la tabla nació con el índice (HU-004) y no hay duplicados posibles | *Tabla/clave de bloqueo*: más piezas móviles sin ganancia. *Índice adicional*: redundante | RF-2, RF-6 |
+| D3 | **`create_booking()` endurecido**: capturar `sqlite3.IntegrityError` de forma específica y mapear también `OperationalError` de bloqueo a `SLOT_TAKEN`; el resto de excepciones se propaga *(histórico; con PostgreSQL el mapeo vigente es `IntegrityError`/`UniqueViolation` → `SLOT_TAKEN`, sin `OperationalError` por bloqueo; Spec 019 RF-1/RF-18)* | Hoy captura `Exception` y busca la subcadena "UNIQUE", lo que puede enmascarar errores ajenos; RF-3/RF-6 exigen rechazar las restantes y RNF-2 prohíbe un 500 crudo por concurrencia | *Solo SELECT previo*: ventana sin protección (AGENTS.md). *Solo UNIQUE con 500*: viola RF-4/RNF-2. *Transacción `BEGIN IMMEDIATE`*: más código con el mismo resultado ya garantizado por el índice (constitución #1); se conserva la doble comprobación D9 de HU-004 | RF-2, RF-3, RF-4, RF-6, RNF-2 |
 | D4 | **RF-5 con el POST de formulario actual + estado en el botón** (Q2): guard `submitting` en JS, `preventDefault` en el envío repetido, `disabled` + texto + `aria-busy` en el primero | PRG intacto (no se reescribe un flujo que funciona); cubre «estado en curso» y «evitar acciones duplicadas»; vanilla JS (constitución #1) | *Envío vía `fetch` + redirect cliente*: reescribe el envío, añade manejo de errores de red y cambia el contrato de pruebas. *Solo servidor*: no cubre RF-5 | RF-5, RNF-3 |
 | D5 | **Conflicto = `MSG_SLOT_TAKEN` reutilizado + re-render que recalcula las horas** (la ocupada se sirve «Ocupado», sin radio seleccionable) | RF-4/RNF-2: respuesta clara con textos ya fijados en specs 004/005; HU-005 ya pinta el estado ocupado | *Nuevo literal específico de concurrencia*: copy adicional sin requisito y más técnico para el paciente | RF-4, CL-2, RNF-2 |
 | D6 | **Literal único nuevo `MSG_SUBMITTING` servido vía `data-submitting` en `#booking-calendar`** (mismo contenedor de literales de HU-004/005) | El JS nunca contiene textos (decisión de HU-005); el espejo `expected_content.py` mantiene la trazabilidad spec → test (constitución #6) | *Texto hardcodeado en el JS*: rompe el espejo. *Varios literales (spinner, aria-label)*: más copy sin necesidad | RF-5 |
 | D7 | **CSS del estado en curso** en `.appointment__submit` (`:disabled` / `[aria-busy="true"]`) con cursor de espera y atenuación dentro de la paleta (salvia/arena) | AGENTS.md: la paleta es restricción, no sugerencia; RNF-3 (usable durante el procesamiento) | *Color nuevo de marca*: requiere decisión de diseño. *Spinner de librería*: dependencia sin aprobación | RF-5, RNF-3 |
-| D8 | **Duplicados históricos (Q1): prevención + detección en tests, sin saneamiento automático** | AGENTS.md exige decisión explícita, respaldo/auditoría y pruebas para saneamientos; el índice ya impide nuevos duplicados; detectar es suficiente para cerrar la duda | *Limpieza automática en `init_db`*: riesgo de pérdida de datos sin decisión formal. *Función de diagnóstico en producción*: código sin consumidor funcional | RF-6, CL-3, RNF-1 |
+| D8 | **Duplicados históricos (Q1): prevención + detección en tests, sin saneamiento automático** | AGENTS.md exige decisión explícita, respaldo/auditoría y pruebas para saneamientos; el índice ya impide nuevos duplicados; detectar es suficiente para cerrar la duda | *Limpieza automática en el arranque*: riesgo de pérdida de datos sin decisión formal. *Función de diagnóstico en producción*: código sin consumidor funcional | RF-6, CL-3, RNF-1 |
 | D9 | **Reintento de la misma solicitud (Q4) → rechazo con `MSG_SLOT_TAKEN` y 0 filas** | RF-3/RF-4 exigen rechazar las solicitudes restantes; es el comportamiento ya existente, ahora con test explícito | *Redirección idempotente a la confirmación*: comportamiento no pedido, exige enmienda de spec y detección de duplicado por datos | RF-2, RF-3, CL-4 |
 | D10 | **Rama `feature/hu-006` desde `main`, tras aceptar y mergear HU-005** (Q5, aceptada 2026-10-09) | AGENTS.md: aislamiento de HU por rama; `main` vuelve a ser el punto de partida con 118 tests en verde | *Rama desde `feature/hu-005`*: arrastra pendientes de cierre. *Seguir en `feature/hu-005`*: mezcla dos HU en una rama | regresión |
 | D11 | **Identificadores en inglés, mensajes en español; espejo único en `expected_content.py` actualizado junto con la enmienda de la spec** | Constitución #6 y AGENTS.md (textos contractuales: spec y espejo cambian juntos; patrón D15/D11) | *Literales solo en código*: rompe la trazabilidad spec → test | todos |
@@ -299,8 +311,8 @@ FUNCTION initBookingSubmit():
 ## 6. Estrategia de tests
 
 Ejecución: `python -m pytest -q` (suite) · `python -m pytest tests/test_hu_006.py -v`
-(HU). Fixtures de `conftest.py` **sin cambios** (`app`, `client`, `database_path` con
-BD temporal). Arrange/Act/Assert, sin dependencia del orden; fechas relativas
+(HU). Fixtures de `conftest.py` **sin cambios** (`app`, `client` y base de datos de prueba
+aislada). Arrange/Act/Assert, sin dependencia del orden; fechas relativas
 calculadas en cada prueba (lunes laborable futuro). `tests/expected_content.py`
 concentra el literal nuevo (espejo único, D11).
 
@@ -312,7 +324,7 @@ concentra el literal nuevo (espejo único, D11).
 | TC-006-002 | `test_double_booking_service.py` | **CL-4:** reintento con datos idénticos (secuencial) → `SLOT_TAKEN`, **0 filas** nuevas, la fila original intacta | RF-2, CL-4 |
 | TC-006-003 | `test_double_booking_service.py` | **CL-1:** 8 hilos con `threading.Barrier` sobre la misma terna → **1** `Appointment`, **7** `SLOT_TAKEN` y `COUNT(*) = 1` | RF-3, RF-6, CL-1 |
 | TC-006-004 | `test_double_booking_service.py` | **CL-5:** misma fecha/hora en **servicio distinto** → 2 citas válidas (unicidad por la terna; regresión TC-004-007) | RF-2, CL-5 |
-| TC-006-005 | `test_double_booking_service.py` | `repository.insert_appointment` parcheado: `IntegrityError` → `SLOT_TAKEN`; `OperationalError("database is locked")` → `SLOT_TAKEN`; `ValueError` → **se propaga** (500 real, no silenciado) | RF-3, RF-6 |
+| TC-006-005 | `test_double_booking_service.py` | `repository.insert_appointment` parcheado: `IntegrityError`/`UniqueViolation` → `SLOT_TAKEN`; `OperationalError`/`InterfaceError` → `PersistenceUnavailable` (no `SLOT_TAKEN`); `ValueError` → **se propaga** (500 real, no silenciado) | RF-3, RF-6 |
 | TC-006-006 | `test_double_booking_routes.py` | **CL-2:** `POST` sobre terna ocupada → **200** con `MSG_SLOT_TAKEN` visible, la hora servida como «Ocupado» (sin radio `name="time"` seleccionable) y **1 fila** total | RF-4, CL-2, RNF-2 |
 | TC-006-007 | `test_double_booking_routes.py` | **CL-1:** 8 `POST` concurrentes (`ThreadPoolExecutor`, un `test_client` por hilo, Barrier) → **1×303**, **7×200** con `MSG_SLOT_TAKEN`, `COUNT(*) = 1` | RF-1, RF-3, RF-6, CL-1 |
 | TC-006-008 | `test_double_booking_routes.py` | **CL-5:** hora ocupada en servicio A → `POST` con servicio B (misma fecha/hora) → **303** y 2 filas (combinación distinta) | RF-2, RF-4, CL-5 |
@@ -320,7 +332,7 @@ concentra el literal nuevo (espejo único, D11).
 | TC-006-010 | `test_double_booking_routes.py` | **Regresión HU-005:** tras reservar, `/citas/horarios` devuelve la hora en `occupied` y `/citas/disponibilidad` excluye el día lleno; 400/405 sin cambios | RF-4, CL-5, regresión |
 | TC-006-011 | `test_hu_006.py` | **RF-5 (inspección estática, patrón TC-005-015):** `availability.js` con listener de `submit`, `preventDefault` en el envío repetido, `disabled`, `data-submitting` vía `dataAttr` y `aria-busy`; sin imports de librerías externas | RF-5 |
 | TC-006-012 | `test_hu_006.py` | `main.css` con el estado en curso/deshabilitado de `.appointment__submit`; colores ⊆ paleta de 6 hex; párrafos `justify` + `hyphens: none`; sin desborde a 375 px | RF-5, RNF-3 |
-| TC-006-013 | `test_hu_006.py` | **RF-6:** el esquema conserva `UNIQUE (service, date, time)` (consultado sobre `sqlite_master`) y el diagnóstico de duplicados devuelve **0 filas** tras un flujo completo de reservas | RF-6, RNF-1, CL-3 |
+| TC-006-013 | `test_hu_006.py` | **RF-6:** la unicidad vigente de slots abiertos es el índice parcial `ux_appointments_slot_open` sobre `(service, date, time) WHERE status <> 'cancelled'` (verificado sobre el catálogo del motor) y el diagnóstico de duplicados devuelve **0 filas** tras un flujo completo de reservas | RF-6, RNF-1, CL-3 |
 | TC-006-014 | `test_hu_006.py` | Espejo: `expected_content.MSG_SUBMITTING == appointment_content.MSG_SUBMITTING == "Registrando tu cita…"`; `MSG_SLOT_TAKEN` idéntico al de specs 004/005 | RF-4, RF-5 |
 | TC-006-015 | `test_hu_006.py` | **CL-3:** BD temporal cuya tabla `appointments` se crea **sin** el índice (DDL del test) con 2 filas idénticas → el diagnóstico las detecta (valida la política Q1: detectar, no sanear) | RF-6, CL-3 |
 | TC-006-016 | `test_hu_006.py` | **Regresión total:** `python -m pytest -q` → **0 FAIL** con los **118 tests previos** intactos (HU-001/002/003/016/004/005) | todos, finalización |

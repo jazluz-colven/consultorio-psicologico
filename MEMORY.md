@@ -948,5 +948,19 @@ aporte.
   CL-6 y RF-28 PASS; sin defectos bloqueantes). Observaciones no bloqueantes
   corregidas en la evidencia: precisión de datos ficticios, encuadre de los 399
   como total de suite y diferencia entre DSN conservado y `DATABASE_URL=""` en
-  el test. **T15 marcada `[x]`; pendiente autorización de commit.**
+  el test. **T15 marcada `[x]`; commit `87ab012` publicado en `main`.**
   **No se ejecutó rollback real sobre Render/Neon** ni snapshot real.
+
+- **Spec 019 — T16 COMPLETADA Y APROBADA (2026-11-16)**: actualización
+  documental de `specs/004_agendar-cita/plan.md`,
+  `005_validar-dis-horarios`, `006_evitar-doble-reserva`,
+  `007_automatizacion-reservas` y `010_notificar-cancelacion`, con evidencia
+  `docs/evidencias/hu-019/plan-updates.md`. Menciones operativas a SQLite,
+  `sqlite3`, `DATABASE_PATH`, `sqlite_master`, `PRAGMA` y `busy_timeout`
+  sustituidas por `Database`/`ensure_schema()`/PostgreSQL; DDL históricos
+  marcados; `TC-010-014` ubicado en `tests/test_rollback_sqlite.py`.
+  Decisiones D2 (004), D1/D2/D3 (006), D11 (007) y D5 (010) conservadas con
+  marca histórica; sin cambios de RF/CA/CL/literales. `@revisor`: **APROBADO**
+  tras dos ciclos de corrección. 201+/142− en 5 planes; P1 30 y P2 9
+  coincidencias, todas históricas o de rollback T15. **Sin commit ni push;
+  pendiente autorización de commit.**

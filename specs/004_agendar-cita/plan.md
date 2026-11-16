@@ -23,10 +23,18 @@ automatización n8n (Spec 007), cancelación de citas, agenda interna del psicó
 curso» del botón (Spec 006), calendario completo de disponibilidad con navegación de
 fechas y distinción visual de estados (Spec 005 — ver delimitación en Q10/§7.1).
 
-**Primera persistencia del proyecto**: se crea `consultorio/persistence/` con SQLite de
-la librería estándar (Q4). Se activan la constitución #5 (persistencia íntegra) y la
-decisión pendiente de `MEMORY.md` («`persistence/` se crea con la primera HU con BD»).
-Sin dependencias nuevas: `sqlite3` es stdlib (constitución #1).
+**Primera persistencia del proyecto (referencia histórica)**: se creó
+`consultorio/persistence/` con SQLite de la librería estándar (Q4). Se activaron la
+constitución #5 (persistencia íntegra) y la decisión pendiente de `MEMORY.md`
+(«`persistence/` se crea con la primera HU con BD»). Sin dependencias nuevas entonces:
+`sqlite3` es stdlib (constitución #1).
+
+> **Actualización Spec 019 (T16)**: la capa `consultorio/persistence/` se mantiene como
+> frontera única de acceso a datos, pero el motor vigente es PostgreSQL mediante
+> `DATABASE_URL`/`PERSISTENCE_BACKEND` y la abstracción `Database`
+> (`connection()`/`transaction()`). Las menciones a SQLite, `sqlite3` y `DATABASE_PATH`
+> que se conservan en este plan quedan como referencia histórica de la decisión
+> original; su adaptación está respaldada por RF-1/RF-18 de la Spec 019.
 
 **Dudas de la spec resueltas** (2026-10-09, usuaria):
 - **Q1 — datos obligatorios**: tipo de documento (CC, TI, CE, Pasaporte, RC), número de
@@ -69,8 +77,8 @@ Consultorio_Carolina/
 │   │                             # BOOKING_PAGE_TITLE, mensajes literal de error/éxito
 │   │                             #   [RF-1][RF-2][RF-3][RNF-1]
 │   ├── persistence/                 # NUEVO (Q4) — constitución #5
-│   │   ├── database.py              # get_connection(), init_db(app): esquema +
-│   │   │                         # índice UNIQUE (service, date, time)   [RF-3][RF-4]
+│   │   ├── database.py              # Database/ensure_schema(): esquema +
+│   │   │                         # índice único parcial de slots abiertos   [RF-3][RF-4]
 │   │   └── appointments_repository.py  # insert_appointment(), get_appointment_by_id(),
 │   │                                 # is_slot_taken(), list_available_hours()
 │   │                                 #   [RF-1][RF-3][RF-4]
@@ -98,7 +106,7 @@ Consultorio_Carolina/
 │                                 # diferenciados + fetch /citas/horarios al
 │                                 # cambiar servicio/día y rellena los bloques
 │                                 # Mañana/Tarde (D19)  [RF-1][RF-3][RNF-2]
-├── consultorio/config.py            # + DATABASE_PATH (data/consultorio.db)
+├── consultorio/config.py            # + DATABASE_URL / PERSISTENCE_BACKEND
 │                                 #   [RF-1][RF-4]
 └── tests/
     ├── conftest.py                  # fixture app con BD temporal por test  [todos]
@@ -121,7 +129,7 @@ Responsabilidades (sin solaparse):
 | Módulo | Responsabilidad | NO debe hacer |
 |---|---|---|
 | `content/appointment_content.py` | Declarar horas, tipos de documento y literales de mensajes | Contener lógica ni acceder a la BD |
-| `persistence/database.py` | Conexión, `init_db()`, esquema e índice UNIQUE | Validar datos de negocio ni generar HTML |
+| `persistence/database.py` | Conexión, `Database`/`ensure_schema()`, esquema e índice de unicidad | Validar datos de negocio ni generar HTML |
 | `persistence/appointments_repository.py` | Insertar/recuperar citas y leer horas ocupadas | Decidir reglas de validación ni manejar request/response |
 | `services/appointment_service.py` | Validar, comprobar disponibilidad, orquestar el registro | Escribir HTML, manejar status codes |
 | `web/appointments.py` | Método/ruta, status codes, parseo del form, `render_template`/`jsonify`/`redirect` | Contener reglas de validación ni consultar la BD directamente |
@@ -129,7 +137,8 @@ Responsabilidades (sin solaparse):
 | `static/js/availability.js` | Refrescar el `<select>` de horas vía `fetch` | Validar datos ni registrar la cita (doble comprobación en el servidor) |
 
 `create_app()` registra `appointments_bp` junto a `about_bp`, `home_bp`, `sections_bp`,
-`search_bp` y `services_bp`, y ejecuta `init_db(app)`. `base.html` y `nav.js` no
+`search_bp` y `services_bp`, y aplica el esquema con `Database`/`ensure_schema()`.
+`base.html` y `nav.js` no
 cambian: la navegación se sirve desde `get_home_view()` (el enlace «Agendar cita» →
 `/citas` ya existe en `NAV_LINKS`).
 
@@ -137,10 +146,17 @@ cambian: la navegación se sirve desde `get_home_view()` (el enlace «Agendar ci
 
 ## 2. Modelo de datos, catálogo de horas y literales
 
-`[RF-1][RF-3][RF-4][RNF-1]` — Esquema versionado en el repositorio (las migraciones y
-su estrategia se documentan aquí antes de tocar tablas; AGENTS.md).
+`[RF-1][RF-3][RF-4][RNF-1]` — El esquema original de HU-004 se versionó en el
+repositorio (las migraciones y su estrategia se documentan aquí antes de tocar
+tablas; AGENTS.md).
 
 ### 2.1 Esquema (`persistence/database.py`)
+
+> **Nota histórica (Spec 019, T16)**: el siguiente DDL es el esquema original de
+> HU-004 sobre SQLite. **No es el esquema vigente**: en PostgreSQL el esquema se
+> aplica con `Database`/`ensure_schema()` en `consultorio/persistence/database.py`,
+> con el índice parcial `ux_appointments_slot_open` (Spec 019 RF-1/RF-18). Las
+> columnas y reglas de negocio descritas se conservan.
 
 ```sql
 CREATE TABLE IF NOT EXISTS appointments (
@@ -165,7 +181,8 @@ CREATE TABLE IF NOT EXISTS appointments (
 - **Unicidad por `service + date + time`** desde HU-004 (Q5), coherente con Spec 006
   RF-2 («la misma combinación de servicio, fecha y hora»); la Spec 005 plantea esa
   misma regla en sus dudas abiertas.
-- `data/consultorio.db` fuera de git (`.gitignore`); tests con BD temporal por fixture.
+- `DATABASE_URL`/`PERSISTENCE_BACKEND` configuran la base de datos (credenciales
+  fuera de git); tests con base de datos de prueba aislada por fixture.
 
 ### 2.2 `consultorio/content/appointment_content.py`
 
@@ -313,7 +330,7 @@ Ambos caminos producen el mismo literal `MSG_SLOT_TAKEN` y **ninguna fila nueva*
 
 | Comando | Descripción | Salida esperada | Exit code |
 |---|---|---|---|
-| `python app.py` | Arranca el servidor (crea `data/consultorio.db` si no existe) | `Running on http://127.0.0.1:5000` | `0` con Ctrl+C; `1` si falla |
+| `python app.py` | Arranca el servidor (aplica el esquema vigente con `Database.ensure_schema()` si aún no existe) | `Running on http://127.0.0.1:5000` | `0` con Ctrl+C; `1` si falla |
 | `python -m pytest -q` | Suite completa (74 actuales + ~27 nuevos) | `N passed` | `0` / `1` |
 | `python -m pytest tests/test_hu_004.py -v` | Pruebas de la HU | listado PASS/FAIL | `0` / `1` |
 
@@ -378,7 +395,7 @@ Ambos caminos producen el mismo literal `MSG_SLOT_TAKEN` y **ninguna fila nueva*
 | # | Decisión | Justificación | Alternativa descartada | RF |
 |---|---|---|---|---|
 | D1 | **Blueprint propio `appointments`**; la ruta `/citas` sale de `placeholders.py` | Frontera por HU (patrón D1 del plan 003 / D11 del plan 001); `placeholders.py` queda solo para secciones no implementadas | *Mantener la ruta en `placeholders.py`*: mezcla sección implementada con placeholders y obliga a condicionar el módulo genérico | RF-1..5 |
-| D2 | **SQLite con `sqlite3` de la stdlib y capa `persistence/` nueva, sin ORM** | Q4 + constitución #1 (sin dependencias) y #5 (integridad en persistencia); `MEMORY.md` ya preveía crear `persistence/` con la primera HU con BD | *Flask-SQLAlchemy*: dependencia nueva sin aprobación. *Guardar en sesión/memoria*: RF-1/RF-4 exigen registro duradero | RF-1, RF-4 |
+| D2 | **SQLite con `sqlite3` de la stdlib y capa `persistence/` nueva, sin ORM** (histórico; motor vigente PostgreSQL, Spec 019 RF-1/RF-18) | Q4 + constitución #1 (sin dependencias) y #5 (integridad en persistencia); `MEMORY.md` ya preveía crear `persistence/` con la primera HU con BD | *Flask-SQLAlchemy*: dependencia nueva sin aprobación. *Guardar en sesión/memoria*: RF-1/RF-4 exigen registro duradero | RF-1, RF-4 |
 | D3 | **Tabla única `appointments` con las columnas del paciente** (sin tabla `patients`) | RF-4 asocia la cita al paciente; ninguna spec pide identificar o reutilizar pacientes (constitución #1) | *Tabla `patients` separada*: normalización sin requisito que la exija; migración posterior si una HU la pide | RF-4 |
 | D4 | **Índice `UNIQUE (service, date, time)` desde HU-004** (Q5) | AGENTS.md exige proteger la integridad en el punto de persistencia; la constitución #5 prohíbe confiar solo en comprobaciones previas; base sobre la que HU-006 añadirá concurrencia | *Solo `SELECT` previo*: ventana sin protección hasta HU-006. *Unicidad solo por fecha+hora*: contradice Spec 006 RF-2 (combinación servicio+fecha+hora) | RF-3, RF-4, CL-4 |
 | D5 | **Estado inicial `pending` («Pendiente»)** (Q2) | Duda abierta de la spec cerrada por la usuaria; valor técnico en inglés y etiqueta en español (constitución #6); deja margen a estados posteriores (007/010) | *«Confirmada»*: implicaría confirmación que aún no existe (correo/WhatsApp son specs aparte) | RF-4 |
@@ -402,8 +419,8 @@ Ambos caminos producen el mismo literal `MSG_SLOT_TAKEN` y **ninguna fila nueva*
 ## 6. Estrategia de tests
 
 Ejecución: `python -m pytest -q` (suite) · `python -m pytest tests/test_hu_004.py -v`
-(HU). Fixtures: `conftest.py` — `app` y `client` **ampliados con BD temporal por test**
-(`DATABASE_PATH` en directorio temporal, borrada al cierre) sin romper los fixtures
+(HU). Fixtures: `conftest.py` — `app` y `client` **ampliados con BD aislada por test**
+(`DATABASE_URL` de prueba, base limpiada al cierre) sin romper los fixtures
 actuales. Arrange/Act/Assert, sin dependencia del orden. `tests/expected_content.py`
 concentra los literales de la spec 004 (espejo único, se actualiza junto con la spec —
 D15).
@@ -415,7 +432,7 @@ D15).
 | TC-004-001 | `test_appointment_content.py` | `BOOKING_HOURS` = exactamente los 14 slots (08:00–11:30 y 14:00–16:30), ordenados, formato `HH:MM`, sin duplicados | RF-1, RNF-1 |
 | TC-004-002 | `test_appointment_content.py` | `DOCUMENT_TYPES` = exactamente CC, TI, CE, PASSPORT, RC con sus etiquetas en español | RF-2 |
 | TC-004-003 | `test_appointment_content.py` | Espejo: mensajes/títulos de `expected_content` idénticos a `appointment_content` y a los literales de la spec | RF-1, RF-2, RF-3 |
-| TC-004-004 | `test_appointment_persistence.py` | `init_db()` crea `appointments` con las 11 columnas y el índice `UNIQUE (service, date, time)` | RF-4 |
+| TC-004-004 | `test_appointment_persistence.py` | El catálogo del motor registra `appointments` con las 11 columnas y la unicidad de slots abiertos (`ux_appointments_slot_open`, índice parcial vigente) | RF-4 |
 | TC-004-005 | `test_appointment_persistence.py` | `insert_appointment()` persiste con `status='pending'`; `get_appointment_by_id()` recupera todos los campos | RF-1, RF-4 |
 | TC-004-006 | `test_appointment_persistence.py` | **CL-4:** segundo insert con la misma combinación servicio+fecha+hora → `IntegrityError`, queda 1 fila | RF-3, CL-4 |
 | TC-004-007 | `test_appointment_persistence.py` | Misma fecha/hora con **servicio distinto** → insert permitido (unicidad por la terna) | RF-4, CL-4 |
@@ -483,7 +500,7 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
 | Q1 | Datos obligatorios (duda abierta de la spec) | **Tipo de documento (CC, TI, CE, Pasaporte, RC), número de documento, nombre y apellido, correo electrónico y celular** (usuaria, 2026-10-09); la duda se cierra en la spec 004. |
 | Q2 | Estado inicial de la cita (duda abierta de la spec) | **`pending` / «Pendiente»** (usuaria, 2026-10-09); se cierra en la spec 004. |
 | Q3 | Selector de horario (¿alcance respecto de HU-005?) | **Select con disponibilidad en vivo** (usuaria, 2026-10-09); el endpoint se entrega en 004 y se reutiliza en 005. |
-| Q4 | Persistencia | **Sí: SQLite + `consultorio/persistence/`** (usuaria, 2026-10-09); primera BD del proyecto. |
+| Q4 | Persistencia | **Sí: SQLite + `consultorio/persistence/`** (usuaria, 2026-10-09); primera BD del proyecto. *(Histórico: motor vigente PostgreSQL con la misma capa; Spec 019 RF-1/RF-18.)* |
 | Q5 | Unicidad `service + date + time` | **Índice `UNIQUE` desde HU-004** (usuaria, 2026-10-09); HU-006 se centra en concurrencia y estado en curso. |
 | Q6 | Rama de trabajo | **Merge `feature/identidad-buscador` → `main`** (HU-016 aceptada) y **`feature/hu-004` desde `main`** (usuaria, 2026-10-09). |
 | Q7 | Catálogo de horas | **Bloques de 30 min: 08:00–12:00 y 14:00–17:00 como horas de FINALIZACIÓN** → 14 slots 08:00–11:30 y 14:00–16:30 (usuaria, 2026-10-09). |
@@ -518,18 +535,19 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
 1. **Spec primero**: enmienda de la spec 004 — cerrar las dudas Q1/Q2, añadir campos
    obligatorios, `BOOKING_HOURS`, reglas de fecha/día y los literales aprobados (Q9).
 2. **Plan**: este `plan.md` (aprobado 2026-10-09).
-3. **Config y espejo**: `Config.DATABASE_PATH` + `BOOKING_HOURS`, `DOCUMENT_TYPES` y
+3. **Config y espejo**: `Config.DATABASE_URL` (y `PERSISTENCE_BACKEND`) + `BOOKING_HOURS`, `DOCUMENT_TYPES` y
    mensajes en `tests/expected_content.py` (Q9; `PLACEHOLDER_SECTIONS` se toca en el
    paso 7, junto con la ruta).
 4. **Contenido**: `consultorio/content/appointment_content.py` (§2.2).
 5. **Persistencia**: `consultorio/persistence/database.py` + `appointments_repository.py`
-   (esquema §2.1, UNIQUE) → `test_appointment_content.py` +
+   (esquema §2.1, unicidad en persistencia) → `test_appointment_content.py` +
    `test_appointment_persistence.py`.
 6. **Servicio**: `consultorio/services/appointment_service.py` (§3) →
    `test_appointment_service.py`.
 7. **Capa web**: `consultorio/web/appointments.py` + plantillas
    `appointments/index.html` y `confirmation.html` + retirar `/citas` de
-   `placeholders.py` + registrar `appointments_bp` en `create_app()` + `init_db()` +
+   `placeholders.py` + registrar `appointments_bp` en `create_app()` +
+   `Database`/`ensure_schema()` +
    `PLACEHOLDER_SECTIONS` sin `/citas` (D16) → `test_appointment_routes.py`.
 8. **JS de disponibilidad**: `static/js/availability.js` (fetch al cargar y al cambiar
    servicio/fecha; mensaje `MSG_NO_HOURS` con la lista vacía).
@@ -564,8 +582,9 @@ Evidencia visual: docs/evidencias/hu-004/escritorio-1280.png, movil-375.png
   `content/appointment_content.py` + espejo `tests/expected_content.py` (D10);
   usos en `web/appointments.py` y `services/email_service.py`.
 - **Saneamiento de la BD de desarrollo** (decisión de la usuaria 2026-10-11:
-  «estamos en pruebas, podemos limpiar la BD»): se elimina
-  `data/consultorio.db` y se regenera con `init_db()` en el siguiente arranque;
+  «estamos en pruebas, podemos limpiar la BD»): *histórico:* se eliminó
+  `data/consultorio.db` y se regeneró con `init_db()` en el siguiente arranque
+  (hoy el esquema vigente se aplica con `Database.ensure_schema()`);
   sin migración UPDATE (no hay datos de producción).
 - Impacto en tests: TC-004-005/016/026 y los asserts `status == "pending"` de
   HU-006/007/008 pasan a `confirmed`; el espejo y el literal del correo pasan a

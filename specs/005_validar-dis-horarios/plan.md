@@ -31,11 +31,15 @@ exige y que la delimitación Q10 del plan 004 reservó para esta HU.
 el `UNIQUE` y el rechazo en `POST` de HU-004 se conservan intactos como base),
 notificaciones posteriores a la reserva (Specs 008/009/010), agenda interna del
 psicólogo (Specs 011/012), cancelación de citas, automatización n8n (Spec 007),
-cambios de esquema SQLite y dependencias nuevas (constitución #1).
+cambios de esquema de persistencia ni dependencias nuevas (constitución #1).
 
 **Sin cambios de modelo de datos**: se reutiliza la tabla `appointments` y el índice
 `UNIQUE (service, date, time)` de HU-004 sin migraciones (AGENTS.md: nada de tablas
 sin spec; la constitución #5 ya está activa y se respeta).
+
+> **Actualización Spec 019 (T16)**: las referencias al «esquema SQLite» se expresan
+> como «esquema de persistencia»; el motor vigente es PostgreSQL (Spec 019
+> RF-1/RF-18), sin cambios en el modelo de datos ni en los requisitos de esta HU.
 
 **Duda abierta de la spec** (debe cerrarse por enmienda antes de codificar):
 - **Q1 — regla de disponibilidad**: la spec pregunta si la disponibilidad depende
@@ -127,7 +131,7 @@ Responsabilidades (sin solaparse; solo módulos tocados):
 | `static/js/availability.js` | Pintar estados del servidor, cargar estados del mes, secuenciar peticiones | Decidir qué día/hora está libre (siempre servidor) |
 
 `create_app()` no cambia (blueprint `appointments` ya registrado). `base.html`, `nav.js`
-y el esquema SQLite no cambian.
+y el esquema de persistencia no cambian.
 
 ---
 
