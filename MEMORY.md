@@ -928,9 +928,8 @@ aporte.
   en T13, limitación de facturación y artefacto bruto de spin-down pendiente
   para T17. **T14 marcada `[x]` en `tasks.md`.**
   **Cierre:** commit `309a442` publicado en `main` (`dde4461..309a442`).
-  `RENDER_API_KEY` retirada del entorno local el 2026-11-16; la revocación en el
-  servidor de Render queda pendiente en el Dashboard (la API pública no expone
-  endpoint de revocación). Observaciones
+  `RENDER_API_KEY` retirada del entorno local el 2026-11-16 y revocada en el
+  Dashboard de Render el 2026-11-17; no queda pendiente de seguridad. Observaciones
   abiertas para T17: n8n/variables de automatización y
   `CONSULTORIO_ADMIN_TOKEN` (RNF-5 y paridad funcional), repetir la suite
   completa y adjuntar extracto del primer GET tras el spin-down.
@@ -990,7 +989,7 @@ aporte.
   evidencia y referencia obsoleta a T14. Evidencia:
   `docs/evidencias/hu-019/t18-removal.md`; T18 marcada `[x]`. **Commit
   `61f358a` publicado en `origin/feature/hu-019-migracion-postgres`
-  (2026-11-17).** La `RENDER_API_KEY`
-  local fue retirada; su revocación en el panel de Render sigue pendiente de la
-  usuaria. Quedan `data/consultorio.db*` locales ignorados por Git y sin
+  (2026-11-17).** La `RENDER_API_KEY` local fue retirada y la usuaria confirmó
+  su revocación en el panel de Render (2026-11-17); no queda pendiente de
+  seguridad. Quedan `data/consultorio.db*` locales ignorados por Git y sin
   referencias en código.
