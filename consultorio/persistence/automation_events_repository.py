@@ -1,34 +1,22 @@
 """Data access for automation events; no business rules live here (HU-007).
 
-Spec 019 (T5, plan D8/D13): the SQL uses ``%s`` placeholders and the same
-minimal SQLite adapter as the appointments repository, so there is a single
-statement set for PostgreSQL and the temporary SQLite rollback route. The
-public names and return contracts are unchanged; the last parameter accepts a
-``Database``/``DatabaseTarget`` or, transitionally, a legacy ``database_path``.
+Spec 019 (T5/T18, plan D8/D13): the SQL uses ``%s`` placeholders on PostgreSQL,
+which is the only persistence engine. The public names and return contracts are
+unchanged; the last parameter accepts a ``Database`` or a ``DatabaseTarget``.
 """
 
-import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Iterator, Mapping
 
-from consultorio.persistence.database import (
-    Database,
-    DatabaseTarget,
-    get_connection,
+from consultorio.persistence.database import Database, DatabaseTarget
+
+DatabaseResource = Database | DatabaseTarget
+
+# UTC expression for ``sent_at`` (plan D7, RF-30).
+_SENT_AT_EXPRESSION = (
+    "to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')"
 )
-
-DatabaseResource = Database | DatabaseTarget | str | Path
-
-# UTC expression for ``sent_at`` (plan D7, RF-30). PostgreSQL keeps the
-# approved ``to_char`` expression; SQLite rollback uses ``datetime('now')``,
-# which is UTC and produces the same ``YYYY-MM-DD HH:MM:SS`` format. Only this
-# expression differs by dialect; the rest of the statement is shared.
-_SENT_AT_EXPRESSION = {
-    "postgres": "to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')",
-    "sqlite": "datetime('now')",
-}
 
 
 @dataclass(frozen=True)
@@ -58,7 +46,7 @@ def _to_event(row: Mapping[str, Any]) -> AutomationEvent:
     )
 
 
-def _database_for(resource: DatabaseResource) -> tuple[Database | None, bool]:
+def _database_for(resource: DatabaseResource) -> tuple[Database, bool]:
     """Return ``(database, owned)`` for a migrated resource.
 
     ``owned`` is ``True`` only when this repository created the ``Database``
@@ -68,34 +56,12 @@ def _database_for(resource: DatabaseResource) -> tuple[Database | None, bool]:
     """
     if isinstance(resource, Database):
         return resource, False
-    if isinstance(resource, DatabaseTarget):
-        return Database(resource), True
-    return None, False
-
-
-def _backend_of(resource: DatabaseResource) -> str:
-    if isinstance(resource, Database):
-        return resource.target.backend
-    if isinstance(resource, DatabaseTarget):
-        return resource.backend
-    return "sqlite"
-
-
-def _adapt_sqlite_sql(query: str) -> str:
-    """Minimal rollback adapter (plan D8): ``%s`` -> ``?`` only.
-
-    The statements are controlled by this module: literals never contain ``?``
-    and ``%`` only appears in the ``%s`` placeholders, so a plain replacement is
-    safe. This is deliberately not a general SQL translator.
-    """
-    return query.replace("%s", "?")
+    return Database(resource), True
 
 
 @contextmanager
-def _scope(
-    resource: DatabaseResource, *, write: bool
-) -> Iterator[tuple[Any, str]]:
-    """Yield ``(connection, backend)`` for either persistence resource.
+def _scope(resource: DatabaseResource, *, write: bool) -> Iterator[Any]:
+    """Yield a connection from the ``Database`` facade.
 
     When the repository created the ``Database`` from a ``DatabaseTarget``, it
     closes that temporary instance with ``close_request()`` on every exit path,
@@ -103,48 +69,35 @@ def _scope(
     untouched (its owner/teardown closes it).
     """
     database, owned = _database_for(resource)
-    if database is not None:
-        try:
-            database.ensure_schema()
-            backend = database.target.backend
-            manager = database.transaction() if write else database.connection()
-            with manager as connection:
-                yield connection, backend
-        finally:
-            if owned:
-                database.close_request()
-        return
-    with get_connection(resource) as connection:
-        yield connection, "sqlite"
+    try:
+        database.ensure_schema()
+        manager = database.transaction() if write else database.connection()
+        with manager as connection:
+            yield connection
+    finally:
+        if owned:
+            database.close_request()
 
 
 def _run(
     connection: Any,
-    backend: str,
     query: str,
     params: tuple[object, ...] = (),
 ) -> Any:
-    if backend == "sqlite":
-        query = _adapt_sqlite_sql(query)
     return connection.execute(query, params)
 
 
-def _is_unique_violation(error: BaseException, backend: str) -> bool:
+def _is_unique_violation(error: BaseException) -> bool:
     """True only for the engine's unique-id violation on ``insert_event``.
 
-    PostgreSQL: exactly ``psycopg.errors.UniqueViolation`` (imported lazily so
-    the SQLite route never needs the driver). SQLite keeps the historical
-    ``sqlite3.IntegrityError``. Other errors are not translated or silenced.
+    Exactly ``psycopg.errors.UniqueViolation`` (imported lazily). Other errors
+    are not translated or silenced.
     """
-    if backend == "sqlite":
-        return isinstance(error, sqlite3.IntegrityError)
-    if backend == "postgres":
-        try:
-            from psycopg import errors as pg_errors
-        except ImportError:  # pragma: no cover - depends on local libpq
-            return False
-        return isinstance(error, pg_errors.UniqueViolation)
-    return False
+    try:
+        from psycopg import errors as pg_errors
+    except ImportError:  # pragma: no cover - depends on local libpq
+        return False
+    return isinstance(error, pg_errors.UniqueViolation)
 
 
 def insert_event(
@@ -155,12 +108,10 @@ def insert_event(
     database: DatabaseResource,
 ) -> bool:
     """Register a pending event; False when event_id already exists (RF-5)."""
-    backend = _backend_of(database)
     try:
-        with _scope(database, write=True) as (connection, conn_backend):
+        with _scope(database, write=True) as connection:
             _run(
                 connection,
-                conn_backend,
                 """
                 INSERT INTO automation_events (
                     event_id, event_type, event_version, appointment_id, status
@@ -169,7 +120,7 @@ def insert_event(
                 (event_id, event_type, event_version, appointment_id),
             )
     except Exception as error:
-        if _is_unique_violation(error, backend):
+        if _is_unique_violation(error):
             return False
         raise
     return True
@@ -178,10 +129,9 @@ def insert_event(
 def get_by_event_id(
     event_id: str, database: DatabaseResource
 ) -> AutomationEvent | None:
-    with _scope(database, write=False) as (connection, backend):
+    with _scope(database, write=False) as connection:
         row = _run(
             connection,
-            backend,
             "SELECT * FROM automation_events WHERE event_id = %s",
             (event_id,),
         ).fetchone()
@@ -189,14 +139,13 @@ def get_by_event_id(
 
 
 def mark_sent(event_id: str, database: DatabaseResource) -> None:
-    with _scope(database, write=True) as (connection, backend):
+    with _scope(database, write=True) as connection:
         _run(
             connection,
-            backend,
             f"""
             UPDATE automation_events
             SET status = 'sent', detail = NULL,
-                sent_at = {_SENT_AT_EXPRESSION[backend]}
+                sent_at = {_SENT_AT_EXPRESSION}
             WHERE event_id = %s
             """,
             (event_id,),
@@ -206,10 +155,9 @@ def mark_sent(event_id: str, database: DatabaseResource) -> None:
 def mark_skipped(
     event_id: str, detail: str, database: DatabaseResource
 ) -> None:
-    with _scope(database, write=True) as (connection, backend):
+    with _scope(database, write=True) as connection:
         _run(
             connection,
-            backend,
             """
             UPDATE automation_events SET status = 'skipped', detail = %s
             WHERE event_id = %s
@@ -221,10 +169,9 @@ def mark_skipped(
 def mark_failed(
     event_id: str, detail: str, database: DatabaseResource
 ) -> None:
-    with _scope(database, write=True) as (connection, backend):
+    with _scope(database, write=True) as connection:
         _run(
             connection,
-            backend,
             """
             UPDATE automation_events SET status = 'failed', detail = %s
             WHERE event_id = %s
@@ -270,6 +217,6 @@ def claim_failed_event(
         """
         params.extend([permanent_pattern, retryable_pattern])
 
-    with _scope(database, write=True) as (connection, backend):
-        cursor = _run(connection, backend, query, tuple(params))
+    with _scope(database, write=True) as connection:
+        cursor = _run(connection, query, tuple(params))
         return cursor.rowcount == 1

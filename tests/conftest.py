@@ -33,7 +33,7 @@ sesión se detiene al inicio.
 
 3) Repite:
 
-   python -m pytest -q
+   py -3.14 -m pytest -q
 
 Procedimiento completo: docs/operaciones/postgresql.md
 """.strip()
@@ -94,17 +94,16 @@ def require_test_database_url() -> str:
 
 
 @pytest.fixture()
-def app(tmp_path: Path, pg_target: DatabaseTarget) -> Iterator:
+def app(pg_target: DatabaseTarget) -> Iterator:
     """Flask app bound to an isolated PostgreSQL schema.
 
-    ``create_app`` bootstraps with the SQLite rollback target (``DATABASE_URL``
-    empty) so it never opens a connection against ``public``. The persistence
-    facade is then replaced by a PostgreSQL ``Database`` whose ``search_path``
-    points to the per-test ``test_hu019_<uuid>`` schema. Its teardown runs
-    before ``pg_schema`` drops the schema.
+    ``create_app`` bootstraps with ``DATABASE_URL`` empty so it never opens a
+    connection against ``public``. The persistence facade is then replaced by a
+    PostgreSQL ``Database`` whose ``search_path`` points to the per-test
+    ``test_hu019_<uuid>`` schema. Its teardown runs before ``pg_schema`` drops
+    the schema.
     """
     class TempConfig(TestConfig):
-        DATABASE_PATH: Path = tmp_path / "consultorio.db"
         # Keep the bootstrap away from any DATABASE_URL present in the
         # environment; PostgreSQL is attached explicitly below.
         DATABASE_URL: str = ""
@@ -116,7 +115,6 @@ def app(tmp_path: Path, pg_target: DatabaseTarget) -> Iterator:
     database.ensure_schema()
     application.extensions[DATABASE_EXTENSION_KEY] = database
     # Keep the configuration coherent with the database actually in use.
-    application.config["PERSISTENCE_BACKEND"] = "postgres"
     application.config["DATABASE_URL"] = pg_target.dsn or ""
 
     try:
@@ -184,7 +182,6 @@ def pg_schema() -> Iterator[tuple[str, str]]:
 def pg_target(pg_schema: tuple[str, str]) -> DatabaseTarget:
     url, schema = pg_schema
     return DatabaseTarget(
-        backend="postgres",
         dsn=url,
         schema=schema,
         connect_timeout=5.0,

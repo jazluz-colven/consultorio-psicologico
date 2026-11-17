@@ -1,9 +1,8 @@
 """Application-scoped persistence resource for the web layer (plan D13).
 
 ``create_app()`` builds the single :class:`Database` instance from
-``PERSISTENCE_BACKEND`` and registers it under ``DATABASE_EXTENSION_KEY``.
-Routes resolve it here instead of rebuilding a path from ``DATABASE_PATH``,
-which keeps SQLite as a test/rollback option while production uses PostgreSQL.
+``DATABASE_URL`` and registers it under ``DATABASE_EXTENSION_KEY``. Routes
+resolve it here instead of building their own connections.
 """
 
 from flask import current_app

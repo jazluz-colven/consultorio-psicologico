@@ -977,3 +977,20 @@ aporte.
   incidente, limitación externa divulgada. **Aceptación funcional emitida por la
   usuaria el 2026-11-16** con esa limitación; T17 marcada `[x]`. **Commit y push
   autorizados; T18 autorizada e iniciada el 2026-11-16.**
+
+- **Spec 019 — T18 RETIRADA SQLITE COMPLETADA (2026-11-17)**: retirados
+  `PERSISTENCE_BACKEND`, `DATABASE_PATH`, el DDL SQLite, `init_db`,
+  `get_connection`, el adaptador `%s`→`?` y las ramas de backend; `render.yaml`
+  sin variables SQLite; documentación operativa centrada en PostgreSQL. Suite
+  completa PostgreSQL Docker: **392 PASS / 0 FAIL / 0 skip** (implementador
+  `188.84s`; corrida independiente del coordinador `192.92s`). `@revisor`:
+  **APROBADO** sin defectos bloqueantes; no pudo repetir la suite por no tener
+  Docker activo y se apoyó en la corrida independiente. Observaciones menores
+  corregidas: test `init_db` renombrado, `DATA_DIR` retirado, cifras de la
+  evidencia y referencia obsoleta a T14. Evidencia:
+  `docs/evidencias/hu-019/t18-removal.md`; T18 **aprobada técnicamente** y
+  pendiente de marcar `[x]` tras publicar. **Pendiente autorización de la
+  usuaria para commit y push de T18.** La `RENDER_API_KEY`
+  local fue retirada; su revocación en el panel de Render sigue pendiente de la
+  usuaria. Quedan `data/consultorio.db*` locales ignorados por Git y sin
+  referencias en código.

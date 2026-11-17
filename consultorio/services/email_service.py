@@ -42,7 +42,10 @@ from consultorio.content.email_content import (
 )
 from consultorio.content.services_catalog import SERVICES_CATALOG
 from consultorio.persistence import automation_events_repository as events_repository
-from consultorio.persistence.appointments_repository import Appointment
+from consultorio.persistence.appointments_repository import (
+    Appointment,
+    DatabaseResource,
+)
 from consultorio.services import automation_service
 
 EVENT_TYPE: str = "appointment.confirmation_email"
@@ -225,7 +228,7 @@ def build_cancellation_event(appointment: Appointment) -> dict[str, object]:
 
 def send_confirmation(
     appointment: Appointment,
-    database_path: str,
+    database: DatabaseResource,
     webhook_url: str = "",
     timeout_seconds: float = 3.0,
     auth_header: str = "",
@@ -238,31 +241,31 @@ def send_confirmation(
             if appointment.id:
                 if events_repository.insert_event(
                     event_id, EVENT_TYPE, EVENT_VERSION, appointment.id,
-                    database_path,
+                    database,
                 ):
                     events_repository.mark_failed(
-                        event_id, MSG_APPOINTMENT_INCOMPLETE, database_path
+                        event_id, MSG_APPOINTMENT_INCOMPLETE, database
                     )
             return
         if not _is_valid_recipient(appointment.email):
             if events_repository.insert_event(
                 event_id, EVENT_TYPE, EVENT_VERSION, appointment.id,
-                database_path,
+                database,
             ):
                 events_repository.mark_failed(
-                    event_id, DETAIL_INVALID_RECIPIENT, database_path
+                    event_id, DETAIL_INVALID_RECIPIENT, database
                 )
             return
         event = build_event(appointment, cancellation_url=cancellation_url)
         created = events_repository.insert_event(
-            event_id, EVENT_TYPE, EVENT_VERSION, appointment.id, database_path
+            event_id, EVENT_TYPE, EVENT_VERSION, appointment.id, database
         )
         if not created:
             # same reservation processed again: no duplicate e-mails (RF-4)
             return
         if not webhook_url:
             events_repository.mark_skipped(
-                event_id, DETAIL_EMAIL_NOT_CONFIGURED, database_path
+                event_id, DETAIL_EMAIL_NOT_CONFIGURED, database
             )
             return
         try:
@@ -273,32 +276,32 @@ def send_confirmation(
         except TimeoutError as error:
             # same single classification point as the business events (D-010-01)
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         except urllib.error.HTTPError as error:
             # must come BEFORE URLError: HTTPError is a URLError subclass
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         except urllib.error.URLError as error:
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         except Exception as error:
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         if 200 <= status_code < 300:
-            events_repository.mark_sent(event_id, database_path)
+            events_repository.mark_sent(event_id, database)
         else:
             events_repository.mark_failed(
                 event_id,
                 DETAIL_INVALID_RESPONSE_TEMPLATE.format(status_code=status_code),
-                database_path,
+                database,
             )
     except Exception:
         # the confirmation must never invalidate the booking (RF-3, Q2)
@@ -307,7 +310,7 @@ def send_confirmation(
 
 def send_cancellation(
     appointment: Appointment,
-    database_path: str,
+    database: DatabaseResource,
     webhook_url: str = "",
     timeout_seconds: float = 3.0,
     auth_header: str = "",
@@ -329,10 +332,10 @@ def send_cancellation(
                     CANCELLATION_EVENT_TYPE,
                     CANCELLATION_EVENT_VERSION,
                     appointment.id,
-                    database_path,
+                    database,
                 ):
                     events_repository.mark_failed(
-                        event_id, MSG_APPOINTMENT_INCOMPLETE, database_path
+                        event_id, MSG_APPOINTMENT_INCOMPLETE, database
                     )
             return
         if not _is_valid_recipient(appointment.email):
@@ -341,10 +344,10 @@ def send_cancellation(
                 CANCELLATION_EVENT_TYPE,
                 CANCELLATION_EVENT_VERSION,
                 appointment.id,
-                database_path,
+                database,
             ):
                 events_repository.mark_failed(
-                    event_id, DETAIL_INVALID_RECIPIENT, database_path
+                    event_id, DETAIL_INVALID_RECIPIENT, database
                 )
             return
         event = build_cancellation_event(appointment)
@@ -353,14 +356,14 @@ def send_cancellation(
             CANCELLATION_EVENT_TYPE,
             CANCELLATION_EVENT_VERSION,
             appointment.id,
-            database_path,
+            database,
         )
         if not created:
             # cancellation reprocessed: no duplicate e-mails (spec 010 RF-4)
             return
         if not webhook_url:
             events_repository.mark_skipped(
-                event_id, DETAIL_CANCELLATION_NOT_CONFIGURED, database_path
+                event_id, DETAIL_CANCELLATION_NOT_CONFIGURED, database
             )
             return
         try:
@@ -371,32 +374,32 @@ def send_cancellation(
         except TimeoutError as error:
             # same single classification point as the business events (D-010-01)
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         except urllib.error.HTTPError as error:
             # must come BEFORE URLError: HTTPError is a URLError subclass
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         except urllib.error.URLError as error:
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         except Exception as error:
             automation_service._register_publication_failure(
-                event_id, error, database_path
+                event_id, error, database
             )
             return
         if 200 <= status_code < 300:
-            events_repository.mark_sent(event_id, database_path)
+            events_repository.mark_sent(event_id, database)
         else:
             events_repository.mark_failed(
                 event_id,
                 DETAIL_INVALID_RESPONSE_TEMPLATE.format(status_code=status_code),
-                database_path,
+                database,
             )
     except Exception:
         # the cancellation email must never revert the cancellation (RF-1)

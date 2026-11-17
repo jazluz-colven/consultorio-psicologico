@@ -12,9 +12,6 @@ services:
         value: 3.12.7
       - key: SECRET_KEY
         generateValue: true
-      # Spec 019 (T14, D11): PostgreSQL es el backend de persistencia.
-      - key: PERSISTENCE_BACKEND
-        value: postgres
       # DSN de Neon (endpoint directo, sin -pooler). Se configura como secreto
       # en el panel de Render; nunca se versiona en este archivo.
       - key: DATABASE_URL

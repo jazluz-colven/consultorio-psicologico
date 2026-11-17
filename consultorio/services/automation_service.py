@@ -9,7 +9,6 @@ import json
 import urllib.error
 import urllib.request
 from datetime import datetime
-from pathlib import Path
 
 from consultorio.content.automation_content import (
     CANCELLED_EVENT_TYPE,
@@ -25,7 +24,10 @@ from consultorio.content.automation_content import (
     EVENT_VERSION,
 )
 from consultorio.persistence import automation_events_repository as events_repository
-from consultorio.persistence.appointments_repository import Appointment
+from consultorio.persistence.appointments_repository import (
+    Appointment,
+    DatabaseResource,
+)
 
 
 def _build_automation_event(
@@ -64,7 +66,7 @@ def build_cancelled_event(appointment: Appointment) -> dict[str, object]:
 def _register_publication_failure(
     event_id: str,
     error: BaseException,
-    database_path: str | Path,
+    database: DatabaseResource,
 ) -> None:
     """Record `failed` with the Spanish detail that matches `error` (D-010-01).
 
@@ -84,12 +86,12 @@ def _register_publication_failure(
         detail = DETAIL_UNAVAILABLE
     else:
         detail = DETAIL_UNEXPECTED
-    events_repository.mark_failed(event_id, detail, database_path)
+    events_repository.mark_failed(event_id, detail, database)
 
 
 def on_appointment_confirmed(
     appointment: Appointment,
-    database_path: str | Path,
+    database: DatabaseResource,
     webhook_url: str = "",
     timeout_seconds: float = 3.0,
     auth_header: str = "",
@@ -103,14 +105,14 @@ def on_appointment_confirmed(
             str(event["event_type"]),
             int(event["event_version"]),  # type: ignore[arg-type]
             appointment.id,
-            database_path,
+            database,
         )
         if not created:
             # same reservation processed again: no duplicate automations (RF-5)
             return
         if not webhook_url:
             events_repository.mark_skipped(
-                event_id, DETAIL_NOT_CONFIGURED, database_path
+                event_id, DETAIL_NOT_CONFIGURED, database
             )
             return
         try:
@@ -118,25 +120,25 @@ def on_appointment_confirmed(
                 webhook_url, event, timeout_seconds, auth_header
             )
         except TimeoutError as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except urllib.error.HTTPError as error:
             # must come BEFORE URLError: HTTPError is a URLError subclass
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except urllib.error.URLError as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except Exception as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         if 200 <= status_code < 300:
-            events_repository.mark_sent(event_id, database_path)
+            events_repository.mark_sent(event_id, database)
         else:
             events_repository.mark_failed(
                 event_id,
                 DETAIL_INVALID_RESPONSE_TEMPLATE.format(status_code=status_code),
-                database_path,
+                database,
             )
     except Exception:
         # a registration failure must never invalidate the booking (RF-2/RF-4/RF-7)
@@ -145,7 +147,7 @@ def on_appointment_confirmed(
 
 def publish_cancelled_event(
     appointment: Appointment,
-    database_path: str | Path,
+    database: DatabaseResource,
     url: str = "",
     timeout: float = 3.0,
     auth: str = "",
@@ -165,31 +167,31 @@ def publish_cancelled_event(
         event_id = str(event["event_id"])
         if not url:
             events_repository.mark_skipped(
-                event_id, DETAIL_NOT_CONFIGURED, database_path
+                event_id, DETAIL_NOT_CONFIGURED, database
             )
             return
         try:
             status_code = _post_webhook(url, event, timeout, auth)
         except TimeoutError as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except urllib.error.HTTPError as error:
             # must come BEFORE URLError: HTTPError is a URLError subclass
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except urllib.error.URLError as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except Exception as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         if 200 <= status_code < 300:
-            events_repository.mark_sent(event_id, database_path)
+            events_repository.mark_sent(event_id, database)
         else:
             events_repository.mark_failed(
                 event_id,
                 DETAIL_INVALID_RESPONSE_TEMPLATE.format(status_code=status_code),
-                database_path,
+                database,
             )
     except Exception:
         # a publication failure must never affect the cancellation (RF-10)
@@ -198,7 +200,7 @@ def publish_cancelled_event(
 
 def reprocess_automation_event(
     event_id: str,
-    database_path: str | Path,
+    database: DatabaseResource,
     url: str = "",
     timeout: float = 3.0,
     auth: str = "",
@@ -212,24 +214,24 @@ def reprocess_automation_event(
     try:
         if not events_repository.claim_failed_event(
             event_id,
-            database_path,
+            database,
             permanent_pattern=DETAIL_PERMANENT_REJECTION_PATTERN,
             retryable_pattern=DETAIL_RETRYABLE_REJECTION_PATTERN,
         ):
             return
 
-        event_record = events_repository.get_by_event_id(event_id, database_path)
+        event_record = events_repository.get_by_event_id(event_id, database)
         if not event_record:
             return
 
         # Retrieve the associated appointment to rebuild the payload
         from consultorio.persistence import appointments_repository
         appointment = appointments_repository.get_appointment_by_id(
-            event_record.appointment_id, database_path
+            event_record.appointment_id, database
         )
         if not appointment:
             events_repository.mark_failed(
-                event_id, "Cita asociada no encontrada.", database_path
+                event_id, "Cita asociada no encontrada.", database
             )
             return
 
@@ -238,33 +240,33 @@ def reprocess_automation_event(
         
         if not url:
             events_repository.mark_skipped(
-                event_id, DETAIL_NOT_CONFIGURED, database_path
+                event_id, DETAIL_NOT_CONFIGURED, database
             )
             return
 
         try:
             status_code = _post_webhook(url, event, timeout, auth)
         except TimeoutError as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except urllib.error.HTTPError as error:
             # must come BEFORE URLError: HTTPError is a URLError subclass
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except urllib.error.URLError as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
         except Exception as error:
-            _register_publication_failure(event_id, error, database_path)
+            _register_publication_failure(event_id, error, database)
             return
 
         if 200 <= status_code < 300:
-            events_repository.mark_sent(event_id, database_path)
+            events_repository.mark_sent(event_id, database)
         else:
             events_repository.mark_failed(
                 event_id,
                 DETAIL_INVALID_RESPONSE_TEMPLATE.format(status_code=status_code),
-                database_path,
+                database,
             )
     except Exception:
         # Best-effort: never propagate exceptions during reprocessing

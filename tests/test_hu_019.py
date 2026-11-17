@@ -11,18 +11,12 @@
   (RF-14; CL-8).
 * TC-019-015 — event deduplication: the second ``insert_event`` returns
   ``False``, only one row exists and the stored event is not reset (no second
-  send) (RF-12).
-
-The SQLite test keeps the adapted repositories compatible with the temporary
-rollback route (both the legacy ``database_path`` and the ``Database``
-facade), without duplicating the whole existing suite. It is evidence of T5,
-not of PostgreSQL parity.
+   send) (RF-12).
 """
 
 import threading
 import time
 from dataclasses import replace
-from pathlib import Path
 
 import psycopg
 import psycopg.errors as pg_errors
@@ -32,11 +26,7 @@ from consultorio.content import appointment_content
 from consultorio.persistence import appointments_repository as appointments
 from consultorio.persistence import automation_events_repository as events
 from consultorio.persistence.appointments_repository import Appointment
-from consultorio.persistence.database import (
-    Database,
-    DatabaseTarget,
-    init_db,
-)
+from consultorio.persistence.database import Database, DatabaseTarget
 from consultorio.services import appointment_service as booking
 from tests import expected_content
 
@@ -322,58 +312,6 @@ def test_tc_019_011_persistence_unavailable_literal_and_unchanged_mirror() -> No
     for name, literal in unchanged_hu_005.items():
         assert getattr(appointment_content, name) == literal, name
         assert getattr(expected_content, name) == literal, name
-
-
-# ---------------------------------------------------------------------------
-# SQLite rollback compatibility of the adapted repositories
-# ---------------------------------------------------------------------------
-
-
-def test_sqlite_rollback_route_keeps_repository_contract(
-    tmp_path: Path,
-) -> None:
-    path = tmp_path / "rollback.db"
-    init_db(path)
-
-    # Legacy ``database_path`` (still used by the services until T6).
-    legacy = appointments.insert_appointment(VALID_DATA, path)
-    assert legacy.id >= 1
-    assert (
-        events.insert_event(
-            "legacy-event", "appointment.confirmed", 1, legacy.id, path
-        )
-        is True
-    )
-    assert (
-        events.insert_event(
-            "legacy-event", "appointment.confirmed", 1, legacy.id, path
-        )
-        is False
-    )
-    events.mark_sent("legacy-event", path)
-    legacy_event = events.get_by_event_id("legacy-event", path)
-    assert legacy_event is not None
-    assert legacy_event.status == "sent"
-    assert legacy_event.sent_at is not None
-
-    # Temporary ``Database`` facade over SQLite (same SQL and adapter).
-    database = Database(
-        DatabaseTarget(backend="sqlite", sqlite_path=path)
-    )
-    other = {**VALID_DATA, "time": "09:00"}
-    created = appointments.insert_appointment(other, database)
-    assert created.id != legacy.id
-    assert (
-        events.insert_event(
-            "facade-event", "appointment.confirmed", 1, created.id, database
-        )
-        is True
-    )
-    events.mark_sent("facade-event", database)
-    facade_event = events.get_by_event_id("facade-event", database)
-    assert facade_event is not None
-    assert facade_event.status == "sent"
-    assert facade_event.sent_at is not None
 
 
 # ---------------------------------------------------------------------------

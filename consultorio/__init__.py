@@ -20,11 +20,7 @@ def create_app(settings: Any = None) -> Flask:
         app.config.from_object(settings)
 
     from consultorio.errors import PersistenceUnavailable, register_error_handlers
-    from consultorio.persistence.database import (
-        Database,
-        DatabaseTarget,
-        init_db,
-    )
+    from consultorio.persistence.database import Database, DatabaseTarget
     from consultorio.web.about import bp as about_bp
     from consultorio.web.admin import bp as admin_bp
     from consultorio.web.appointments import bp as appointments_bp
@@ -46,8 +42,7 @@ def create_app(settings: Any = None) -> Flask:
     app.register_blueprint(services_bp)
 
     # HU-019 T3: side-effect free facade. No connection is opened here, so the
-    # app still starts when PostgreSQL/DSN is unavailable (RF-22). The real
-    # migration of repositories to this object happens in T4/T5.
+    # app still starts when PostgreSQL/DSN is unavailable (RF-22).
     database = Database(DatabaseTarget.from_config(app.config))
     app.extensions[DATABASE_EXTENSION_KEY] = database
 
@@ -59,11 +54,6 @@ def create_app(settings: Any = None) -> Flask:
     app.teardown_appcontext(_close_request_database)
 
     register_error_handlers(app)
-
-    # Transitional coexistence (Spec 019, until T5/T6): the current
-    # repositories and services still use DATABASE_PATH/SQLite, so its schema
-    # keeps being initialized. The PostgreSQL DDL does not replace it.
-    init_db(app.config["DATABASE_PATH"])
 
     # Spec 019 D14/RF-22: try the PostgreSQL bootstrap at startup but never
     # abort the process if the database is unavailable. ``ensure_schema`` is

@@ -1,10 +1,11 @@
 """Appointments persistence contract against PostgreSQL (Spec 019, T10).
 
-The assertions that used to read SQLite ``PRAGMA``/``sqlite_master`` now read
-the real PostgreSQL catalogs (``information_schema``, ``pg_indexes``,
-``pg_index`` and ``pg_constraint``) in the isolated per-test schema. The
-partial unique index and the absence of an inline unique constraint are the
-same guarantees as before (Spec 010 Q4, Spec 006).
+This contract exercises the schema created by ``ensure_schema()``. The
+assertions that used to read SQLite ``PRAGMA``/``sqlite_master`` now read the
+real PostgreSQL catalogs (``information_schema``, ``pg_indexes``, ``pg_index``
+and ``pg_constraint``) in the isolated per-test schema. The partial unique index
+and the absence of an inline unique constraint are the same guarantees as
+before (Spec 010 Q4, Spec 006).
 """
 
 import psycopg.errors as pg_errors
@@ -49,7 +50,7 @@ def _count(database, table: str) -> int:
     return int(rows[0]["total"])
 
 
-def test_init_db_crea_appointments_con_11_columnas_y_unique(database) -> None:
+def test_ensure_schema_crea_appointments_con_11_columnas_y_unique(database) -> None:
     schema = database.target.schema
     assert schema is not None
 

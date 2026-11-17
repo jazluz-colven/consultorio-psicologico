@@ -1,11 +1,7 @@
 """HU-010 — Notificar la cancelación de una cita (Spec 010, enmienda 2026-10-13).
 
-T10: the remaining Spec 010 criteria run against the isolated PostgreSQL
-schema of the ``database`` fixture.
-
-TC-010-014 (the legacy SQLite schema migration) was relocated to
-``tests/test_rollback_sqlite.py``: it verifies the SQLite rollback route and is
-NOT part of the PostgreSQL parity suite (Spec 019 plan D9, RF-28).
+T10: all Spec 010 criteria run against the isolated PostgreSQL schema of the
+``database`` fixture.
 
 TC-010-013/015/016/017: re-reserva, HTTP, espejo+config y regresión funcional.
 """
@@ -213,24 +209,17 @@ def test_tc_010_017_regresion_funcional_y_constitucion_1(
         "consultorio/services/appointment_service.py": {
             "re",
             "datetime",
-            "pathlib",
         },
         "consultorio/persistence/appointments_repository.py": {
-            "sqlite3",
-            "dataclasses",
-            "pathlib",
-            # HU-019 T5 (plan D8/D13): one SQL source runs on PostgreSQL and
-            # the SQLite rollback route. ``contextlib`` provides the connection
-            # scope and ``typing`` the row-mapping/iterator annotations. The
-            # driver itself is not imported at module level.
+            # HU-019 T5/T18 (plan D8/D13): one PostgreSQL SQL source.
+            # ``contextlib`` provides the connection scope and ``typing`` the
+            # row-mapping/iterator annotations. The driver itself is not
+            # imported at module level.
             "contextlib",
+            "dataclasses",
             "typing",
         },
         "consultorio/persistence/database.py": {
-            "shutil",
-            "sqlite3",
-            "datetime",
-            "pathlib",
             # HU-019 T3 (plan D3): request-scoped reuse, per-instance
             # BoundedSemaphore/threading.Lock and context managers. ``flask``
             # is the project's existing core dependency (flask.g), not a new

@@ -1,30 +1,20 @@
 """Data access for appointments; no business rules live here.
 
-Spec 019 (T5, plan D8/D13): the SQL is written in the PostgreSQL dialect
+Spec 019 (T5/T18, plan D8/D13): the SQL is written in the PostgreSQL dialect
 (``%s`` placeholders, ``INSERT ... RETURNING id``, ``rowcount`` and named row
-access). The same statements run on the SQLite rollback route through a
-minimal, project-controlled adapter that replaces ``%s`` with ``?``; there is
-no general SQL translator and no duplicated second query set.
+access). PostgreSQL is the only persistence engine.
 
 The public function names and return contracts are unchanged. The last
-parameter accepts a ``Database``/``DatabaseTarget`` (the target of the
-migration) or, transitionally, a legacy ``database_path`` while the services
-and the rest of the suite are migrated in T6/T10 (plan D13).
+parameter accepts a ``Database`` or a ``DatabaseTarget`` (plan D13).
 """
 
-import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Iterator, Mapping
 
-from consultorio.persistence.database import (
-    Database,
-    DatabaseTarget,
-    get_connection,
-)
+from consultorio.persistence.database import Database, DatabaseTarget
 
-DatabaseResource = Database | DatabaseTarget | str | Path
+DatabaseResource = Database | DatabaseTarget
 
 
 @dataclass(frozen=True)
@@ -58,7 +48,7 @@ def _to_appointment(row: Mapping[str, Any]) -> Appointment:
     )
 
 
-def _database_for(resource: DatabaseResource) -> tuple[Database | None, bool]:
+def _database_for(resource: DatabaseResource) -> tuple[Database, bool]:
     """Return ``(database, owned)`` for a migrated resource.
 
     ``owned`` is ``True`` only when this repository created the ``Database``
@@ -68,30 +58,15 @@ def _database_for(resource: DatabaseResource) -> tuple[Database | None, bool]:
     """
     if isinstance(resource, Database):
         return resource, False
-    if isinstance(resource, DatabaseTarget):
-        return Database(resource), True
-    return None, False
-
-
-def _adapt_sqlite_sql(query: str) -> str:
-    """Minimal rollback adapter (plan D8): ``%s`` -> ``?`` only.
-
-    The statements are controlled by this module: literals never contain ``?``
-    and ``%`` only appears in the ``%s`` placeholders, so a plain replacement is
-    safe. This is deliberately not a general SQL translator.
-    """
-    return query.replace("%s", "?")
+    return Database(resource), True
 
 
 @contextmanager
-def _scope(
-    resource: DatabaseResource, *, write: bool
-) -> Iterator[tuple[Any, str]]:
-    """Yield ``(connection, backend)`` for either persistence resource.
+def _scope(resource: DatabaseResource, *, write: bool) -> Iterator[Any]:
+    """Yield a connection from the ``Database`` facade.
 
     ``Database``/``DatabaseTarget`` use the facade (lazy schema, request-scoped
-    connection, one commit or full rollback). A legacy path keeps the original
-    ``get_connection`` behaviour for the SQLite rollback route.
+    connection, one commit or full rollback).
 
     When the repository created the ``Database`` from a ``DatabaseTarget``, it
     closes that temporary instance with ``close_request()`` on every exit path,
@@ -101,38 +76,29 @@ def _scope(
     supplied by the caller is left untouched (its owner/teardown closes it).
     """
     database, owned = _database_for(resource)
-    if database is not None:
-        try:
-            database.ensure_schema()
-            backend = database.target.backend
-            manager = database.transaction() if write else database.connection()
-            with manager as connection:
-                yield connection, backend
-        finally:
-            if owned:
-                database.close_request()
-        return
-    with get_connection(resource) as connection:
-        yield connection, "sqlite"
+    try:
+        database.ensure_schema()
+        manager = database.transaction() if write else database.connection()
+        with manager as connection:
+            yield connection
+    finally:
+        if owned:
+            database.close_request()
 
 
 def _run(
     connection: Any,
-    backend: str,
     query: str,
     params: tuple[object, ...] = (),
 ) -> Any:
-    if backend == "sqlite":
-        query = _adapt_sqlite_sql(query)
     return connection.execute(query, params)
 
 
 def _fetch_appointment(
-    connection: Any, backend: str, appointment_id: int
+    connection: Any, appointment_id: int
 ) -> Appointment | None:
     row = _run(
         connection,
-        backend,
         "SELECT * FROM appointments WHERE id = %s",
         (appointment_id,),
     ).fetchone()
@@ -142,10 +108,9 @@ def _fetch_appointment(
 def insert_appointment(
     data: dict[str, str], database: DatabaseResource
 ) -> Appointment:
-    with _scope(database, write=True) as (connection, backend):
+    with _scope(database, write=True) as connection:
         row = _run(
             connection,
-            backend,
             """
             INSERT INTO appointments (
                 document_type, document_number, patient_name, email, phone,
@@ -165,7 +130,7 @@ def insert_appointment(
             ),
         ).fetchone()
         appointment_id = int(row["id"])
-        created = _fetch_appointment(connection, backend, appointment_id)
+        created = _fetch_appointment(connection, appointment_id)
     if created is None:  # pragma: no cover - defensive
         raise RuntimeError("Appointment inserted but not found.")
     return created
@@ -174,17 +139,16 @@ def insert_appointment(
 def get_appointment_by_id(
     appointment_id: int, database: DatabaseResource
 ) -> Appointment | None:
-    with _scope(database, write=False) as (connection, backend):
-        return _fetch_appointment(connection, backend, appointment_id)
+    with _scope(database, write=False) as connection:
+        return _fetch_appointment(connection, appointment_id)
 
 
 def is_slot_taken(
     service: str, date: str, time: str, database: DatabaseResource
 ) -> bool:
-    with _scope(database, write=False) as (connection, backend):
+    with _scope(database, write=False) as connection:
         row = _run(
             connection,
-            backend,
             """
             SELECT 1 FROM appointments
             WHERE service = %s AND date = %s AND time = %s
@@ -198,10 +162,9 @@ def is_slot_taken(
 def list_booked_times(
     service: str, date: str, database: DatabaseResource
 ) -> list[str]:
-    with _scope(database, write=False) as (connection, backend):
+    with _scope(database, write=False) as connection:
         rows = _run(
             connection,
-            backend,
             """
             SELECT time FROM appointments
             WHERE service = %s AND date = %s AND status <> 'cancelled'
@@ -218,10 +181,9 @@ def list_booked_times_by_date(
     date_to: str,
     database: DatabaseResource,
 ) -> dict[str, list[str]]:
-    with _scope(database, write=False) as (connection, backend):
+    with _scope(database, write=False) as connection:
         rows = _run(
             connection,
-            backend,
             """
             SELECT date, time FROM appointments
             WHERE service = %s AND date >= %s AND date <= %s
@@ -244,10 +206,9 @@ def update_appointment_status(
     Returns the updated appointment, or None when the row does not exist or is
     not 'confirmed' (already cancelled or unknown id) — RF-4/CL-1/CL-4.
     """
-    with _scope(database, write=True) as (connection, backend):
+    with _scope(database, write=True) as connection:
         cursor = _run(
             connection,
-            backend,
             """
             UPDATE appointments SET status = %s
             WHERE id = %s AND status = 'confirmed'
@@ -279,10 +240,9 @@ def update_appointment_status_with_pending_event(
     fails, the whole transaction is rolled back — the appointment is NOT
     cancelled — and the error propagates (RF-12).
     """
-    with _scope(database, write=True) as (connection, backend):
+    with _scope(database, write=True) as connection:
         cursor = _run(
             connection,
-            backend,
             """
             UPDATE appointments SET status = %s
             WHERE id = %s AND status = 'confirmed'
@@ -295,7 +255,6 @@ def update_appointment_status_with_pending_event(
             return None
         _run(
             connection,
-            backend,
             """
             INSERT INTO automation_events (
                 event_id, event_type, event_version, appointment_id, status

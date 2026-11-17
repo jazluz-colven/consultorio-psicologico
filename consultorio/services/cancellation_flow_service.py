@@ -70,8 +70,7 @@ def verify_cancellation_request(
         appointment_id: reference of the appointment (URL identifier).
         document: document number typed by the patient; compared exactly
             against ``document_number`` after ``strip()`` (D3).
-        database: persistence resource (``Database``/``DatabaseTarget`` or a
-            transitional SQLite path, plan D13).
+        database: persistence resource (``Database``/``DatabaseTarget``).
         now: explicit reference time; defaults to ``datetime.now()`` (local,
             naive — same base as ``date.today()`` used by the booking rules).
             Passing it makes the 3-hour boundary deterministic in tests (D6).
@@ -140,8 +139,7 @@ def cancel_verified_request(
         appointment_id: reference of the appointment (URL identifier).
         document: document number typed by the patient (D3, compared after
             ``strip()``).
-        database: persistence resource (``Database``/``DatabaseTarget`` or a
-            transitional SQLite path, plan D13).
+        database: persistence resource (``Database``/``DatabaseTarget``).
         now: explicit reference time for the 3-hour window (D6); defaults to
             ``datetime.now()``.
         automation_url: webhook configuration forwarded to the delegated

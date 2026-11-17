@@ -1,34 +1,21 @@
 """Persistence connections, schema bootstrap and domain error translation.
 
-The module keeps the original SQLite helpers (``get_connection``/``init_db``)
-untouched for the current application and rollback route. HU-019 adds the
-``DatabaseTarget``/``Database`` layer that owns connection lifecycle:
+The ``DatabaseTarget``/``Database`` layer owns the PostgreSQL connection
+lifecycle (Spec 019):
 
 * at most one connection per Flask app context, reused and closed on teardown;
 * one connection per operation outside an app context;
 * a per-instance ``BoundedSemaphore`` that caps concurrency and raises
   ``PersistenceUnavailable`` when a permit cannot be acquired in time;
 * transactions that commit once or roll back completely;
-* lazy schema initialization: explicit PostgreSQL DDL (no ORM) and the
-  unchanged SQLite rollback DDL.
-
-Transitional coexistence (Spec 019, until T5/T6): the repositories and services
-still read/write SQLite through ``DATABASE_PATH``. ``create_app`` keeps calling
-``init_db`` for them *and* attempts the PostgreSQL bootstrap when the backend is
-``postgres``; the latter never aborts startup (RF-22). The PostgreSQL DDL does
-not replace the SQLite one, so the current suite keeps working while the data
-layer is migrated task by task.
+* lazy schema initialization with the explicit PostgreSQL DDL (no ORM).
 
 No connection is created at import time or when constructing ``Database``.
 """
 
-import shutil
-import sqlite3
 import threading
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping
 
 from flask import g, has_app_context
@@ -38,58 +25,7 @@ from consultorio.errors import PersistenceUnavailable
 # HU-010 (spec 010 amended 2026-10-13): the inline UNIQUE (service, date, time)
 # is replaced by a partial unique index that ignores cancelled appointments, so
 # a cancelled slot can be booked again while live slots stay unique (RF-4).
-# Spec 019 (D7, RF-30): the rollback route stores ``created_at`` in UTC too.
-# ``datetime('now')`` in SQLite is UTC and yields the approved
-# ``YYYY-MM-DD HH:MM:SS`` format, matching the PostgreSQL DDL.
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS appointments (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    document_type   TEXT NOT NULL,
-    document_number TEXT NOT NULL,
-    patient_name    TEXT NOT NULL,
-    email           TEXT NOT NULL,
-    phone           TEXT NOT NULL,
-    service         TEXT NOT NULL,
-    date            TEXT NOT NULL,
-    time            TEXT NOT NULL,
-    status          TEXT NOT NULL DEFAULT 'confirmed',
-    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS automation_events (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id        TEXT NOT NULL UNIQUE,
-    event_type      TEXT NOT NULL,
-    event_version   INTEGER NOT NULL,
-    appointment_id  INTEGER NOT NULL,
-    status          TEXT NOT NULL DEFAULT 'pending',
-    detail          TEXT,
-    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-    sent_at         TEXT
-);
-"""
-
-APPOINTMENTS_TABLE_SQL = """
-CREATE TABLE appointments (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    document_type   TEXT NOT NULL,
-    document_number TEXT NOT NULL,
-    patient_name    TEXT NOT NULL,
-    email           TEXT NOT NULL,
-    phone           TEXT NOT NULL,
-    service         TEXT NOT NULL,
-    date            TEXT NOT NULL,
-    time            TEXT NOT NULL,
-    status          TEXT NOT NULL DEFAULT 'confirmed',
-    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
-)
-"""
-
 PARTIAL_INDEX_NAME = "ux_appointments_slot_open"
-_PARTIAL_INDEX_SQL = (
-    f"CREATE UNIQUE INDEX IF NOT EXISTS {PARTIAL_INDEX_NAME} "
-    "ON appointments(service, date, time) WHERE status <> 'cancelled'"
-)
 
 # ---------------------------------------------------------------------------
 # PostgreSQL DDL (Spec 019, D4 and plan §3.1). Explicit SQL, no ORM.
@@ -184,8 +120,8 @@ _DEFAULT_STATEMENT_TIMEOUT_MS = 15000
 def _psycopg_unavailable_errors() -> tuple[type[BaseException], ...]:
     """Return the real driver base classes that mean "database unavailable".
 
-    ``psycopg`` is imported lazily so importing this module never requires libpq
-    (SQLite route and tests keep working). ``isinstance`` against
+    ``psycopg`` is imported lazily so importing this module never requires
+    libpq. ``isinstance`` against
     ``OperationalError``/``InterfaceError`` recognises real subclasses such as
     ``CannotConnectNow``, ``AdminShutdown``, ``ConnectionFailure`` or
     ``ConnectionTimeout``. ``UniqueViolation``/``IntegrityError`` are
@@ -205,16 +141,8 @@ def is_slot_uniqueness_violation(error: BaseException) -> bool:
     ``create_booking()`` uses this classifier to map a lost insert race to
     ``SLOT_TAKEN``. Driver outage errors are not integrity errors and never
     reach this branch; other integrity failures (or a different constraint)
-    return ``False`` so they keep propagating. The driver is imported lazily so
-    the SQLite rollback route never requires libpq.
+    return ``False`` so they keep propagating. The driver is imported lazily.
     """
-    if isinstance(error, sqlite3.IntegrityError):
-        # SQLite does not expose the index name; the message lists the unique
-        # columns of ``ux_appointments_slot_open``.
-        return (
-            "UNIQUE constraint failed: appointments.service, "
-            "appointments.date, appointments.time" in str(error)
-        )
     try:
         from psycopg import errors as pg_errors
     except ImportError:  # pragma: no cover - depends on local libpq
@@ -230,14 +158,12 @@ def is_slot_uniqueness_violation(error: BaseException) -> bool:
 def is_persistence_unavailable(error: BaseException) -> bool:
     """True for driver errors that mean the store cannot serve the operation.
 
-    Plan D6 maps SQLite ``OperationalError``/``InterfaceError`` and psycopg
-    ``OperationalError``/``InterfaceError`` (including connection timeouts) to
-    ``PersistenceUnavailable``. Integrity errors are deliberately excluded:
-    the slot conflict is classified separately and never becomes an outage.
+    Plan D6 maps psycopg ``OperationalError``/``InterfaceError`` (including
+    connection timeouts) to ``PersistenceUnavailable``. Integrity errors are
+    deliberately excluded: the slot conflict is classified separately and
+    never becomes an outage.
     """
     if isinstance(error, PersistenceUnavailable):
-        return True
-    if isinstance(error, (sqlite3.OperationalError, sqlite3.InterfaceError)):
         return True
     unavailable = _psycopg_unavailable_errors()
     return bool(unavailable) and isinstance(error, unavailable)
@@ -255,78 +181,6 @@ def translate_persistence_error(error: BaseException) -> BaseException:
     if is_persistence_unavailable(error):
         return PersistenceUnavailable("La base de datos no está disponible.")
     return error
-
-
-def get_connection(database_path: str | Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(str(database_path))
-    connection.row_factory = sqlite3.Row
-    return connection
-
-
-def init_db(database_path: str | Path) -> None:
-    path = Path(database_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with get_connection(path) as connection:
-        connection.executescript(SCHEMA)
-        _migrate_appointment_uniqueness(connection, path)
-
-
-def _migrate_appointment_uniqueness(
-    connection: sqlite3.Connection, path: Path
-) -> None:
-    """One-time migration: inline UNIQUE -> partial unique index (spec 010).
-
-    Backs the database file up before touching anything, keeps all rows, is
-    idempotent (no-op once the partial index exists) and aborts loudly if
-    duplicates among non-cancelled appointments were ever found.
-    """
-    existing = connection.execute(
-        "SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = ?",
-        (PARTIAL_INDEX_NAME,),
-    ).fetchone()
-    if existing is not None:
-        return
-    table_row = connection.execute(
-        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'appointments'"
-    ).fetchone()
-    table_sql = ((table_row["sql"] if table_row is not None else "") or "")
-    if "UNIQUE" not in table_sql.upper():
-        # Fresh schema (or already rebuilt table): only ensure the index.
-        connection.execute(_PARTIAL_INDEX_SQL)
-        return
-    backup = path.with_name(
-        path.name + ".bak-" + datetime.now().strftime("%Y%m%d%H%M%S")
-    )
-    shutil.copy2(path, backup)
-    duplicates = connection.execute(
-        """
-        SELECT service, date, time FROM appointments
-        WHERE status <> 'cancelled'
-        GROUP BY service, date, time HAVING COUNT(*) > 1
-        """
-    ).fetchall()
-    if duplicates:
-        raise RuntimeError(
-            "appointments migration aborted: duplicate active slots found."
-        )
-    # Manual transaction: rollback on any failure below (constitución #5).
-    connection.execute("BEGIN")
-    connection.execute("ALTER TABLE appointments RENAME TO appointments_legacy")
-    connection.execute(APPOINTMENTS_TABLE_SQL)
-    connection.execute(
-        """
-        INSERT INTO appointments (
-            id, document_type, document_number, patient_name, email, phone,
-            service, date, time, status, created_at
-        )
-        SELECT id, document_type, document_number, patient_name, email, phone,
-               service, date, time, status, created_at
-        FROM appointments_legacy
-        """
-    )
-    connection.execute("DROP TABLE appointments_legacy")
-    connection.execute(_PARTIAL_INDEX_SQL)
-    connection.execute("COMMIT")
 
 
 def apply_postgres_schema(connection: Any) -> None:
@@ -359,9 +213,7 @@ class DatabaseTarget:
     the explicit one so a DSN with credentials never leaks into logs.
     """
 
-    backend: str = "postgres"
     dsn: str | None = field(default=None, repr=False)
-    sqlite_path: Path | None = None
     schema: str | None = None  # isolated schema for tests; None in production
     max_connections: int = _DEFAULT_MAX_CONNECTIONS
     connect_timeout: float = _DEFAULT_CONNECT_TIMEOUT
@@ -369,11 +221,6 @@ class DatabaseTarget:
     statement_timeout_ms: int = _DEFAULT_STATEMENT_TIMEOUT_MS
 
     def __post_init__(self) -> None:
-        if self.backend not in {"postgres", "sqlite"}:
-            raise ValueError(
-                "DatabaseTarget.backend debe ser 'postgres' o 'sqlite'; "
-                f"valor recibido: {self.backend!r}"
-            )
         if self.max_connections <= 0:
             raise ValueError("max_connections debe ser mayor que cero.")
         if self.connect_timeout <= 0:
@@ -392,18 +239,10 @@ class DatabaseTarget:
                 return config.get(name, default)
             return getattr(config, name, default)
 
-        backend = str(read("PERSISTENCE_BACKEND", "postgres")).strip().lower()
         raw_dsn = read("DATABASE_URL", "") or ""
         dsn = str(raw_dsn) if raw_dsn else None
-        raw_sqlite_path = (
-            read("DATABASE_PATH") if backend == "sqlite" else None
-        )
         return cls(
-            backend=backend,
             dsn=dsn,
-            sqlite_path=(
-                Path(raw_sqlite_path) if raw_sqlite_path is not None else None
-            ),
             schema=None,
             max_connections=int(
                 read("DATABASE_MAX_CONNECTIONS", _DEFAULT_MAX_CONNECTIONS)
@@ -425,9 +264,7 @@ class DatabaseTarget:
     def __repr__(self) -> str:
         return (
             "DatabaseTarget("
-            f"backend={self.backend!r}, "
             f"dsn={'<set>' if self.dsn else None!r}, "
-            f"sqlite_path={self.sqlite_path!r}, "
             f"schema={self.schema!r}, "
             f"max_connections={self.max_connections!r}, "
             f"connect_timeout={self.connect_timeout!r}, "
@@ -446,7 +283,7 @@ class _RequestState:
 
 
 class Database:
-    """Connection facade for SQLite/PostgreSQL.
+    """Connection facade for PostgreSQL.
 
     Construction is side-effect free: it only captures the target, the
     connection factory and a per-instance semaphore. The first ``connection()``
@@ -558,24 +395,15 @@ class Database:
     def ensure_schema(self) -> None:
         """Apply the schema lazily (once per process) with a lock.
 
-        SQLite delegates to the existing ``init_db``. PostgreSQL applies the
-        explicit DDL in one advisory-locked transaction. The ready flag is set
-        only after a successful commit: if the database is unavailable the
-        exception propagates and the next call retries without a restart
-        (RF-22, RF-23). There is no background retry loop.
+        PostgreSQL applies the explicit DDL in one advisory-locked transaction.
+        The ready flag is set only after a successful commit: if the database is
+        unavailable the exception propagates and the next call retries without a
+        restart (RF-22, RF-23). There is no background retry loop.
         """
         if self._schema_ready:
             return
         with self._schema_lock:
             if self._schema_ready:
-                return
-            if self._target.backend == "sqlite":
-                if self._target.sqlite_path is None:
-                    raise PersistenceUnavailable(
-                        "No se ha configurado la base de datos SQLite."
-                    )
-                init_db(self._target.sqlite_path)
-                self._schema_ready = True
                 return
             if not self._target.dsn:
                 # Same domain error as an unreachable server: startup must not
@@ -693,22 +521,11 @@ class Database:
 
 
 def _default_connect(target: DatabaseTarget) -> Any:
-    """Open a connection using the configured backend.
+    """Open a PostgreSQL connection.
 
-    PostgreSQL imports ``psycopg`` lazily so importing this module never
-    requires libpq to be available (tests and the SQLite route keep working).
+    ``psycopg`` is imported lazily so importing this module never requires
+    libpq to be available.
     """
-    if target.backend == "sqlite":
-        if target.sqlite_path is None:
-            raise PersistenceUnavailable(
-                "No se ha configurado la base de datos SQLite."
-            )
-        connection = sqlite3.connect(
-            str(target.sqlite_path), timeout=target.connect_timeout
-        )
-        connection.row_factory = sqlite3.Row
-        return connection
-
     if not target.dsn:
         raise PersistenceUnavailable("No se ha configurado DATABASE_URL.")
 

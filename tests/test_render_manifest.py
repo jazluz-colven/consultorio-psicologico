@@ -97,7 +97,6 @@ def test_render_manifest_contract() -> None:
 
     # Ejecución y persistencia (D11).
     assert env.get("PYTHON_VERSION", {}).get("value") == "3.12.7"
-    assert env.get("PERSISTENCE_BACKEND", {}).get("value") == "postgres"
     assert env.get("SECRET_KEY", {}).get("generateValue") == "true"
 
     # DATABASE_URL es un secreto: se pide en el panel y no lleva valor.
@@ -110,6 +109,10 @@ def test_render_manifest_contract() -> None:
     )
 
     # El almacenamiento SQLite de rollback no se declara en producción.
+    assert "PERSISTENCE_BACKEND" not in env, (
+        "PERSISTENCE_BACKEND no debe estar en render.yaml"
+    )
+    assert "PERSISTENCE_BACKEND" not in text
     assert "DATABASE_PATH" not in env, "DATABASE_PATH no debe estar en render.yaml"
     assert "DATABASE_PATH" not in text
 

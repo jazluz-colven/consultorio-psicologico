@@ -21,9 +21,10 @@
 - La implementación de una tarea exige: (1) aprobación explícita de `plan.md`
   y `tasks.md`; (2) autorización expresa de la fase o entrega correspondiente;
   (3) que la tarea anterior de la que depende esté cerrada con evidencia.
-- **T18 [AUTORIZADA 2026-11-16 — EN IMPLEMENTACIÓN]** La aceptación funcional se
-  emitió y la retirada del rollback fue autorizada; se ejecuta tras el cierre de
-  T17.
+- **T18 [IMPLEMENTACIÓN COMPLETADA 2026-11-16 — PENDIENTE REVISIÓN]** La
+  aceptación funcional se emitió y la retirada del rollback fue autorizada; la
+  implementación y la suite final están completadas, pendiente la revisión de
+  evidencia.
 - No se marca una tarea como terminada por inspección del código. Cada cierre
   exige pruebas ejecutadas, resultado real y evidencia (AGENTS.md).
 - No se modifican requisitos, literales, tarifas ni alcance sin actualizar
@@ -523,7 +524,7 @@
     la usuaria** con la limitación de n8n declarada; T17 marcada `[x]`. T18
     autorizada por la usuaria el 2026-11-16; inicio tras este cierre.
 
-- [ ] **T18. Retirar el rollback y el almacenamiento anterior tras la aceptación. [AUTORIZADA 2026-11-16 — EN IMPLEMENTACIÓN]**
+- [ ] **T18. Retirar el rollback y el almacenamiento anterior tras la aceptación. [APROBADA TÉCNICAMENTE 2026-11-17 — PENDIENTE COMMIT/PUSH]**
   - **Objetivo:** eliminar el interruptor y la ruta SQLite cuando la migración
     haya sido aceptada, dejando una sola vía de persistencia.
   - **Cubre:** RF-18; RNF-7.
@@ -541,9 +542,13 @@
   - **Evidencia:** diff de retirada y corrida final de la suite.
   - **Hecho cuando:** la usuaria aceptó la migración, la retirada está
     autorizada y la suite final pasa sin la ruta SQLite.
-  - **Estado (2026-11-16):** autorizada por la usuaria tras aceptar la
-    migración; en implementación. El cierre exige diff de retirada, suite final
-    sin la ruta SQLite y evidencia revisada.
+  - **Estado (2026-11-17):** implementación completada y **APROBADA** por
+    `@revisor` (RF-18, RNF-7 y TC-019-024, sin defectos bloqueantes). Retirados
+    el interruptor, `DATABASE_PATH`, el DDL y la ruta SQLite, la prueba de
+    rollback y la documentación de rollback. Suite completa: `392 passed`
+    (corrida independiente del coordinador: `192.92s`); evidencia en
+    `docs/evidencias/hu-019/t18-removal.md`. Queda pendiente la autorización de
+    la usuaria para commit y push; T18 se marcará `[x]` tras publicar.
 
 ---
 
@@ -580,5 +585,6 @@ funcional de la migración y una autorización específica de retirada del
 rollback.
 
 > **Actualización 2026-11-16:** T1–T17 están cerradas; la aceptación funcional
-> fue emitida y **T18 está autorizada y en implementación**. Este apartado
-> conserva el estado inicial de autorización del 2026-11-08.
+> fue emitida y **T18 tiene la implementación completada, pendiente de revisión
+> de evidencia**. Este apartado conserva el estado inicial de autorización del
+> 2026-11-08.

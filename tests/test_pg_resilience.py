@@ -11,9 +11,7 @@ cold start simulado cerrando la conexión recuperada y forzando una nueva.
 import importlib
 import logging
 import os
-import sqlite3
 from datetime import date, timedelta
-from pathlib import Path
 
 import pytest
 
@@ -39,8 +37,6 @@ from consultorio.persistence.database import Database, DatabaseTarget
 
 _CONFIG_ENV_VARS = (
     "DATABASE_URL",
-    "PERSISTENCE_BACKEND",
-    "DATABASE_PATH",
     "DATABASE_MAX_CONNECTIONS",
     "DATABASE_CONNECT_TIMEOUT",
     "DATABASE_ACQUIRE_TIMEOUT",
@@ -73,7 +69,6 @@ def _reload_with(monkeypatch, **values: str) -> object:
 
 
 def test_default_values(isolated_config) -> None:
-    assert config_module.Config.PERSISTENCE_BACKEND == "postgres"
     assert config_module.Config.DATABASE_URL == ""
     assert config_module.Config.DATABASE_MAX_CONNECTIONS == 5
     assert config_module.Config.DATABASE_CONNECT_TIMEOUT == 10.0
@@ -81,16 +76,22 @@ def test_default_values(isolated_config) -> None:
     assert config_module.Config.DATABASE_STATEMENT_TIMEOUT_MS == 15000
 
 
-def test_invalid_backend_raises_value_error(isolated_config, monkeypatch) -> None:
-    monkeypatch.setenv("PERSISTENCE_BACKEND", "mysql")
-    with pytest.raises(ValueError, match="PERSISTENCE_BACKEND"):
-        importlib.reload(config_module)
-
-
 def test_missing_database_url_does_not_raise(isolated_config, monkeypatch) -> None:
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.setenv("PERSISTENCE_BACKEND", "postgres")
     reloaded = importlib.reload(config_module)
+    assert reloaded.Config.DATABASE_URL == ""
+
+
+def test_removed_sqlite_configuration_is_not_exposed(
+    isolated_config, monkeypatch
+) -> None:
+    """T18: legacy SQLite switches are ignored and no longer exist."""
+    monkeypatch.setenv("PERSISTENCE_BACKEND", "sqlite")
+    monkeypatch.setenv("DATABASE_PATH", "legacy.db")
+    reloaded = importlib.reload(config_module)
+
+    assert not hasattr(reloaded.Config, "PERSISTENCE_BACKEND")
+    assert not hasattr(reloaded.Config, "DATABASE_PATH")
     assert reloaded.Config.DATABASE_URL == ""
 
 
@@ -132,31 +133,6 @@ def test_local_database_url_accepts_disable(
     url = f"postgresql://consultorio_dev@{host}:55432/consultorio_dev?sslmode=disable"
     reloaded = _reload_with(monkeypatch, DATABASE_URL=url)
     assert reloaded.Config.DATABASE_URL == url
-
-
-def test_sqlite_backend_accepts_database_path(
-    isolated_config, monkeypatch, tmp_path: Path
-) -> None:
-    rollback_path = tmp_path / "rollback.db"
-    reloaded = _reload_with(
-        monkeypatch,
-        PERSISTENCE_BACKEND="sqlite",
-        DATABASE_PATH=str(rollback_path),
-    )
-    assert reloaded.Config.PERSISTENCE_BACKEND == "sqlite"
-    assert reloaded.Config.DATABASE_PATH == rollback_path
-
-
-def test_sqlite_backend_ignores_tls_validation(
-    isolated_config, monkeypatch
-) -> None:
-    # A non-local DSN without sslmode would fail for postgres; sqlite ignores it.
-    reloaded = _reload_with(
-        monkeypatch,
-        PERSISTENCE_BACKEND="sqlite",
-        DATABASE_URL="postgresql://usuario@db.example.com:5432/consultorio",
-    )
-    assert reloaded.Config.PERSISTENCE_BACKEND == "sqlite"
 
 
 def test_database_limits_and_timeouts_are_parsed(
@@ -297,7 +273,6 @@ _SECRET_DSN = (
 
 def _fake_target(**overrides: object) -> DatabaseTarget:
     values: dict[str, object] = {
-        "backend": "postgres",
         "dsn": _SECRET_DSN,
         "max_connections": 5,
         "connect_timeout": 1.0,
@@ -465,34 +440,6 @@ def test_driver_errors_translate_to_persistence_unavailable(
         assert not connection.closed
     assert connection.closed
     assert factory.opens == 2
-
-
-@pytest.mark.parametrize(
-    "error",
-    [
-        sqlite3.OperationalError("database is locked"),
-        sqlite3.InterfaceError("bad sqlite state"),
-    ],
-)
-def test_sqlite_driver_errors_translate_to_persistence_unavailable(
-    error: BaseException,
-) -> None:
-    """D6 also covers the SQLite rollback backend, not only psycopg."""
-    factory = _FakeConnectionFactory(error=error)
-    database = Database(
-        DatabaseTarget(
-            backend="sqlite", sqlite_path=Path("unused-for-test.db")
-        ),
-        connect_factory=factory,
-    )
-
-    with pytest.raises(PersistenceUnavailable) as excinfo:
-        with database.connection():
-            pytest.fail("A SQLite outage must not yield a connection")
-
-    assert str(excinfo.value) != "slot_taken"
-    assert "locked" not in str(excinfo.value)
-    assert "bad sqlite state" not in str(excinfo.value)
 
 
 def test_non_driver_errors_are_not_translated() -> None:
@@ -673,27 +620,23 @@ def test_failed_connection_does_not_log_dsn_or_credentials(caplog) -> None:
     assert "postgresql://" not in caplog.text
 
 
-def test_create_app_registers_side_effect_free_database(tmp_path: Path) -> None:
+def test_create_app_registers_side_effect_free_database() -> None:
     class PostgresConfig(TestConfig):
-        PERSISTENCE_BACKEND = "postgres"
         DATABASE_URL = (
             "postgresql://consultorio_dev@127.0.0.1:1/consultorio_dev"
             "?sslmode=disable"
         )
-        DATABASE_PATH = tmp_path / "fallback.db"
 
     application = create_app(PostgresConfig)
     assert DATABASE_EXTENSION_KEY in application.extensions
     database = application.extensions[DATABASE_EXTENSION_KEY]
     assert isinstance(database, Database)
-    assert database.target.backend == "postgres"
+    assert database.target.dsn == PostgresConfig.DATABASE_URL
 
 
-def test_app_starts_without_database_url(tmp_path: Path) -> None:
+def test_app_starts_without_database_url() -> None:
     class NoDsnConfig(TestConfig):
-        PERSISTENCE_BACKEND = "postgres"
         DATABASE_URL = ""
-        DATABASE_PATH = tmp_path / "fallback.db"
 
     application = create_app(NoDsnConfig)
     database = application.extensions[DATABASE_EXTENSION_KEY]
@@ -725,7 +668,7 @@ def _schema_tables(url: str, schema: str) -> set[str]:
 
 
 def test_tc_019_016_startup_tolerates_outage_and_recovers(
-    pg_schema, tmp_path: Path, caplog
+    pg_schema, caplog
 ) -> None:
     import psycopg
 
@@ -736,12 +679,10 @@ def test_tc_019_016_startup_tolerates_outage_and_recovers(
     # Part A: create_app does not abort when the database is unreachable and a
     # page without persistence still responds (RF-22).
     class UnreachableConfig(TestConfig):
-        PERSISTENCE_BACKEND = "postgres"
         DATABASE_URL = (
             "postgresql://consultorio_dev@127.0.0.1:1/consultorio_dev"
             "?sslmode=disable"
         )
-        DATABASE_PATH: Path = tmp_path / "fallback.db"
         DATABASE_CONNECT_TIMEOUT = 1.0
         DATABASE_ACQUIRE_TIMEOUT = 1.0
 
@@ -757,7 +698,6 @@ def test_tc_019_016_startup_tolerates_outage_and_recovers(
     # delegates to the real PostgreSQL connection simulates the recovery; the
     # next ensure_schema() retries without restarting the process (RF-23).
     target = DatabaseTarget(
-        backend="postgres",
         dsn=url,
         schema=schema,
         connect_timeout=5.0,
@@ -846,13 +786,11 @@ def _future_weekday() -> str:
 
 
 @pytest.fixture()
-def unavailable_app(tmp_path: Path):
+def unavailable_app():
     """App with a real PostgreSQL target whose server does not exist."""
 
     class UnreachableConfig(TestConfig):
-        PERSISTENCE_BACKEND = "postgres"
         DATABASE_URL = T9_DSN
-        DATABASE_PATH: Path = tmp_path / "fallback.db"
         DATABASE_CONNECT_TIMEOUT = 1.0
         DATABASE_ACQUIRE_TIMEOUT = 1.0
         AUTOMATION_WEBHOOK_URL = ""
