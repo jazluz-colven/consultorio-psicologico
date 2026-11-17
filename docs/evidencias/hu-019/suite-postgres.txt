@@ -1,7 +1,27 @@
+# Suite completa contra PostgreSQL — Spec 019 (T17)
+#
+# Fecha (UTC): 2026-11-16 22:54:03
+# Rama: feature/hu-019-migracion-postgres
+# Commit (HEAD): 00e48b8
+# Comando:
+#   $env:TEST_DATABASE_URL='<DSN local de pruebas; valor no registrado>'
+#   Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+#   py -3.14 -m pytest -q
+# Entorno: Python 3.14.6, pytest 9.1.1, psycopg 3.3.8
+# PostgreSQL: 16.15 (contenedor Docker consultorio-pg-019, 127.0.0.1:55432)
+# Resultado: 399 passed, 0 failed, 0 skipped — EXIT_CODE=0 — 183.39 s (0:03:03)
+#
+# Salida real (T17):
 ........................................................................ [ 18%]
 ........................................................................ [ 36%]
 ........................................................................ [ 54%]
 ........................................................................ [ 72%]
 ........................................................................ [ 90%]
-.....................................                                    [100%]
-397 passed in 171.22s (0:02:51)
+.......................................                                  [100%]
+399 passed in 183.39s (0:03:03)
+#
+# Histórico (se conserva la constancia anterior):
+# - T11/T12 (2026-11-11): 397 passed in 171.22s (0:02:51). Era la salida
+#   registrada previamente en este archivo.
+# - T14 (2026-11-12): 398 passed in 175.88s (0:02:55), según render-deploy.md.
+# - T15 (2026-11-13): 399 passed in 252.13s (0:04:12), añade TC-019-021.

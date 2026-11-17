@@ -14,15 +14,16 @@
 
 ## Control de autorización
 
-- **T1 completada y revisada (2026-11-09); T2 autorizada (2026-11-09).** Las
-  tareas T3–T18 están planificadas y **no autorizadas**; cada una lleva la marca
-  **[NO AUTORIZADA]**.
+- **T1 completada y revisada (2026-11-09); T2 autorizada (2026-11-09).** En el
+  estado inicial, las tareas T3–T18 estaban planificadas y **no autorizadas**;
+  cada una llevaba la marca **[NO AUTORIZADA]**. El avance real se registra en
+  cada tarea y en la actualización del 2026-11-16 al final del documento.
 - La implementación de una tarea exige: (1) aprobación explícita de `plan.md`
   y `tasks.md`; (2) autorización expresa de la fase o entrega correspondiente;
   (3) que la tarea anterior de la que depende esté cerrada con evidencia.
-- **T18 [NO AUTORIZADA — REQUIERE ACEPTACIÓN]** solo puede ejecutarse después de
-  la aceptación funcional de la usuaria y de la autorización de retirada del
-  rollback.
+- **T18 [AUTORIZADA 2026-11-16 — EN IMPLEMENTACIÓN]** La aceptación funcional se
+  emitió y la retirada del rollback fue autorizada; se ejecuta tras el cierre de
+  T17.
 - No se marca una tarea como terminada por inspección del código. Cada cierre
   exige pruebas ejecutadas, resultado real y evidencia (AGENTS.md).
 - No se modifican requisitos, literales, tarifas ni alcance sin actualizar
@@ -492,7 +493,7 @@
     `tests/test_rollback_sqlite.py`, evidencia ampliada. Sin cambios en código,
     requisitos ni literales. Commit `861e3f4` publicado en `main`.
 
-- [ ] **T17. Ejecutar QA, reunir evidencias y solicitar la aceptación. [NO AUTORIZADA]**
+- [x] **T17. Ejecutar QA, reunir evidencias y solicitar la aceptación. [COMPLETADA Y ACEPTADA por la usuaria 2026-11-16 — QA APROBADO; limitación n8n declarada]**
   - **Objetivo:** cerrar la validación con resultados reales y solicitar la
     aceptación funcional de la usuaria.
   - **Cubre:** RNF-5, RNF-7.
@@ -507,16 +508,22 @@
       regresiones revisadas.
     - Se distingue PASS, FAIL y NO VERIFICADO; no se declara PASS por
       inspección del código.
-    - El checkbox de aceptación queda **sin marcar** hasta la decisión de la
-      usuaria.
+    - El checkbox de aceptación permanece **sin marcar** hasta la decisión de la
+      usuaria; al emitirse, se marca con fecha y limitaciones declaradas.
     - No hay secretos, DSN ni PII en las evidencias.
     - Si se generan capturas, usan CDP y la paleta vigente.
   - **Pruebas:** TC-019-023.
   - **Evidencia:** `docs/evidencias/hu-019/qa-hu-019.md`.
-  - **Hecho cuando:** el informe está completo y la aceptación se solicita
-    formalmente; no se declara aprobado.
+  - **Hecho cuando:** el informe está completo y la aceptación funcional queda
+    registrada con fecha y limitaciones; la aprobación técnica corresponde a
+    `@revisor` y no sustituye la aceptación.
 
-- [ ] **T18. Retirar el rollback y el almacenamiento anterior tras la aceptación. [NO AUTORIZADA — REQUIERE ACEPTACIÓN]**
+  - **Estado (2026-11-16):** QA ejecutado; `docs/evidencias/hu-019/qa-hu-019.md`
+    revisado y **APROBADO** por `@revisor`. Aceptación funcional **emitida por
+    la usuaria** con la limitación de n8n declarada; T17 marcada `[x]`. T18
+    autorizada por la usuaria el 2026-11-16; inicio tras este cierre.
+
+- [ ] **T18. Retirar el rollback y el almacenamiento anterior tras la aceptación. [AUTORIZADA 2026-11-16 — EN IMPLEMENTACIÓN]**
   - **Objetivo:** eliminar el interruptor y la ruta SQLite cuando la migración
     haya sido aceptada, dejando una sola vía de persistencia.
   - **Cubre:** RF-18; RNF-7.
@@ -534,6 +541,9 @@
   - **Evidencia:** diff de retirada y corrida final de la suite.
   - **Hecho cuando:** la usuaria aceptó la migración, la retirada está
     autorizada y la suite final pasa sin la ruta SQLite.
+  - **Estado (2026-11-16):** autorizada por la usuaria tras aceptar la
+    migración; en implementación. El cierre exige diff de retirada, suite final
+    sin la ruta SQLite y evidencia revisada.
 
 ---
 
@@ -568,3 +578,7 @@ autorizada. La autorización de una tarea no autoriza automáticamente las
 siguientes ni una entrega completa. **T18** requiere además la aceptación
 funcional de la migración y una autorización específica de retirada del
 rollback.
+
+> **Actualización 2026-11-16:** T1–T17 están cerradas; la aceptación funcional
+> fue emitida y **T18 está autorizada y en implementación**. Este apartado
+> conserva el estado inicial de autorización del 2026-11-08.

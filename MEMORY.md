@@ -928,7 +928,9 @@ aporte.
   en T13, limitación de facturación y artefacto bruto de spin-down pendiente
   para T17. **T14 marcada `[x]` en `tasks.md`.**
   **Cierre:** commit `309a442` publicado en `main` (`dde4461..309a442`).
-  Queda pendiente revocar `RENDER_API_KEY` (acción de la usuaria). Observaciones
+  `RENDER_API_KEY` retirada del entorno local el 2026-11-16; la revocación en el
+  servidor de Render queda pendiente en el Dashboard (la API pública no expone
+  endpoint de revocación). Observaciones
   abiertas para T17: n8n/variables de automatización y
   `CONSULTORIO_ADMIN_TOKEN` (RNF-5 y paridad funcional), repetir la suite
   completa y adjuntar extracto del primer GET tras el spin-down.
@@ -964,3 +966,14 @@ aporte.
   tras dos ciclos de corrección. 201+/142− en 5 planes; P1 30 y P2 9
   coincidencias, todas históricas o de rollback T15. **Commit `861e3f4`
   publicado en `main` (2026-11-16).**
+
+- **Spec 019 — T17 QA EJECUTADO (2026-11-16)**: informe
+  `docs/evidencias/hu-019/qa-hu-019.md` con matriz TC-019-001..023, comandos y
+  resultados reales. Suite completa PostgreSQL Docker: **399 PASS / 0 FAIL /
+  0 skipped**; `test_hu_019.py` + `test_rollback_sqlite.py`: **8 PASS**. Render
+  `GET /`: **200** con cold start (~22,5 s). PostgreSQL 16.15, Python 3.14.6,
+  psycopg 3.3.8. `@revisor`: **APROBADO** (sin defectos bloqueantes; 3
+  observaciones menores corregidas). n8n real sigue **NO VERIFICADO** por el
+  incidente, limitación externa divulgada. **Aceptación funcional emitida por la
+  usuaria el 2026-11-16** con esa limitación; T17 marcada `[x]`. **Commit y push
+  autorizados; T18 autorizada e iniciada el 2026-11-16.**

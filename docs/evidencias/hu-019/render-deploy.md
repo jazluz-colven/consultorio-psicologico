@@ -7,9 +7,9 @@
 > **Ejecución:** 2026-11-12 (UTC). **Rama:** `feature/hu-019-migracion-postgres`.
 > **HEAD:** `dde4461`, publicado en `main` (`9846613..dde4461`).
 >
-> **Estado: EJECUTADO — PENDIENTE DE REVISIÓN TÉCNICA.** Todos los criterios de
-> aceptación de T14 se ejecutaron contra el servicio real de Render y Neon. El
-> veredicto final corresponde a `@revisor`.
+> **Estado: EJECUTADO — APROBADO por `@revisor` (2026-11-12).** Todos los
+> criterios de aceptación de T14 se ejecutaron contra el servicio real de Render
+> y Neon. Evidencia commiteada en `309a442` (publicada en `main`).
 
 ## 1. Resultado del despliegue
 

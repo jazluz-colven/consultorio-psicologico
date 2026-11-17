@@ -5,7 +5,8 @@
 > este documento.
 >
 > **Fecha:** 2026-11-12. **Rama:** `feature/hu-019-migracion-postgres`.
-> **HEAD:** `d1e7909` (T12). **Sin commit ni push de T13.**
+> **HEAD al ejecutar:** `d1e7909` (T12). **Evidencia commiteada en `6f5e132`**
+> (publicada en `main`).
 >
 > **Resultado global:** PASS técnico en TLS, creación de esquema desde vacío,
 > reserva + eventos y cold start > 5 min. El plan Neon Free y la región se
