@@ -524,7 +524,7 @@
     la usuaria** con la limitación de n8n declarada; T17 marcada `[x]`. T18
     autorizada por la usuaria el 2026-11-16; inicio tras este cierre.
 
-- [ ] **T18. Retirar el rollback y el almacenamiento anterior tras la aceptación. [APROBADA TÉCNICAMENTE 2026-11-17 — PENDIENTE COMMIT/PUSH]**
+- [x] **T18. Retirar el rollback y el almacenamiento anterior tras la aceptación. [COMPLETADA 2026-11-17 — COMMIT 61f358a]**
   - **Objetivo:** eliminar el interruptor y la ruta SQLite cuando la migración
     haya sido aceptada, dejando una sola vía de persistencia.
   - **Cubre:** RF-18; RNF-7.
@@ -547,8 +547,8 @@
     el interruptor, `DATABASE_PATH`, el DDL y la ruta SQLite, la prueba de
     rollback y la documentación de rollback. Suite completa: `392 passed`
     (corrida independiente del coordinador: `192.92s`); evidencia en
-    `docs/evidencias/hu-019/t18-removal.md`. Queda pendiente la autorización de
-    la usuaria para commit y push; T18 se marcará `[x]` tras publicar.
+    `docs/evidencias/hu-019/t18-removal.md`. Commit `61f358a` publicado en
+    `origin/feature/hu-019-migracion-postgres`; T18 marcada `[x]`.
 
 ---
 

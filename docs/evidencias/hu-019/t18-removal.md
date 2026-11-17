@@ -160,5 +160,5 @@ evidencia anterior.
 - No hay cambios visuales en T18; no requiere comprobación de navegador.
 - El cierre documental, la marca `[x]` de T18 y la actualización de `MEMORY.md`
   los realiza el coordinador tras la aprobación técnica.
-- Queda pendiente la autorización de la usuaria para el commit y el push de
-  T18.
+- Commit `61f358a` publicado en `origin/feature/hu-019-migracion-postgres`
+  (2026-11-17); T18 marcada `[x]`.

@@ -988,9 +988,9 @@ aporte.
   Docker activo y se apoyó en la corrida independiente. Observaciones menores
   corregidas: test `init_db` renombrado, `DATA_DIR` retirado, cifras de la
   evidencia y referencia obsoleta a T14. Evidencia:
-  `docs/evidencias/hu-019/t18-removal.md`; T18 **aprobada técnicamente** y
-  pendiente de marcar `[x]` tras publicar. **Pendiente autorización de la
-  usuaria para commit y push de T18.** La `RENDER_API_KEY`
+  `docs/evidencias/hu-019/t18-removal.md`; T18 marcada `[x]`. **Commit
+  `61f358a` publicado en `origin/feature/hu-019-migracion-postgres`
+  (2026-11-17).** La `RENDER_API_KEY`
   local fue retirada; su revocación en el panel de Render sigue pendiente de la
   usuaria. Quedan `data/consultorio.db*` locales ignorados por Git y sin
   referencias en código.
