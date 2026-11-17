@@ -605,7 +605,8 @@ aporte.
   («No pudimos completar tu solicitud en este momento. Inténtalo de nuevo en
   unos minutos.») aprobado para el MVP, pero exige **enmienda coordinada** de
   las Specs 004/005 y su espejo `tests/expected_content.py`. Rama
-  `feature/hu-019-migracion-postgres` (creada desde `main`, ya ff a `8ce511f`);
+  `feature/hu-019-migracion-postgres` (creada desde `main`, ya ff a `8ce511f`;
+  integrada en `main` y eliminada el 2026-11-17);
   `plan.md`/`tasks.md` **aprobados el 2026-11-08**; T1/T2 completadas
   (2026-11-09). Pendiente: reconciliar los literales de la
   **Spec 011** (están en MEMORY, no en su `spec.md`).
@@ -988,7 +989,8 @@ aporte.
   corregidas: test `init_db` renombrado, `DATA_DIR` retirado, cifras de la
   evidencia y referencia obsoleta a T14. Evidencia:
   `docs/evidencias/hu-019/t18-removal.md`; T18 marcada `[x]`. **Commit
-  `61f358a` publicado en `origin/feature/hu-019-migracion-postgres`
+  `61f358a` integrado en `main` mediante fast-forward (`208f8f2`), rama
+  `feature/hu-019-migracion-postgres` eliminada en local y remoto
   (2026-11-17).** La `RENDER_API_KEY` local fue retirada y la usuaria confirmó
   su revocación en el panel de Render (2026-11-17); no queda pendiente de
   seguridad. Quedan `data/consultorio.db*` locales ignorados por Git y sin
